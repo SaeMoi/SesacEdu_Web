@@ -1,0 +1,25 @@
+:root {
+  /* 색상 */
+  --color-primary: #adf046;
+  --color-primary-hover: #9dde35;
+  --color-navy: #153b4c;
+  --color-text: #123244;
+  --color-muted: #657b83;
+  --color-background: #ffffff;
+  --color-surface: #f4f6f5;
+  --color-sage: #e8efd9;
+  --color-lavender: #e8e1f2;
+  --color-border: #dce4e3;
+  --color-error: #b64040;
+
+  /* 글꼴 */
+  --font-family:
+    "Pretendard", -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+
+  /* 크기 */
+  --content-width: 1200px;
+  --radius-small: 8px;
+  --radius-medium: 12px;
+  --radius-large: 24px;
+}
