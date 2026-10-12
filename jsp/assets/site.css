@@ -1526,10 +1526,61 @@ fieldset {
   }
 }
 
-/* 강의 필터 결과에 맞춰 생성하는 페이지 버튼 */
-.course-pagination{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:32px 0 12px}
-.course-pagination button{min-width:40px;min-height:40px;padding:8px 12px;background:white;border:1px solid #dce4e3;border-radius:8px;color:#153b4c;font:inherit;cursor:pointer}
-.course-pagination button[aria-current="page"]{background:#adf046;border-color:#adf046;font-weight:700}
-.course-pagination button:disabled{opacity:.4;cursor:default}
-.course-pagination button:focus-visible{outline:2px solid #537738;outline-offset:3px}
-#course-page-status{text-align:center}
+/* 목록 전체 너비를 기준으로 페이지 이동 버튼을 중앙 정렬합니다. */
+.course-pagination {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 40px auto 0;
+  padding: 28px 0 0;
+  border-top: 1px solid #edf1ee;
+}
+.course-pagination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: #657b83;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .15s, color .15s, border-color .15s;
+}
+.course-pagination button:not(:disabled):hover {
+  background: #f0f5e9;
+  color: #153b4c;
+}
+.course-pagination button[aria-current="page"] {
+  background: #eaf3dc;
+  border-color: #d3e4b9;
+  color: #456b28;
+  font-weight: 700;
+}
+.course-pagination button:first-child,
+.course-pagination button:last-child {
+  flex-basis: 72px;
+  gap: 7px;
+  font-size: 13px;
+}
+.course-pagination button:first-child { margin-right: 12px; }
+.course-pagination button:last-child { margin-left: 12px; }
+.course-pagination button:first-child::before { content: "‹"; font-size: 22px; }
+.course-pagination button:last-child::after { content: "›"; font-size: 22px; }
+.course-pagination button:disabled { color: #b7c2c5; cursor: default; }
+.course-pagination button:focus-visible { outline: 2px solid #537738; outline-offset: 3px; }
+#course-page-status { margin: 14px 0 0; text-align: center; color: #83938e; font-size: 12px; }
+@media (max-width: 480px) {
+  .course-pagination { gap: 4px; margin-top: 28px; padding-top: 20px; }
+  .course-pagination button { flex-basis: 34px; height: 38px; border-radius: 10px; }
+  .course-pagination button:first-child,
+  .course-pagination button:last-child { flex-basis: 56px; margin: 0; }
+}
