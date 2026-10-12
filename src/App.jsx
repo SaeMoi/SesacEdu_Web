@@ -1,4 +1,11 @@
 import "./App.css";
+import { Route, Routes } from "react-router";
+import {
+  PaymentPage,
+  PaymentCompletePage,
+  PaymentHistoryPage,
+  PaymentDetailPage,
+} from "./features/my-payment/PaymentPages.jsx";
 
 const categories = [
   "웹 보안",
@@ -8,7 +15,7 @@ const categories = [
   "클라우드",
 ];
 
-function App() {
+function HomePage() {
   return (
     <>
       <header className="site-header">
@@ -77,6 +84,34 @@ function App() {
         <div className="container">새싹에듀 · 오늘도 한 걸음</div>
       </footer>
     </>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/mypage/buy" element={<PaymentPage />} />
+      <Route path="/mypage/buy/complete" element={<PaymentCompletePage />} />
+      <Route path="/mypage/buy/history" element={<PaymentHistoryPage />} />
+      <Route path="/mypage/buy/history/:orderId" element={<PaymentDetailPage />} />
+      <Route
+        path="*"
+        element={
+          <main className="container">
+            <section className="home-hero">
+              <h1>페이지를 찾을 수 없습니다.</h1>
+              <p className="hero-description">
+                요청한 화면은 아직 준비되지 않았거나 주소가 올바르지 않습니다.
+              </p>
+              <a className="button button-primary" href="/">
+                홈으로
+              </a>
+            </section>
+          </main>
+        }
+      />
+    </Routes>
   );
 }
 
