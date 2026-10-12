@@ -1,4 +1,6 @@
 import "./App.css";
+import { Route, Routes } from "react-router";
+import BenefitsPage from "./features/my-benefits/BenefitsPage.jsx";
 
 const categories = [
   "웹 보안",
@@ -8,7 +10,7 @@ const categories = [
   "클라우드",
 ];
 
-function App() {
+function HomePage() {
   return (
     <>
       <header className="site-header">
@@ -77,6 +79,15 @@ function App() {
         <div className="container">새싹에듀 · 오늘도 한 걸음</div>
       </footer>
     </>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/mypage/bnf" element={<BenefitsPage />} />
+    </Routes>
   );
 }
 

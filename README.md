@@ -19,6 +19,13 @@ npm run dev
 npm run lint
 npm run build
 
+## 마이페이지 쿠폰 / 포인트 API
+
+프론트엔드 `/mypage/bnf`에서 `VITE_API_BASE_URL` 기준
+`GET /mypage/bnf`와 `POST /mypage/cpn`을 호출합니다.
+현재 저장소에 로그인 Access Token 공급 및 `/login/replc` 갱신 기능이 없어 실제 요청은
+기존 인증 상태를 `BenefitsAuthProvider`에 연결한 뒤 검증해야 합니다.
+
 ## 담당 범위
 
 - A: 메인, 로그인, 회원가입, 강의 목록·상세, 학습 화면, 질문답변, 커뮤니티, 챗봇
