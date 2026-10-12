@@ -11,7 +11,7 @@
 .header-inner {
   display: flex;
   align-items: center;
-  gap: 48px;
+  gap: clamp(20px, 4vw, 48px);
   min-height: 88px;
 }
 
@@ -20,6 +20,7 @@
   font-size: 28px;
   font-weight: 800;
   letter-spacing: -1.5px;
+  color: var(--color-navy);
 }
 
 .brand span {
@@ -30,7 +31,7 @@
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: clamp(14px, 3vw, 40px);
   font-size: 14px;
   font-weight: 600;
 }
@@ -39,8 +40,51 @@
   color: #426f29;
 }
 
-.header-actions {
+.header-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(260px, 24vw);
+  min-height: 40px;
   margin-left: auto;
+  padding: 0 14px;
+  border-radius: var(--radius-small);
+  background: var(--color-surface);
+  color: var(--color-muted);
+}
+
+.header-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.header-search input::placeholder {
+  color: var(--color-muted);
+}
+
+.header-actions {
+  flex-shrink: 0;
+  gap: 20px;
+}
+
+.header-mypage {
+  white-space: nowrap;
+}
+
+.header-cart {
+  min-height: 40px;
+  padding: 8px 20px;
+  border-radius: var(--radius-small);
+  background: var(--color-primary);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .button {
@@ -173,16 +217,22 @@
   }
 
   .main-nav {
-    order: 3;
-    width: 100%;
+    gap: 16px;
   }
 
   .header-actions {
     gap: 12px;
+    margin-left: auto;
   }
 
-  .header-actions .button {
-    padding-inline: 14px;
+  .header-search {
+    order: 4;
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .header-cart {
+    padding-inline: 12px;
   }
 
   .home-hero {
