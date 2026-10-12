@@ -1,6 +1,6 @@
 <%@ page pageEncoding="UTF-8" %>
 <% for(String[] item:courses){ %>
-<a class="course-card" data-course data-category="웹 보안" data-level="입문" data-price="<%=item[7]%>" href="${pageContext.request.contextPath}/courses/detail?id=<%=item[0]%>">
+<a class="course-card" data-course data-category="<%=item[8]%>" data-level="<%=item[9]%>" data-price="<%=item[7]%>" href="${pageContext.request.contextPath}/courses/detail?id=<%=item[0]%>">
 <div class="course-art <%=item[4]%>">
 <strong>
 <%=item[2]%>
@@ -25,7 +25,7 @@
 <h3>
 <%=item[1]%>
 </h3>
-<p>예시 강사</p>
+<p><%=item[8]%> · 예시 강사</p>
 <div class="course-price">
 <strong>
 <%=item[3]%>원</strong>

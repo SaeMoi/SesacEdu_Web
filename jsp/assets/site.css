@@ -1525,3 +1525,11 @@ fieldset {
     font-size: 11px;
   }
 }
+
+/* 강의 필터 결과에 맞춰 생성하는 페이지 버튼 */
+.course-pagination{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:32px 0 12px}
+.course-pagination button{min-width:40px;min-height:40px;padding:8px 12px;background:white;border:1px solid #dce4e3;border-radius:8px;color:#153b4c;font:inherit;cursor:pointer}
+.course-pagination button[aria-current="page"]{background:#adf046;border-color:#adf046;font-weight:700}
+.course-pagination button:disabled{opacity:.4;cursor:default}
+.course-pagination button:focus-visible{outline:2px solid #537738;outline-offset:3px}
+#course-page-status{text-align:center}

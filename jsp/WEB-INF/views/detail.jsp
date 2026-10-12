@@ -5,13 +5,13 @@
 <main id="main" class="wrap detail-page">
 <section class="detail-banner">
 <div>
-<p class="eyebrow">WEB SECURITY / BEGINNER</p>
+<p class="eyebrow"><%=selected[8]%> / <%=selected[9]%></p>
 <h1>
 <%=id.equals("web") ? "웹 보안, 처음부터<br>제대로 배워요." : selected[2]%>
 </h1>
-<p class="banner-copy">인증과 접근 권한부터 입력값 검증까지.<br>웹 서비스에 필요한 보안 원칙을 익힙니다.</p>
+<p class="banner-copy"><%=selected[10]%></p>
 <div class="banner-tags">
-<span class="pill">입문</span>
+<span class="pill"><%=selected[9]%></span>
 <span>4개 레슨</span>
 <span>예시 강사</span>
 </div>
@@ -33,13 +33,13 @@
 <section data-panel="intro">
 <h2>이 강의에서 배우는 내용</h2>
 <ul class="learning-list">
-<li>로그인과 권한 검사의 차이를 이해해요.</li>
-<li>웹 입력과 파일 업로드의 보안 원칙을 살펴봐요.</li>
+<li><%=selected[10]%></li>
+<li><%=selected[1]%>의 주요 개념을 예시로 살펴봐요.</li>
 <li>강의 자료와 과제로 배운 내용을 정리해요.</li>
 </ul>
 <div class="video-preview" id="video-preview" hidden>
 <button class="play-button" data-video-note aria-label="미리보기 영상 재생">▷</button>
-<strong>웹 보안 입문 · 강의 소개</strong>
+<strong><%=selected[1]%> · 강의 소개</strong>
 <p class="video-status" role="status">
 </p>
 </div>
@@ -51,15 +51,15 @@
 </nav>
 </section>
 <section data-panel="teacher" hidden>
-<h2>어려운 보안을, 이해하기 쉽게.</h2>
+<h2>어려운 개념을, 이해하기 쉽게.</h2>
 <div class="teacher-profile">
 <span class="avatar">H</span>
 <div>
 <strong>예시 강사</strong>
-<p>웹 보안 · 서비스 보안</p>
+<p><%=selected[8]%></p>
 </div>
 </div>
-<p class="body-copy">인증과 접근 권한, 안전한 입력 처리의 원칙을 함께 살펴봅니다.<br>기초 개념부터 실습까지, 자신의 속도로 배울 수 있도록 안내해요.</p>
+<p class="body-copy"><%=selected[10]%><br>기초 개념부터 실습까지, 자신의 속도로 배울 수 있도록 안내해요.</p>
 </section>
 <section data-panel="reviews" hidden>
 <h2>먼저 배운 사람들의 이야기</h2>
@@ -79,7 +79,7 @@
 </section>
 </div>
 <aside class="purchase-card">
-<span class="pill">입문 과정</span>
+<span class="pill"><%=selected[9]%> 과정</span>
 <h3>
 <%=selected[1]%>
 </h3>
@@ -95,11 +95,11 @@
 </div>
 <div>
 <dt>난이도</dt>
-<dd>입문</dd>
+<dd><%=selected[9]%></dd>
 </div>
 <div>
 <dt>학습 분야</dt>
-<dd>웹 보안</dd>
+<dd><%=selected[8]%></dd>
 </div>
 </dl>
 </aside>

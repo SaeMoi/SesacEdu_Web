@@ -75,60 +75,66 @@ if (byId("signup-form")) {
   form.addEventListener("input", update);
 }
 // 카테고리·검색·정렬은 JSP에서 출력한 예시 카드에 적용합니다.
+// 현재는 예시 데이터를 브라우저에서 필터링한 뒤 페이지당 6개씩 표시합니다.
+// API 연결 시 검색/정렬/페이지 조건을 서버에 보내고 전체 결과 수를 받습니다.
 if (byId("course-search")) {
   const cards = all("[data-course]");
   const chips = all(".category-tabs [data-category]");
   const params = new URLSearchParams(location.search);
-  let category = chips.some(
-    (b) => b.dataset.category === params.get("category"),
-  )
-    ? params.get("category")
-    : "웹 보안";
+  let category = chips.some(b => b.dataset.category === params.get("category")) ? params.get("category") : "전체";
+  let page = 1;
+  const pageSize = 6;
   byId("course-search").value = params.get("q") || "";
   const apply = () => {
-    let count = 0;
     const q = byId("course-search").value.trim().toLowerCase();
-    cards.forEach((card) => {
-      card.hidden = !(
-        (category === "전체" || card.dataset.category === category) &&
-        card.textContent.toLowerCase().includes(q) &&
-        (byId("level-filter").value === "all" ||
-          byId("level-filter").value === card.dataset.level)
-      );
-      if (!card.hidden) count++;
-    });
-    chips.forEach((b) =>
-      b.setAttribute("aria-pressed", String(b.dataset.category === category)),
-    );
-    byId("catalog-title").textContent = category + " 강의";
-    byId("course-count").textContent = count;
-    byId("course-empty").hidden = count !== 0;
-    const sorted = [...cards];
+    const matches = cards.filter(card =>
+      (category === "전체" || card.dataset.category === category) &&
+      card.textContent.toLowerCase().includes(q) &&
+      (byId("level-filter").value === "all" || byId("level-filter").value === card.dataset.level));
     const sort = byId("sort-filter").value;
-    if (sort !== "default")
-      sorted.sort(
-        (a, b) =>
-          (Number(a.dataset.price) - Number(b.dataset.price)) *
-          (sort === "low" ? 1 : -1),
-      );
-    sorted.forEach((card) =>
-      document.querySelector(".course-grid").append(card),
-    );
+    if (sort !== "default") matches.sort((a,b) => (Number(a.dataset.price)-Number(b.dataset.price))*(sort === "low" ? 1 : -1));
+    const totalPages = Math.ceil(matches.length / pageSize);
+    page = Math.min(page, Math.max(totalPages, 1));
+    cards.forEach(card => {card.hidden=true;});
+    matches.forEach((card,index) => {
+      card.hidden = index < (page-1)*pageSize || index >= page*pageSize;
+      document.querySelector(".course-grid").append(card);
+    });
+    chips.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.category === category)));
+    byId("catalog-title").textContent=category+" 강의";
+    byId("course-count").textContent=matches.length;
+    byId("course-empty").hidden=matches.length !== 0;
+    const pagination=byId("course-pagination");
+    pagination.replaceChildren();
+    pagination.hidden=totalPages<=1;
+    const addButton=(label,target,disabled=false,current=false) => {
+      const button=document.createElement("button");
+      button.type="button";button.textContent=label;button.disabled=disabled;
+      button.setAttribute("aria-label", /^\d+$/.test(label) ? label+"페이지" : label+" 페이지");
+      if(current) button.setAttribute("aria-current","page");
+      button.addEventListener("click",()=>{
+        page=target;apply();
+        // 페이지 버튼 재생성 후 현재 페이지로 키보드 포커스를 복원합니다.
+        pagination.querySelector('[aria-current="page"]')?.focus({preventScroll:true});
+      });
+      pagination.append(button);
+    };
+    if(totalPages>1){
+      addButton("이전",page-1,page===1);
+      for(let n=1;n<=totalPages;n++) addButton(String(n),n,false,n===page);
+      addButton("다음",page+1,page===totalPages);
+    }
+    byId("course-page-status").textContent=matches.length ? `${page} / ${totalPages} 페이지 · ${(page-1)*pageSize+1}–${Math.min(page*pageSize,matches.length)} / ${matches.length}개` : "검색 결과가 없습니다.";
   };
-  chips.forEach((b) =>
-    b.addEventListener("click", () => {
-      category = b.dataset.category;
-      apply();
-    }),
-  );
-  on("course-search", "input", apply);
-  on("level-filter", "change", apply);
-  on("sort-filter", "change", apply);
-  on("reset-courses", "click", () => {
-    category = "전체";
-    byId("course-search").value = "";
-    byId("level-filter").value = "all";
-    apply();
+  // 검색 조건을 바꾸면 첫 페이지부터 보여줍니다.
+  const resetPage=()=>{page=1;apply();};
+  chips.forEach(b=>b.addEventListener("click",()=>{category=b.dataset.category;resetPage();}));
+  on("course-search","input",resetPage);
+  on("level-filter","change",resetPage);
+  on("sort-filter","change",resetPage);
+  on("reset-courses","click",()=>{
+    category="전체";byId("course-search").value="";
+    byId("level-filter").value="all";byId("sort-filter").value="default";resetPage();
   });
   apply();
 }
