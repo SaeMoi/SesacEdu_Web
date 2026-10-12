@@ -63,7 +63,7 @@ export default function HomePage() {
             <p className="about-links">
               <a href="/courses">강의 학습</a>
               <span>/</span>
-              <a href="/qna">질문·답변</a>
+              <a href="/qna">강의상세</a>
               <span>/</span>
               <a href="/community">커뮤니티</a>
             </p>

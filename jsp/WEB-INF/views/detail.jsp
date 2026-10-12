@@ -47,7 +47,7 @@
 <%-- TODO(auth): 로그인 서버 연결 전 화면 확인을 위한 임시 진입 링크입니다.
      인증 연동 시 이 링크를 제거하고, 로그인 확인 후 정식 학습 경로를 제공합니다.
      /qna, /assignments, /chatbot 및 영상·자료 API의 접근 권한은 서버에서 검사해야 합니다. --%>
-<a href="${pageContext.request.contextPath}/qna" data-preview-classroom-link>질문·답변 →</a>
+<a href="${pageContext.request.contextPath}/qna" data-preview-classroom-link>강의상세 →</a>
 </nav>
 </section>
 <section data-panel="teacher" hidden>

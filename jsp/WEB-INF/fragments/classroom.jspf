@@ -31,7 +31,7 @@ boolean assignmentPage = Boolean.TRUE.equals(request.getAttribute("assignmentPag
 <nav class="lesson-actions" aria-label="학습 메뉴">
 <button type="button" class="btn <%=assignmentPage ? "sage" : "secondary"%>" data-lesson-panel="assignment-panel" aria-controls="assignment-panel" aria-expanded="<%=assignmentPage%>">과제　⌄</button>
 <button type="button" class="btn secondary" data-lesson-panel="materials-panel" aria-controls="materials-panel" aria-expanded="false">강의자료</button>
-<button type="button" class="btn <%=(openChat || assignmentPage) ? "secondary" : "sage"%>" data-lesson-panel="qna-panel" aria-controls="qna-panel" aria-expanded="<%=!openChat && !assignmentPage%>">질문·답변</button>
+<button type="button" class="btn secondary" data-lesson-panel="qna-panel" aria-controls="qna-panel" aria-expanded="false">질문·답변</button>
 </nav>
 <p id="lesson-status" class="form-status" role="status">
 </p>
@@ -41,15 +41,14 @@ boolean assignmentPage = Boolean.TRUE.equals(request.getAttribute("assignmentPag
 <section id="materials-panel" class="lesson-intro" data-lesson-content hidden>
 <h2>강의자료</h2><p>등록된 강의자료가 없습니다. 자료 파일은 아직 연결되지 않았습니다.</p>
 </section>
-<% if(openChat){ %>
-<section class="lesson-intro">
+<%-- 메뉴가 모두 접히면 표시하는 기본 안내입니다. 과제 직접 진입 시에만 숨깁니다. --%>
+<section id="lesson-default" class="lesson-intro" <%=assignmentPage ? "hidden" : ""%>>
 <h2>차근차근, 첫걸음부터.</h2>
 <p>오른쪽 목차를 선택하면 영상의 해당 시간으로 이동해요.</p>
 <p class="screen-note">현재는 화면 미리보기이며 영상 파일은 연결 전입니다.</p>
-<a class="small-links" href="${pageContext.request.contextPath}/qna">질문·답변 보기 →</a>
 </section>
-<% } %>
-<section class="qna-section" id="qna-panel" data-lesson-content <%=!openChat && !assignmentPage ? "" : "hidden"%>>
+<%-- 질문 목록은 질문·답변 버튼을 눌렀을 때만 펼칩니다. --%>
+<section class="qna-section" id="qna-panel" data-lesson-content hidden>
 <div class="section-heading">
 <h2>질문·답변</h2>
 <button class="btn primary" id="write-question" aria-controls="question-form" aria-expanded="false">질문 작성</button>

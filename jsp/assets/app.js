@@ -179,8 +179,10 @@ all("[data-lesson-panel]").forEach((button) => {
       menu.classList.toggle("sage", active);
       menu.classList.toggle("secondary", !active);
     });
-    const intro = document.querySelector(".classroom .lesson-intro:not([data-lesson-content])");
-    if (intro) intro.hidden = open;
+    // 어떤 메뉴든 모두 접히면 기본 안내를 다시 표시합니다.
+    const intro = byId("lesson-default");
+    const hasOpenPanel = all("[data-lesson-content]").some(panel => !panel.hidden);
+    if (intro) intro.hidden = hasOpenPanel;
   });
 });
 on("write-question", "click", () => {
