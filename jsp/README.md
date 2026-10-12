@@ -56,3 +56,12 @@ B의 마이페이지/장바구니/강사 화면은 이번 미리보기 범위에
 B의 파일을 덮어쓰지 말고, 병합 때 기존 App 라우터의 `/`에 HomePage를 연결하세요.
 B는 같은 Header.jsx를 import해서 사용하고, JSP 페이지로 이동할 때 일반 링크를 사용합니다.
 상세한 백엔드 합의 항목은 `docs/react-jsp-integration.md`를 참고하세요.
+
+## 과제 확인
+
+`/assignments` 또는 강의 학습 화면의 과제 버튼으로 진입합니다. 설계안 23~25 기반입니다.
+과제 안내 → PDF 선택(또는 드롭) → 메모 → 제출 미리보기 → 내 제출 파일 다운로드 → 피드백 예시를 확인할 수 있습니다.
+파일/메모는 새로고침하면 초기화되며 서버로 전송하지 않습니다. PDF/10MB 제한은 합의 전 임시 UI 기준입니다.
+
+과제 코드는 `assets/assignments.js`, `assets/assignments.css`, `WEB-INF/fragments/assignment.jspf`로 분리했습니다.
+협업 브랜치는 `../docs/feature-branches.md`, API 연결 협의는 `../docs/assignment-backend.md`를 참고하세요.

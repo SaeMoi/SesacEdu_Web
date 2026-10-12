@@ -7,10 +7,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "^/(login|signup|courses|qna|community|chatbot)(/|\\?|$)":
+      "^/(login|signup|courses|qna|community|chatbot|assignments)(/|\\?|$)":
         "http://127.0.0.1:8088",
       "/ui/": "http://127.0.0.1:8088",
-      "^/assets/(app\\.js|site\\.css)$": "http://127.0.0.1:8088",
+      "^/assets/(app\\.js|site\\.css|assignments\\.(js|css))$": "http://127.0.0.1:8088",
     },
   },
 });

@@ -21,4 +21,7 @@
 <servlet-mapping><servlet-name>post-write</servlet-name><url-pattern>/community/write</url-pattern></servlet-mapping>
 <servlet><servlet-name>post-done</servlet-name><jsp-file>/WEB-INF/views/post-done.jsp</jsp-file></servlet>
 <servlet-mapping><servlet-name>post-done</servlet-name><url-pattern>/community/done</url-pattern></servlet-mapping>
+<!-- 과제는 JSP로 렌더링하고 공통 헤더는 React로 마운트합니다. -->
+<servlet><servlet-name>assignments</servlet-name><jsp-file>/WEB-INF/views/assignments.jsp</jsp-file></servlet>
+<servlet-mapping><servlet-name>assignments</servlet-name><url-pattern>/assignments</url-pattern></servlet-mapping>
 <welcome-file-list><welcome-file>index.html</welcome-file></welcome-file-list></web-app>

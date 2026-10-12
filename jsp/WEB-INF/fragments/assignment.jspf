@@ -1,0 +1,38 @@
+<%@ page pageEncoding="UTF-8" %>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/assignments.css">
+<section id="assignment-area" aria-label="과제 확인">
+<p class="screen-note">화면 미리보기 · 파일은 서버에 전송되지 않으며 새로고침하면 초기화됩니다.</p>
+<article class="assignment-card assignment-guide">
+<div class="section-heading"><h2><span class="assignment-badge">과제</span> 인증과 인가 구분하기</h2></div>
+<p>웹 서비스의 로그인과 접근 권한 사례를 각각 하나씩 찾아 정리해 주세요.</p>
+<ol><li>인증이 필요한 상황과 인가가 필요한 상황을 작성해 주세요.</li><li>두 과정이 다른 이유를 자신의 말로 설명해 주세요.</li></ol>
+<div class="assignment-bottom"><span>제출 형식: PDF 파일 · 최대 10MB (미리보기 기준)</span><span class="assignment-badge" id="assignment-state">미제출</span></div>
+</article>
+<form id="assignment-form" class="assignment-card">
+<div class="section-heading"><h2>과제 제출</h2><span class="assignment-badge">웹 보안 입문</span></div>
+<h3>인증과 인가 구분하기</h3><p>인증과 인가의 차이를 정리한 파일을 첨부하고 제출해 주세요.</p>
+<fieldset disabled data-enable>
+<div id="assignment-drop" class="assignment-drop">
+<div><strong>과제 파일 첨부</strong><p id="assignment-file-name">파일을 끌어 놓거나 파일 선택 버튼을 눌러 주세요.</p></div>
+<label class="btn secondary" for="assignment-file">파일 선택</label>
+<input id="assignment-file" type="file" accept=".pdf,application/pdf" aria-label="과제 PDF 파일" class="assignment-file-input">
+</div>
+<label for="assignment-memo">제출 메모</label><textarea id="assignment-memo" rows="5" maxlength="3000" placeholder="제출한 과제에 대한 설명을 입력해 주세요."></textarea>
+<div class="form-actions"><button type="reset" class="btn secondary">취소</button><button type="submit" class="btn primary">과제 제출</button></div>
+</fieldset><p id="assignment-status" class="form-status" role="status"></p>
+</form>
+<article id="assignment-submission" class="assignment-card" hidden>
+<div class="section-heading"><h2>내가 제출한 과제</h2><span class="assignment-badge">제출 완료 · 미리보기</span></div>
+<p class="screen-note">내 제출 내역 · <time id="assignment-time"></time></p><h3>인증과 인가 구분하기</h3>
+<p id="assignment-submitted-memo" class="assignment-memo"></p>
+<div class="assignment-download"><div><strong id="assignment-submitted-name"></strong><p>첨부파일 · PDF</p></div><a id="assignment-download" class="btn secondary">다운로드 ↓</a></div>
+<button class="btn secondary" type="button" id="assignment-edit">다시 작성</button>
+</article>
+<article id="assignment-feedback" class="assignment-card assignment-feedback" hidden>
+<div class="section-heading"><h2>강사 피드백</h2><span class="assignment-badge" id="feedback-state">피드백 대기</span></div>
+<div id="feedback-wait" class="feedback-wait"><h3>강사님의 피드백을 기다리고 있어요.</h3><p>피드백이 등록되면 이곳에서 확인할 수 있어요.</p></div>
+<div id="feedback-example" hidden><p>예시 강사</p><p>인증과 인가의 차이를 정확하게 정리했어요. 구매 여부를 확인하는 예시도 적절합니다.</p><p>추가로, 로그인한 사용자라도 다른 사람의 자료에 접근하지 못하도록 서버에서 매 요청마다 권한을 확인해야 한다는 점을 기억해 주세요.</p></div>
+<button type="button" class="small-links" id="feedback-toggle">완료된 피드백 예시 보기</button>
+</article>
+</section>
+<script type="module" src="${pageContext.request.contextPath}/assets/assignments.js"></script>
