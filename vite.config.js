@@ -10,7 +10,7 @@ export default defineConfig({
       "^/(login|signup|courses|qna|community|chatbot|assignments)(/|\\?|$)":
         "http://127.0.0.1:8088",
       "/ui/": "http://127.0.0.1:8088",
-      "^/assets/(app\\.js|site\\.css|assignments\\.(js|css))$": "http://127.0.0.1:8088",
+      "^/assets/(app\\.js|preview\\.js|site\\.css|assignments\\.(js|css))$": "http://127.0.0.1:8088",
     },
   },
 });

@@ -18,8 +18,7 @@
 </div>
 <div class="hero-preview">
 <img src="${pageContext.request.contextPath}/design/course-hero.png" alt="새싹과 노트북을 표현한 강의 이미지">
-<button data-preview-video>강의 미리보기 <span>▷</span>
-</button>
+<a class="preview-entry" href="${pageContext.request.contextPath}/courses/preview?id=<%=selected[0]%>">강의 미리보기 <span>▷</span></a>
 </div>
 </section>
 <nav class="detail-tabs" aria-label="강의 상세">

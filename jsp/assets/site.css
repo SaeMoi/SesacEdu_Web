@@ -1584,3 +1584,14 @@ fieldset {
   .course-pagination button:first-child,
   .course-pagination button:last-child { flex-basis: 56px; margin: 0; }
 }
+
+/* 공개 30초 미리보기: 원본 영상과 별도 화면으로 구분합니다. */
+.hero-preview .preview-entry{position:absolute;left:18px;right:18px;bottom:18px;display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-radius:12px;background:#ffffffed;color:#657b83;text-decoration:none}
+.preview-player{position:relative}.preview-player video{width:100%;height:360px;background:#102f3e;object-fit:contain}
+.preview-lock{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:#153b4c;color:white}
+.preview-lock h2{font-size:24px;color:white}.preview-lock p{color:#c2d2d5}.preview-lock-icon{font-size:36px}.preview-lock-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:12px}
+.preview-player .pill{color:#153b4c}.preview-player .video-center{gap:12px}
+@media(max-width:600px){.preview-lock h2{font-size:20px}.preview-lock-actions .btn{padding:10px 12px;font-size:13px}.preview-player video{height:290px}}
+
+/* 밝은 구매 버튼에서도 글자 대비를 유지합니다. */
+.preview-lock-actions .btn.primary{color:#153b4c}
