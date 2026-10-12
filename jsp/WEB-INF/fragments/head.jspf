@@ -8,6 +8,7 @@
 <%= pageTitle %> · 새싹에듀</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/design/common.css">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/site.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/ui/chatbot.css">
 </head>
 <body>
 <a class="skip-link" href="#main">본문 바로가기</a>

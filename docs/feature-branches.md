@@ -69,3 +69,5 @@ git branch --set-upstream-to=origin/feat/login feat/login
 ```
 
 다른 브랜치도 같은 방식으로 변경합니다. B의 기존 `feat/` 브랜치는 변경할 필요 없습니다.
+
+공통 React 챗봇 구현 시 feat/chatbot은 기존 과제/상세 수정까지 기준으로 반영했습니다. 최신 전체 화면은 feat/chatbot에 있고, B는 shared-chatbot.md 안내대로 챗봇 관련 새 파일만 선택해서 가져올 수 있습니다.

@@ -21,6 +21,8 @@ for folder in ("WEB-INF", "assets"):
 (webapp / "ui").mkdir()
 for file in ("header.js",):
     shutil.copy2(repo / "dist-header" / file, webapp / "ui" / file)
+for file in ("chatbot.js", "chatbot.css"):
+    shutil.copy2(repo / "dist-chatbot" / file, webapp / "ui" / file)
 # 로컬에서만 접근 가능. 관리 앱이나 예제 앱은 배포하지 않습니다.
 (base / "conf/server.xml").write_text('''<?xml version="1.0" encoding="UTF-8"?>
 <Server port="-1"><Service name="Catalina">

@@ -14,6 +14,7 @@ CHECK
 cd "$PROJECT_ROOT"
 npm run build
 npm run build:header
+npm run build:chatbot
 CATALINA_BASE="$(python3 jsp/prepare-preview.py "$CATALINA_HOME")"
 export JAVA_HOME CATALINA_HOME CATALINA_BASE
 printf 'JSP preview: http://127.0.0.1:8088/\nRuntime base: %s\nStop: Ctrl+C\n' "$CATALINA_BASE"

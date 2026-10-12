@@ -25,3 +25,5 @@ dist-ssr
 
 # JSP 공통 헤더 빌드 결과
 dist-header/
+
+dist-chatbot/

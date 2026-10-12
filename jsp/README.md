@@ -65,3 +65,6 @@ B는 같은 Header.jsx를 import해서 사용하고, JSP 페이지로 이동할 
 
 과제 코드는 `assets/assignments.js`, `assets/assignments.css`, `WEB-INF/fragments/assignment.jspf`로 분리했습니다.
 협업 브랜치는 `../docs/feature-branches.md`, API 연결 협의는 `../docs/assignment-backend.md`를 참고하세요.
+
+## 공통 학습 도우미
+모든 JSP와 React 메인에서 공통 React 챗봇을 사용합니다. `npm run build:chatbot`이 추가되었습니다. B 연결 방법은 `../docs/shared-chatbot.md`에 있습니다.

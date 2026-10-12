@@ -1,5 +1,6 @@
 <%@ page pageEncoding="UTF-8" %>
 <% // 과제 화면도 동일한 React 헤더와 강의 레이아웃을 사용합니다.
+request.setAttribute("chatCourseId", "web");
 boolean assignmentPage = Boolean.TRUE.equals(request.getAttribute("assignmentPage")); %>
 <%@ include file="head.jspf" %>
 <main id="main" class="wrap classroom">
@@ -109,29 +110,4 @@ boolean assignmentPage = Boolean.TRUE.equals(request.getAttribute("assignmentPag
 </aside>
 </div>
 </main>
-<aside class="chat-popup" id="chat-popup" aria-label="학습 도우미" <%=openChat?"":"hidden"%>>
-<div class="chat-heading">
-<div>
-<h2>학습 도우미</h2>
-<p>궁금한 내용을 물어보세요.</p>
-</div>
-<button id="close-chat" aria-label="학습 도우미 닫기">×</button>
-</div>
-<div class="chat-log" id="chat-log" role="log" aria-live="polite">
-<p class="chat-bubble assistant">안녕하세요! 강의에서 궁금한 내용을 함께 살펴볼까요?</p>
-<% if(openChat){ %>
-<p class="chat-bubble user">인증과 인가는 어떻게 다른가요?</p>
-<p class="chat-bubble assistant">인증은 <strong>누구인지</strong> 확인하고,<br>인가는 <strong>허용된 행동인지</strong> 확인하는 과정이에요.</p>
-<% } %>
-</div>
-<form id="chat-form">
-<input id="chat-input" required maxlength="500" aria-label="학습 도우미에게 질문" placeholder="궁금한 내용을 입력해 주세요.">
-<button type="submit" aria-label="질문 보내기">↑</button>
-</form>
-<p class="chat-disclaimer">예시 대화 · AI 서버 미연결</p>
-</aside>
-<button class="chat-launch" id="open-chat" aria-label="학습 도우미 열기" aria-expanded="<%=openChat%>">
-<span>🤖</span>
-<small>학습 도우미</small>
-</button>
 <%@ include file="footer.jspf" %>

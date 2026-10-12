@@ -207,35 +207,7 @@ all("[data-chapter]").forEach((b) =>
       b.dataset.chapter + " 위치 선택 미리보기 · 영상 미연결";
   }),
 );
-// 챗봇은 예시 답변만 제공합니다. 입력은 HTML로 삽입하지 않습니다.
-const setChat = (open) => {
-  byId("chat-popup").hidden = !open;
-  byId("open-chat").setAttribute("aria-expanded", String(open));
-  if (open) byId("chat-input").focus();
-};
-on("open-chat", "click", () => setChat(byId("chat-popup").hidden));
-on("close-chat", "click", () => setChat(false));
-on("chat-form", "submit", (event) => {
-  event.preventDefault();
-  const input = byId("chat-input");
-  const question = input.value.trim();
-  if (!question) return;
-  const add = (text, role) => {
-    const bubble = document.createElement("p");
-    bubble.className = "chat-bubble " + role;
-    bubble.textContent = text;
-    byId("chat-log").append(bubble);
-  };
-  add(question, "user");
-  input.value = "";
-  add(
-    question.includes("인증") || question.includes("인가")
-      ? "예시 답변 · 인증은 누구인지 확인하고, 인가는 허용된 행동인지 확인하는 과정이에요."
-      : "예시 답변 · 학습 중 궁금한 내용을 질문·답변 게시판에 정리해 보세요. AI 서버는 아직 연결되지 않았어요.",
-    "assistant",
-  );
-  byId("chat-log").scrollTop = byId("chat-log").scrollHeight;
-});
+// 챗봇 동작은 공통 React 컴포넌트가 담당합니다.
 if (byId("post-search")) {
   let category = "전체";
   const chips = all(".community-tabs button");

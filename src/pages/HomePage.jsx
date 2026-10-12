@@ -72,7 +72,6 @@ export default function HomePage() {
         <nav className="home-footer wrap" aria-label="화면 바로가기">
           <a href="/login">로그인</a>
           <a href="/signup">회원가입</a>
-          <a href="/chatbot">학습 도우미</a>
         </nav>
       </main>
     </>
