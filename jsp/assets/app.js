@@ -164,12 +164,34 @@ on("open-purchase", "click", () => byId("purchase-dialog").showModal());
 all("[data-close-dialog]").forEach((b) =>
   b.addEventListener("click", () => byId("purchase-dialog").close()),
 );
+// 같은 메뉴를 다시 누르면 접고, 다른 메뉴를 누르면 이전 패널을 접습니다.
+// DOM을 유지하므로 첨부 파일과 작성 중인 메모가 사라지지 않습니다.
+all("[data-lesson-panel]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const target = byId(button.dataset.lessonPanel);
+    const open = target.hidden;
+    all("[data-lesson-content]").forEach((panel) => {
+      panel.hidden = panel !== target || !open;
+    });
+    all("[data-lesson-panel]").forEach((menu) => {
+      const active = menu === button && open;
+      menu.setAttribute("aria-expanded", String(active));
+      menu.classList.toggle("sage", active);
+      menu.classList.toggle("secondary", !active);
+    });
+    const intro = document.querySelector(".classroom .lesson-intro:not([data-lesson-content])");
+    if (intro) intro.hidden = open;
+  });
+});
 on("write-question", "click", () => {
-  byId("question-form").hidden = false;
-  byId("question-title").focus();
+  const form = byId("question-form");
+  form.hidden = !form.hidden;
+  byId("write-question").setAttribute("aria-expanded", String(!form.hidden));
+  if (!form.hidden) byId("question-title").focus();
 });
 on("cancel-question", "click", () => {
   byId("question-form").hidden = true;
+  byId("write-question").setAttribute("aria-expanded", "false");
 });
 all("[data-unavailable]").forEach((b) =>
   b.addEventListener("click", () => {
