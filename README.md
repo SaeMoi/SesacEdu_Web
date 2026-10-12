@@ -19,6 +19,13 @@ npm run dev
 npm run lint
 npm run build
 
+## 마이페이지 장바구니 API
+
+장바구니 화면은 프론트엔드 `/mypage/cart` 경로에서 백엔드 `VITE_API_BASE_URL` 기준
+`GET /mypage/cart`, `POST /mypage/cart/add`, `DELETE /mypage/cart/del`을 호출합니다.
+저장소에 로그인 Access Token 공급 및 `/login/replc` 갱신 구현이 없으므로 실제 인증 연동 전에는
+API 호출을 보내지 않습니다. 인증 통합 시 기존 Access Token을 `CartAuthProvider`에 전달해야 합니다.
+
 ## 담당 범위
 
 - A: 메인, 로그인, 회원가입, 강의 목록·상세, 학습 화면, 질문답변, 커뮤니티, 챗봇
