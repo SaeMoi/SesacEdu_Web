@@ -1,0 +1,14 @@
+<%@ page pageEncoding="UTF-8" %>
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>
+<%= pageTitle %> · 새싹에듀</title>
+<link rel="stylesheet" href="${pageContext.request.contextPath}/design/common.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/site.css">
+</head>
+<body>
+<a class="skip-link" href="#main">본문 바로가기</a>
+<%@ include file="header.jspf" %>

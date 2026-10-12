@@ -1,0 +1,5 @@
+<%@ page pageEncoding="UTF-8" %>
+<script type="module" src="${pageContext.request.contextPath}/assets/app.js">
+</script>
+</body>
+</html>

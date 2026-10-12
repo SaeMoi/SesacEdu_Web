@@ -1,0 +1,129 @@
+<%@ page pageEncoding="UTF-8" %>
+<%@ include file="head.jspf" %>
+<main id="main" class="wrap classroom">
+<p class="eyebrow">MY CLASSROOM</p>
+<h1>웹 보안 입문</h1>
+<div class="classroom-grid">
+<div>
+<div class="lesson-video">
+<div class="video-center">
+<button class="play-button" data-video-note aria-label="강의 영상 재생">▷</button>
+<h2>웹 보안 입문</h2>
+<p>인증과 인가 이해하기</p>
+<p class="video-status" role="status">
+</p>
+</div>
+<div class="video-controls">
+<div class="progress">
+<span>
+</span>
+</div>
+<div>
+<span>Ⅱ　08:30 / 45:00</span>
+<span>음량　1.0×　전체 화면</span>
+</div>
+</div>
+</div>
+<nav class="lesson-actions" aria-label="학습 메뉴">
+<button class="btn secondary" data-unavailable="과제 제출은 이번 구현 범위에 포함되지 않습니다.">과제　⌄</button>
+<button class="btn secondary" data-unavailable="강의자료 파일은 아직 연결되지 않았습니다.">강의자료</button>
+<a class="btn <%=openChat ? "secondary" : "sage"%>" href="${pageContext.request.contextPath}/qna">질문·답변</a>
+</nav>
+<p id="lesson-status" class="form-status" role="status">
+</p>
+<% if(openChat){ %>
+<section class="lesson-intro">
+<h2>차근차근, 첫걸음부터.</h2>
+<p>오른쪽 목차를 선택하면 영상의 해당 시간으로 이동해요.</p>
+<p class="screen-note">현재는 화면 미리보기이며 영상 파일은 연결 전입니다.</p>
+<a class="small-links" href="${pageContext.request.contextPath}/qna">질문·답변 보기 →</a>
+</section>
+<% } else { %>
+<section class="qna-section">
+<div class="section-heading">
+<h2>질문·답변</h2>
+<button class="btn primary" id="write-question">질문 작성</button>
+</div>
+<div class="qna-table-head">
+<span>제목</span>
+<span>학습자 닉네임</span>
+</div>
+<details class="qna-row">
+<summary>
+<strong>인증과 인가의 차이가 궁금합니다.</strong>
+<span>보안새싹</span>
+</summary>
+<p>인증은 누구인지 확인하고, 인가는 허용된 행동인지 확인하는 과정입니다. (예시 답변)</p>
+</details>
+<details class="qna-row">
+<summary>
+<strong>과제 파일 제출 형식을 알려주세요.</strong>
+<span>코딩하는새싹</span>
+</summary>
+<p>강의별 과제 안내에서 제출 형식을 확인해 주세요. (예시 답변)</p>
+</details>
+<form class="question-form" id="question-form" hidden>
+<h3>질문 작성</h3>
+<fieldset disabled data-enable>
+<label for="question-title">제목</label>
+<input id="question-title" required maxlength="100" placeholder="질문 제목을 입력해 주세요">
+<label for="question-body">내용</label>
+<textarea id="question-body" required rows="6" maxlength="3000" placeholder="궁금한 내용을 자세히 적어주세요.">
+</textarea>
+<div class="form-actions">
+<button type="button" class="btn secondary" id="cancel-question">취소</button>
+<button class="btn primary" type="submit">질문 등록</button>
+</div>
+</fieldset>
+<p class="form-status" role="status">
+</p>
+</form>
+</section>
+<% } %>
+</div>
+<aside class="lesson-outline">
+<h2>강의 목차</h2>
+<p>하나의 영상, 주제별로 살펴보세요.</p>
+<% String[][] parts={{"00:00","강의 소개와 학습 목표"},{"08:30","인증과 인가 이해하기"},{"18:00","접근 권한 확인하기"},{"29:20","입력값 검증의 기본"},{"39:10","핵심 정리와 과제 안내"}};for(String[] part:parts){ %>
+<button class="chapter <%=part[0].equals("08:30")?"active":""%>" data-chapter="<%=part[0]%>" data-chapter-title="<%=part[1]%>">
+<strong>
+<%=part[0]%>
+</strong>
+<span>
+<%=part[1]%>
+</span>
+</button>
+<% } %>
+<div class="outline-footer">
+<span>총 45분</span>
+<span>단일 영상</span>
+</div>
+</aside>
+</div>
+</main>
+<aside class="chat-popup" id="chat-popup" aria-label="학습 도우미" <%=openChat?"":"hidden"%>>
+<div class="chat-heading">
+<div>
+<h2>학습 도우미</h2>
+<p>궁금한 내용을 물어보세요.</p>
+</div>
+<button id="close-chat" aria-label="학습 도우미 닫기">×</button>
+</div>
+<div class="chat-log" id="chat-log" role="log" aria-live="polite">
+<p class="chat-bubble assistant">안녕하세요! 강의에서 궁금한 내용을 함께 살펴볼까요?</p>
+<% if(openChat){ %>
+<p class="chat-bubble user">인증과 인가는 어떻게 다른가요?</p>
+<p class="chat-bubble assistant">인증은 <strong>누구인지</strong> 확인하고,<br>인가는 <strong>허용된 행동인지</strong> 확인하는 과정이에요.</p>
+<% } %>
+</div>
+<form id="chat-form">
+<input id="chat-input" required maxlength="500" aria-label="학습 도우미에게 질문" placeholder="궁금한 내용을 입력해 주세요.">
+<button type="submit" aria-label="질문 보내기">↑</button>
+</form>
+<p class="chat-disclaimer">예시 대화 · AI 서버 미연결</p>
+</aside>
+<button class="chat-launch" id="open-chat" aria-label="학습 도우미 열기" aria-expanded="<%=openChat%>">
+<span>🤖</span>
+<small>학습 도우미</small>
+</button>
+<%@ include file="footer.jspf" %>

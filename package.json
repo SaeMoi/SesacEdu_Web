@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "lint": "eslint . --ignore-pattern 'dist-header/**'",
+    "preview": "vite preview",
+    "build:header": "vite build --config vite.header.config.js"
   },
   "dependencies": {
     "react": "^19.2.8",

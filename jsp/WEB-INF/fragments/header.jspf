@@ -1,0 +1,6 @@
+<%@ page pageEncoding="UTF-8" %>
+<%-- 본문은 JSP가 출력하고, 이 영역만 공통 React Header가 담당합니다. --%>
+<div id="shared-header" data-base-path="${pageContext.request.contextPath}">
+</div>
+<noscript>메뉴 사용에는 JavaScript가 필요합니다. <a href="${pageContext.request.contextPath}/">메인</a> · <a href="${pageContext.request.contextPath}/courses">강의</a> · <a href="${pageContext.request.contextPath}/login">로그인</a>
+</noscript>

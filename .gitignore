@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# JSP 공통 헤더 빌드 결과
+dist-header/
