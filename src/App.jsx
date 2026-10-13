@@ -1,4 +1,6 @@
 import "./App.css";
+import { BrowserRouter, Route, Routes } from "react-router";
+import { InstructorProfilePage } from "./features/instructor-profile/InstructorProfilePage.jsx";
 
 const categories = [
   "웹 보안",
@@ -8,7 +10,7 @@ const categories = [
   "클라우드",
 ];
 
-function App() {
+function HomePage() {
   return (
     <>
       <header className="site-header">
@@ -77,6 +79,17 @@ function App() {
         <div className="container">새싹에듀 · 오늘도 한 걸음</div>
       </footer>
     </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/instructor/profile" element={<InstructorProfilePage />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
