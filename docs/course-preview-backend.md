@@ -18,8 +18,8 @@
 ## 제안 API (아직 구현된 명세가 아님)
 | 요청 | 역할 |
 | --- | --- |
-| GET /api/courses/{courseId}/preview | 공개 30초 파일의 previewUrl, durationSeconds 반환 |
-| GET /api/courses/{courseId}/playback | 로그인·수강 권한 확인 후 전체 재생 정보 반환 |
+| 미리보기 API: 명세에 없음 | 버튼 제거 상태. 필요 시 별도 협의 |
+| GET /lectures/{Lid}/learn | 첨부 명세의 강의 수강 경로. 실제 응답 필드는 별도 확인 |
 
 권장 응답: 인증 없음 401, 수강 권한 없음 403, 없는 강의 404. 구매/로그인 완료 후 원래 강의로 복귀하는 경로도 합의합니다.
 

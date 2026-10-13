@@ -11,7 +11,7 @@ JSP는 `<div id="shared-header">`만 React로 마운트하며 나머지 본문�
 ## 백엔드와 합의할 항목
 
 1. **배포와 URL**: Java/Tomcat 버전, Spring 사용 여부, JSP 배포 위치와 Controller/View 경로를 확정합니다. 현재 localhost8088과 web.xml은 미리보기 설정입니다.
-2. **React 경로 보존**: B의 `/mypage/profile`, `/cart` 등 라우트는 유지합니다. 최종 App 라우터에서 `/`에 HomePage를 연결하고 B의 라우트를 합칩니다. JSP 주소에 React SPA fallback이 적용되지 않도록 Apache/Tomcat 경계를 나눕니다.
+2. **React 경로 보존**: B의 `/mypage`, `/mypage/profile`, `/mypage/cart` 등 라우트는 유지합니다. 최종 App 라우터에서 `/`에 HomePage를 연결하고 B의 라우트를 합칩니다. JSP 주소에 React SPA fallback이 적용되지 않도록 Apache/Tomcat 경계를 나눕니다.
 3. **인증 유지**: 문서 이동 때 메모리 상태가 사라지므로 공통 세션 또는 기존 JWT 복구 방식을 합의합니다. 사용자 조회, 로그아웃, 쿠키 속성, CSRF 처리와 인증 만료 응답을 확정합니다.
 4. **로그인/회원가입**: 요청 필드명, 비밀번호 정책, 필수 항목, 이메일 중복 확인/인증번호 발송/검증 API, 인증 만료·재발송·시도 제한, 오류 코드와 문구를 확정합니다. 프론트 시연 인증은 보안 검증으로 사용하면 안 됩니다.
 5. **구매 복귀**: 로그인 전 강의 ID를 유지하는 방식과 허용된 복귀 URL, 수강권 확인, 주문/장바구니/결제 단계 책임을 정합니다. 현재 구매 버튼은 로그인 안내만 엽니다.

@@ -45,8 +45,8 @@ export default function Header({
             <span role="status">로그인 확인 중…</span>
           ) : member ? (
             <>
-              <a href={href("/mypage/profile")}>마이페이지</a>
-              <a className="btn primary" href={href("/cart")}>
+              <a href={href("/mypage")}>마이페이지</a>
+              <a className="btn primary" href={href("/mypage/cart")}>
                 장바구니
               </a>
             </>
