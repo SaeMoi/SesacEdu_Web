@@ -1,4 +1,9 @@
 import "./App.css";
+import { BrowserRouter, Route, Routes } from "react-router";
+import {
+  InstructorAssignmentsDetailPage,
+  InstructorAssignmentsListPage,
+} from "./features/instructor-assignments/InstructorAssignmentsPages.jsx";
 
 const categories = [
   "웹 보안",
@@ -8,7 +13,7 @@ const categories = [
   "클라우드",
 ];
 
-function App() {
+function HomePage() {
   return (
     <>
       <header className="site-header">
@@ -77,6 +82,24 @@ function App() {
         <div className="container">새싹에듀 · 오늘도 한 걸음</div>
       </footer>
     </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route
+          path="/instructor/assignments"
+          element={<InstructorAssignmentsListPage />}
+        />
+        <Route
+          path="/instructor/assignments/:assid"
+          element={<InstructorAssignmentsDetailPage />}
+        />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
