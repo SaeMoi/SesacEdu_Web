@@ -10,7 +10,8 @@ export default defineConfig({
       "^/(login|signup|courses|qna|community|chatbot|assignments)(/|\\?|$)":
         "http://127.0.0.1:8088",
       "/ui/": "http://127.0.0.1:8088",
-      "^/assets/(app\\.js|preview\\.js|site\\.css|assignments\\.(js|css))$": "http://127.0.0.1:8088",
+      // 파일명 뒤에 버전 정보(?v=...)가 있어도 Tomcat으로 전달합니다.
+      "^/assets/(app\\.js|preview\\.js|site\\.css|assignments\\.(js|css))(\\?|$)": "http://127.0.0.1:8088",
     },
   },
 });
