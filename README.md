@@ -24,6 +24,16 @@ npm run build
 - A: 메인, 로그인, 회원가입, 강의 목록·상세, 학습 화면, 질문답변, 커뮤니티, 챗봇
 - B: 마이페이지, 장바구니, 강사 관리
 
+## 강사센터 쿠폰 발행
+
+- 목록/추가 화면 URL: `/instructor/coupon` (화면 전환은 URL을 바꾸지 않는 내부 상태 사용)
+- 쿠폰 목록/발행 API: `GET /instructor/coupon?page={page}`, `POST /instructor/coupon`
+- 강의 선택은 기존 강사 강의 목록 계약 `GET /instructor/lectures?status=&page=1`의 `content`를 사용합니다.
+- 쿠폰 API는 `VITE_API_BASE_URL` 및 `Authorization: Bearer {accessToken}`을 사용합니다. 현재 브랜치에는 로그인 토큰 공급자가 연결되어 있지 않습니다.
+- 쿠폰 페이지네이션 응답 메타데이터가 없으면 다음 페이지를 요청해 비어 있지 않은 페이지인지 확인하며, 임의의 총 페이지 수나 페이지 크기는 만들지 않습니다.
+- 쿠폰 목록 경로(`/instructor/coupon`)와 요청 예시(`/instructors/coupon`)가 명세에서 다릅니다. 구현은 지정된 `/instructor/coupon`을 사용합니다.
+- 목록 조회 실패 코드(400)와 발행 실패 코드(401)의 의미 및 페이지네이션 필드는 백엔드 확인이 필요합니다.
+
 ## 협업 방식
 
 공통 초기 설정을 기준으로 기능별 브랜치에서 작업하고,
