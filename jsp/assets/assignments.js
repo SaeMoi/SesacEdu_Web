@@ -30,15 +30,24 @@ if (form) {
   form.addEventListener('reset', () => { selectedFile = null;el('assignment-file-name').textContent = '파일을 끌어 놓거나 파일 선택 버튼을 눌러 주세요.';message('작성 중인 내용을 비웠습니다.'); });
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    if (!selectedFile) { message('제출할 PDF 파일을 먼저 선택해 주세요.');return; }
+    // 파일은 선택 사항이며, 내용 또는 첨부 중 하나가 있으면 제출할 수 있습니다.
+    const memo = el('assignment-memo').value.trim();
+    if (!selectedFile && !memo) { message('과제 내용을 작성하거나 PDF 파일을 첨부해 주세요.');return; }
     if (downloadUrl) URL.revokeObjectURL(downloadUrl);
-    downloadUrl = URL.createObjectURL(selectedFile);
+    downloadUrl = selectedFile ? URL.createObjectURL(selectedFile) : null;
     // 메모/파일명을 HTML로 해석하지 않도록 textContent로 출력합니다.
-    el('assignment-submitted-name').textContent = selectedFile.name;
-    el('assignment-submitted-memo').textContent = el('assignment-memo').value.trim() || '제출 메모가 없습니다.';
+    el('assignment-submitted-name').textContent = selectedFile?.name || '';
+    el('assignment-attachment').hidden = !selectedFile;
+    el('assignment-submitted-memo').textContent = memo || '작성한 내용이 없습니다.';
     el('assignment-time').textContent = new Date().toLocaleString('ko-KR');
-    el('assignment-download').href = downloadUrl;
-    el('assignment-download').download = selectedFile.name;
+    if (selectedFile) {
+      el('assignment-download').href = downloadUrl;
+      el('assignment-download').download = selectedFile.name;
+    } else {
+      // 이전 첨부 링크가 남지 않도록 파일 없는 재제출 시 제거합니다.
+      el('assignment-download').removeAttribute('href');
+      el('assignment-download').removeAttribute('download');
+    }
     el('assignment-state').textContent = '제출 완료 · 미리보기';
     form.hidden = true;
     el('assignment-submission').hidden = false;

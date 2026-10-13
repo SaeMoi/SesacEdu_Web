@@ -18,7 +18,7 @@
 </div>
 <div class="hero-preview">
 <img src="${pageContext.request.contextPath}/design/course-hero.png" alt="새싹과 노트북을 표현한 강의 이미지">
-<a class="preview-entry" href="${pageContext.request.contextPath}/courses/preview?id=<%=selected[0]%>">강의 미리보기 <span>▷</span></a>
+<%-- 강의 이미지만 표시하며 미리보기 진입 버튼은 제공하지 않습니다. --%>
 </div>
 </section>
 <nav class="detail-tabs" aria-label="강의 상세">
