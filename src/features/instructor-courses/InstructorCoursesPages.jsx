@@ -1,0 +1,777 @@
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
+import {
+  createLectureFilesFormData,
+  getInstructorCoursesErrorMessage,
+  getInstructorLecture,
+  getInstructorLectures,
+  saveInstructorLecture,
+  uploadLectureFiles,
+} from "./instructorCoursesApi.js";
+import { useInstructorCoursesAuth } from "./instructorCoursesAuthContext.js";
+import {
+  InstructorCoursesHeading,
+  InstructorCoursesLayout,
+} from "./InstructorCoursesLayout.jsx";
+import "./instructorCourses.css";
+
+const statusLabels = {
+  open: "공개",
+  closed: "비공개",
+  draft: "임시 저장",
+};
+const filters = [
+  ["", "전체"],
+  ["open", "공개"],
+  ["closed", "비공개"],
+  ["draft", "임시 저장"],
+];
+
+function ErrorState({ message, onRetry }) {
+  return (
+    <div className="instructor-courses-state is-error" role="alert">
+      <p>{message}</p>
+      {onRetry && (
+        <button onClick={onRetry} type="button">
+          다시 시도
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function InstructorCoursesPage() {
+  const location = useLocation();
+  const view = location.state?.view ?? "list";
+
+  if (view === "editor") {
+    return <LectureEditorPage />;
+  }
+  if (view === "files") {
+    return <LectureFilesPage />;
+  }
+  return <LectureListPage />;
+}
+
+function LectureListPage() {
+  const { accessToken } = useInstructorCoursesAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [filter, setFilter] = useState("");
+  const [pageNumber, setPageNumber] = useState(1);
+  const [retry, setRetry] = useState(0);
+  const [record, setRecord] = useState(null);
+  const requestKey = `${filter}:${pageNumber}:${retry}`;
+  const isLoading = record?.key !== requestKey || record.status === "loading";
+  const error = record?.key === requestKey ? record.error : "";
+  const pageData = record?.key === requestKey ? record.data : null;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getInstructorLectures(accessToken, {
+      status: filter || undefined,
+      page: pageNumber,
+      signal: controller.signal,
+    })
+      .then((data) => {
+        if (!controller.signal.aborted) {
+          setRecord({ key: requestKey, data, error: "" });
+        }
+      })
+      .catch((requestError) => {
+        if (requestError.name === "AbortError" || controller.signal.aborted) {
+          return;
+        }
+        setRecord({
+          key: requestKey,
+          data: null,
+          error: getInstructorCoursesErrorMessage(requestError),
+        });
+      });
+    return () => controller.abort();
+  }, [accessToken, filter, pageNumber, requestKey]);
+
+  const content = Array.isArray(pageData?.content) ? pageData.content : [];
+  const totalPages =
+    Number.isInteger(pageData?.totalPages) && pageData.totalPages > 0
+      ? pageData.totalPages
+      : 0;
+  const currentPage =
+    Number.isInteger(pageData?.page) && pageData.page > 0
+      ? pageData.page
+      : pageNumber;
+  const firstPage = Math.max(
+    1,
+    Math.min(currentPage - 2, totalPages - 4),
+  );
+  const visiblePages = Array.from(
+    { length: Math.min(5, totalPages) },
+    (_, index) => firstPage + index,
+  );
+
+  function selectFilter(nextFilter) {
+    setFilter(nextFilter);
+    setPageNumber(1);
+  }
+
+  return (
+    <InstructorCoursesLayout>
+      <InstructorCoursesHeading
+        description="강의의 공개 상태와 수강 현황을 확인하고 관리하세요."
+        title="강의 관리"
+      />
+      <div className="instructor-lecture-toolbar">
+        <div className="instructor-lecture-filters" role="group" aria-label="강의 상태">
+          {filters.map(([value, label]) => (
+            <button
+              aria-pressed={filter === value}
+              className={filter === value ? "is-active" : ""}
+              key={value || "all"}
+              onClick={() => selectFilter(value)}
+              type="button"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <button
+          className="instructor-bright-button"
+          onClick={() =>
+            navigate("/instructor/lectures", {
+              state: { view: "editor", mode: "create" },
+            })
+          }
+          type="button"
+        >
+          새 강의 등록
+        </button>
+      </div>
+      {location.state?.notice && (
+        <p className="instructor-course-success" role="status">
+          {location.state.notice}
+        </p>
+      )}
+
+      {isLoading && (
+        <p className="instructor-courses-state" role="status">
+          강의 목록을 불러오는 중입니다.
+        </p>
+      )}
+      {!isLoading && error && (
+        <ErrorState message={error} onRetry={() => setRetry((value) => value + 1)} />
+      )}
+      {!isLoading && !error && content.length === 0 && (
+        <p className="instructor-courses-state">
+          등록된 강의가 없습니다.
+        </p>
+      )}
+      {!isLoading && !error && content.length > 0 && (
+        <>
+          <div className="instructor-lecture-table-scroll">
+            <table className="instructor-lecture-table">
+              <thead>
+                <tr>
+                  <th scope="col">강의명</th>
+                  <th scope="col">상태</th>
+                  <th scope="col">수강생</th>
+                  <th scope="col">관리</th>
+                </tr>
+              </thead>
+              <tbody>
+                {content.map((lecture) => (
+                  <tr key={lecture.lid}>
+                    <td className="instructor-lecture-name">
+                      {lecture.name || "강의명 없음"}
+                    </td>
+                    <td>
+                      <span
+                        className={`instructor-lecture-status status-${lecture.status}`}
+                      >
+                        {statusLabels[lecture.status] ?? "상태 확인"}
+                      </span>
+                    </td>
+                    <td>{Number.isFinite(lecture.studentCount) ? lecture.studentCount : 0}명</td>
+                    <td>
+                      <button
+                        className="instructor-table-action"
+                        onClick={() =>
+                          navigate("/instructor/lectures", {
+                            state: {
+                              view: "editor",
+                              mode: "edit",
+                              lid: lecture.lid,
+                            },
+                          })
+                        }
+                        type="button"
+                      >
+                        {lecture.status === "draft" ? "계속 작성" : "수정"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {totalPages > 1 && (
+            <nav
+              aria-label="강의 목록 페이지"
+              className="instructor-courses-pagination"
+            >
+              <button
+                aria-label="이전 페이지"
+                disabled={currentPage <= 1}
+                onClick={() => setPageNumber(currentPage - 1)}
+                type="button"
+              >
+                ‹
+              </button>
+              {visiblePages.map((number) => (
+                <button
+                  aria-current={number === currentPage ? "page" : undefined}
+                  className={number === currentPage ? "is-current" : ""}
+                  key={number}
+                  onClick={() => setPageNumber(number)}
+                  type="button"
+                >
+                  {number}
+                </button>
+              ))}
+              <button
+                aria-label="다음 페이지"
+                disabled={currentPage >= totalPages}
+                onClick={() => setPageNumber(currentPage + 1)}
+                type="button"
+              >
+                ›
+              </button>
+            </nav>
+          )}
+        </>
+      )}
+    </InstructorCoursesLayout>
+  );
+}
+
+const blankLecture = {
+  name: "",
+  category: "",
+  level: "",
+  headline: "",
+  summary: "",
+  price: "",
+  status: "open",
+  thumbnail: null,
+};
+
+export function LectureEditorPage() {
+  const { accessToken } = useInstructorCoursesAuth();
+  const location = useLocation();
+  const lid = location.state?.lid;
+  const navigate = useNavigate();
+  const isEditing = location.state?.mode === "edit" && Boolean(lid);
+  const [values, setValues] = useState(blankLecture);
+  const [loadState, setLoadState] = useState(isEditing ? "loading" : "ready");
+  const [loadError, setLoadError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const submitLock = useRef(false);
+
+  useEffect(() => {
+    if (!isEditing) return undefined;
+    const controller = new AbortController();
+    getInstructorLecture(accessToken, lid, controller.signal)
+      .then((lecture) => {
+        if (controller.signal.aborted) return;
+        setValues({
+          name: lecture.name ?? "",
+          category: lecture.category ?? "",
+          level: lecture.level ?? "",
+          headline: lecture.headline ?? "",
+          summary: lecture.summary ?? "",
+          price:
+            Number.isInteger(lecture.price) && lecture.price >= 0
+              ? String(lecture.price)
+              : "",
+          status: ["open", "closed", "draft"].includes(lecture.status)
+            ? lecture.status
+            : "open",
+          thumbnail: null,
+        });
+        setLoadState("ready");
+        setLoadError("");
+      })
+      .catch((error) => {
+        if (error.name === "AbortError" || controller.signal.aborted) return;
+        setLoadState("error");
+        setLoadError(getInstructorCoursesErrorMessage(error));
+      });
+    return () => controller.abort();
+  }, [accessToken, isEditing, lid, retry]);
+
+  function updateField(field, value) {
+    setValues((current) => ({ ...current, [field]: value }));
+    setSaveError("");
+  }
+
+  async function handleSave(event) {
+    event.preventDefault();
+    if (submitLock.current || isSaving) return;
+    if (
+      !values.name.trim() ||
+      !values.category.trim() ||
+      !values.level.trim() ||
+      !values.headline.trim() ||
+      !values.price ||
+      !Number.isInteger(Number(values.price)) ||
+      Number(values.price) < 0
+    ) {
+      setSaveError("강의 제목, 카테고리, 난이도, 한 줄 소개, 가격을 확인해주세요.");
+      return;
+    }
+    if (!isEditing && !values.thumbnail) {
+      setSaveError("강의 썸네일 파일을 선택해주세요.");
+      return;
+    }
+    if (isEditing && !values.thumbnail) {
+      setSaveError(
+        "수정 API 명세에서 썸네일은 필수입니다. 기존 썸네일을 유지하는 방법이 확인되지 않아 새 파일을 선택해주세요.",
+      );
+      return;
+    }
+
+    submitLock.current = true;
+    setIsSaving(true);
+    setSaveError("");
+    try {
+      const result = await saveInstructorLecture(accessToken, {
+        ...values,
+        price: Number(values.price),
+        lid: isEditing ? lid : null,
+      });
+      if (values.status === "draft") {
+        navigate("/instructor/lectures", {
+          state: {
+            view: "list",
+            notice: result.message ?? "강의가 임시 저장되었습니다.",
+          },
+        });
+      } else {
+        navigate("/instructor/lectures", {
+          state: {
+            view: "files",
+            lid: result.lid,
+            lectureName: values.name,
+          },
+        });
+      }
+    } catch (error) {
+      setSaveError(getInstructorCoursesErrorMessage(error));
+    } finally {
+      submitLock.current = false;
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <InstructorCoursesLayout>
+      <InstructorCoursesHeading
+        description="강의의 기본 정보를 입력하고 다음 단계로 진행하세요."
+        title={isEditing ? "강의 등록 / 수정" : "강의 등록"}
+      />
+      <nav className="instructor-editor-steps" aria-label="강의 등록 단계">
+        <span className="is-active">기본 정보</span>
+        <span>커리큘럼</span>
+        <span>자료 업로드</span>
+        <span>미리보기</span>
+      </nav>
+
+      {loadState === "loading" && (
+        <p className="instructor-courses-state" role="status">
+          강의 정보를 불러오는 중입니다.
+        </p>
+      )}
+      {loadState === "error" && (
+        <ErrorState
+          message={loadError}
+          onRetry={() => {
+            setRetry((value) => value + 1);
+          }}
+        />
+      )}
+      {loadState === "ready" && (
+        <form className="instructor-lecture-editor" onSubmit={handleSave}>
+          <div className="instructor-course-form-field">
+            <label htmlFor="lecture-name">강의 제목</label>
+            <input
+              id="lecture-name"
+              onChange={(event) => updateField("name", event.target.value)}
+              placeholder="강의 제목을 입력해주세요."
+              value={values.name}
+            />
+          </div>
+          <div className="instructor-course-form-field">
+            <label htmlFor="lecture-category">카테고리 / 난이도</label>
+            <div className="instructor-course-two-columns">
+              <input
+                id="lecture-category"
+                onChange={(event) =>
+                  updateField("category", event.target.value)
+                }
+                placeholder="카테고리"
+                value={values.category}
+              />
+              <input
+                aria-label="난이도"
+                onChange={(event) => updateField("level", event.target.value)}
+                placeholder="난이도"
+                value={values.level}
+              />
+            </div>
+          </div>
+          <div className="instructor-course-form-field">
+            <label htmlFor="lecture-headline">강의 한 줄 소개</label>
+            <input
+              id="lecture-headline"
+              onChange={(event) => updateField("headline", event.target.value)}
+              placeholder="강의를 한 문장으로 소개해주세요."
+              value={values.headline}
+            />
+          </div>
+          <div className="instructor-course-form-field">
+            <label htmlFor="lecture-summary">강의 소개</label>
+            <textarea
+              id="lecture-summary"
+              onChange={(event) => updateField("summary", event.target.value)}
+              placeholder="강의에서 다루는 내용을 소개해주세요."
+              rows={3}
+              value={values.summary}
+            />
+          </div>
+          <div className="instructor-course-two-columns instructor-course-price-thumbnail">
+            <div className="instructor-course-form-field">
+              <label htmlFor="lecture-price">가격</label>
+              <input
+                id="lecture-price"
+                inputMode="numeric"
+                onChange={(event) =>
+                  updateField("price", event.target.value.replace(/\D/g, ""))
+                }
+                placeholder="가격 (원)"
+                value={values.price}
+              />
+            </div>
+            <div className="instructor-course-form-field">
+              <label htmlFor="lecture-thumbnail">
+                썸네일
+                {isEditing && values.thumbnail === null && (
+                  <span className="instructor-required-note">
+                    수정 시 새 파일 필요
+                  </span>
+                )}
+              </label>
+              <div className="instructor-thumbnail-control">
+                <input
+                  accept="image/*"
+                  id="lecture-thumbnail"
+                  onChange={(event) =>
+                    updateField("thumbnail", event.target.files?.[0] ?? null)
+                  }
+                  type="file"
+                />
+              </div>
+            </div>
+          </div>
+          <fieldset className="instructor-course-status-options">
+            <legend>공개 범위</legend>
+            {[
+              ["open", "수강생 공개"],
+              ["closed", "비공개"],
+              ["draft", "임시 저장"],
+            ].map(([value, label]) => (
+              <label
+                className={values.status === value ? "is-selected" : ""}
+                key={value}
+              >
+                <input
+                  checked={values.status === value}
+                  name="lecture-status"
+                  onChange={() => updateField("status", value)}
+                  type="radio"
+                  value={value}
+                />
+                <span aria-hidden="true">
+                  {values.status === value ? "●" : "○"}
+                </span>
+                {label}
+              </label>
+            ))}
+          </fieldset>
+          {saveError && (
+            <p className="instructor-course-error" role="alert">
+              {saveError}
+            </p>
+          )}
+          <div className="instructor-editor-actions">
+            <Link className="instructor-course-secondary" to="/instructor/lectures">
+              목록으로
+            </Link>
+            <button
+              className="instructor-course-primary"
+              disabled={isSaving}
+              type="submit"
+            >
+              {isSaving ? "저장 중..." : "다음"}
+            </button>
+          </div>
+        </form>
+      )}
+    </InstructorCoursesLayout>
+  );
+}
+
+function formatFileSize(size) {
+  if (!Number.isFinite(size)) return "—";
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export function LectureFilesPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const lid = location.state?.lid;
+  const [lectureName, setLectureName] = useState(location.state?.lectureName ?? "");
+  const [files, setFiles] = useState({ video: null, material: null });
+  const [notice, setNotice] = useState("");
+  const [retry, setRetry] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadSuccess, setUploadSuccess] = useState("");
+  const uploadLock = useRef(false);
+  const { accessToken } = useInstructorCoursesAuth();
+
+  useEffect(() => {
+    if (lectureName || !lid) return undefined;
+    const controller = new AbortController();
+    getInstructorLecture(accessToken, lid, controller.signal)
+      .then((lecture) => {
+        if (!controller.signal.aborted) setLectureName(lecture.name ?? "");
+      })
+      .catch((error) => {
+        if (error.name !== "AbortError" && !controller.signal.aborted) {
+          setNotice(getInstructorCoursesErrorMessage(error));
+        }
+      });
+    return () => controller.abort();
+  }, [accessToken, lid, lectureName, retry]);
+
+  const pendingFormData = createLectureFilesFormData(files);
+  const selectedFileRows = [
+    files.video && { type: "video", label: "수업 영상", file: files.video },
+    files.material && {
+      type: "material",
+      label: "학습 자료",
+      file: files.material,
+    },
+  ].filter(Boolean);
+
+  function setSelectedFile(type, file) {
+    setFiles((current) => ({ ...current, [type]: file }));
+    setNotice("");
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    const droppedFiles = Array.from(event.dataTransfer.files);
+    let nextVideo = null;
+    let nextMaterial = null;
+    for (const file of droppedFiles) {
+      if (!nextVideo && file.type.startsWith("video/")) {
+        nextVideo = file;
+      } else if (!nextMaterial && /\.(pdf|zip)$/i.test(file.name)) {
+        nextMaterial = file;
+      }
+    }
+    if (!nextVideo && !nextMaterial) {
+      setNotice("영상 또는 PDF/ZIP 학습 자료 파일을 선택해주세요.");
+      return;
+    }
+    setFiles((current) => ({
+      video: nextVideo ?? current.video,
+      material: nextMaterial ?? current.material,
+    }));
+    setNotice("");
+  }
+
+  async function handleUpload() {
+    if (uploadLock.current || isUploading) return;
+    if (!lid) {
+      setUploadError("강의 식별 정보가 없습니다. 강의 목록에서 다시 시작해주세요.");
+      return;
+    }
+    if (pendingFormData.entries().next().done) {
+      setUploadError("업로드할 영상 또는 학습 자료를 선택해주세요.");
+      return;
+    }
+    uploadLock.current = true;
+    setIsUploading(true);
+    setUploadError("");
+    setUploadSuccess("");
+    try {
+      await uploadLectureFiles(accessToken, lid, files);
+      setUploadSuccess("강의 자료를 업로드했습니다.");
+      setFiles({ video: null, material: null });
+    } catch (error) {
+      setUploadError(getInstructorCoursesErrorMessage(error));
+    } finally {
+      uploadLock.current = false;
+      setIsUploading(false);
+    }
+  }
+
+  return (
+    <InstructorCoursesLayout>
+      <InstructorCoursesHeading
+        description="수업을 선택하고 학습 영상과 자료를 업로드하세요."
+        title="자료 업로드"
+      />
+      <nav className="instructor-editor-steps" aria-label="강의 등록 단계">
+        <span>기본 정보</span>
+        <span>커리큘럼</span>
+        <span className="is-active">자료 업로드</span>
+        <span>미리보기</span>
+      </nav>
+      <div className="instructor-current-lecture">
+        <strong>{lectureName || "강의 정보를 확인 중입니다."}</strong>
+        <span>강의 관리&nbsp; / &nbsp;자료 업로드</span>
+      </div>
+      <div className="instructor-course-form-field instructor-lesson-select">
+        <label htmlFor="lecture-lesson">수업 선택 *</label>
+        <select disabled id="lecture-lesson" value="">
+          <option value="">
+            수업 목록 API 및 데이터 명세 확인 필요
+          </option>
+        </select>
+        <p>현재 제공된 API에는 수업 목록 조회 및 수업 식별 정보가 없습니다.</p>
+      </div>
+      <section
+        className="instructor-file-drop"
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={handleDrop}
+      >
+        <div>
+          <h2>영상 또는 학습 자료를 이곳에 끌어다 놓으세요.</h2>
+          <p>영상 MP4 · 학습 자료 PDF, ZIP</p>
+        </div>
+        <div className="instructor-file-pickers">
+          <label>
+            영상 파일
+            <input
+              accept="video/*"
+              onChange={(event) =>
+                setSelectedFile("video", event.target.files?.[0] ?? null)
+              }
+              type="file"
+            />
+          </label>
+          <label>
+            자료 파일
+            <input
+              accept=".pdf,.zip,application/pdf,application/zip"
+              onChange={(event) =>
+                setSelectedFile("material", event.target.files?.[0] ?? null)
+              }
+              type="file"
+            />
+          </label>
+        </div>
+      </section>
+      <section className="instructor-selected-files">
+        <h2>선택한 파일</h2>
+        {selectedFileRows.length > 0 ? (
+          <div className="instructor-files-table-scroll">
+            <table className="instructor-files-table">
+              <thead>
+                <tr>
+                  <th scope="col">파일명</th>
+                  <th scope="col">유형</th>
+                  <th scope="col">크기</th>
+                  <th scope="col">관리</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedFileRows.map(({ type, label, file }) => (
+                  <tr key={type}>
+                    <td>{file.name}</td>
+                    <td>{label}</td>
+                    <td>{formatFileSize(file.size)}</td>
+                    <td>
+                      <button
+                        className="instructor-table-action"
+                        onClick={() => setSelectedFile(type, null)}
+                        type="button"
+                      >
+                        삭제
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="instructor-files-empty">아직 선택한 파일이 없습니다.</p>
+        )}
+        <p className="instructor-upload-note">
+          수업 선택 API가 확정되면 업로드한 자료를 수업에 연결할 수 있습니다.
+        </p>
+      </section>
+      {notice && (
+        <p className="instructor-course-error" role="alert">
+          {notice}
+        </p>
+      )}
+      {uploadError && (
+        <p className="instructor-course-error" role="alert">
+          {uploadError}
+        </p>
+      )}
+      {uploadSuccess && (
+        <p className="instructor-course-success" role="status">
+          {uploadSuccess}
+        </p>
+      )}
+      <div className="instructor-editor-actions instructor-files-actions">
+        <button
+          className="instructor-course-secondary"
+          onClick={() =>
+            navigate("/instructor/lectures", {
+              state: { view: "list" },
+            })
+          }
+          type="button"
+        >
+          목록으로
+        </button>
+        <button
+          className="instructor-course-primary"
+          disabled={selectedFileRows.length === 0 || isUploading}
+          onClick={handleUpload}
+          type="button"
+        >
+          {isUploading ? "업로드 중..." : "업로드 시작"}
+        </button>
+      </div>
+      {notice && !lectureName && lid && (
+        <button
+          className="instructor-file-retry"
+          onClick={() => setRetry((value) => value + 1)}
+          type="button"
+        >
+          강의 정보 다시 불러오기
+        </button>
+      )}
+    </InstructorCoursesLayout>
+  );
+}
