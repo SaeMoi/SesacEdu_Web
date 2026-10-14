@@ -9,6 +9,7 @@ import { ProfileEditSessionProvider } from "./features/profile-edit/ProfileEditS
 import { MyLearningAuthProvider } from "./features/my-learning/MyLearningAuthProvider.jsx";
 import { QnaAuthProvider } from "./features/my-qna/QnaAuthProvider.jsx";
 import { CartAuthProvider } from "./features/my-cart/CartAuthProvider.jsx";
+import { BenefitsAuthProvider } from "./features/my-benefits/BenefitsAuthProvider.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -17,9 +18,11 @@ createRoot(document.getElementById("root")).render(
       <ProfileEditSessionProvider>
         <MyLearningAuthProvider>
           <QnaAuthProvider>
-            {/* 장바구니 기능의 Provider를 추가합니다. */}
             <CartAuthProvider>
-              <App />
+              {/* 쿠폰·포인트 기능의 공유 상태를 추가합니다. */}
+              <BenefitsAuthProvider>
+                <App />
+              </BenefitsAuthProvider>
             </CartAuthProvider>
           </QnaAuthProvider>
         </MyLearningAuthProvider>
