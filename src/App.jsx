@@ -1,9 +1,10 @@
 import "./App.css";
 import { Route, Routes } from "react-router";
 
-// 메인·마이페이지·공통 챗봇
+// 메인·마이페이지·공통 요소
 import HomePage from "./pages/HomePage";
 import MyPage from "./pages/MyPage.jsx";
+import Header from "./components/navigation/Header.jsx";
 import Chatbot from "./components/chatbot/Chatbot";
 
 // 본인 확인·프로필 수정
@@ -18,6 +19,14 @@ import ReviewWritePage from "./features/my-learning/ReviewWritePage.jsx";
 import MyQnaPage from "./features/my-qna/MyQnaPage.jsx";
 import MyCartPage from "./features/my-cart/MyCartPage.jsx";
 import BenefitsPage from "./features/my-benefits/BenefitsPage.jsx";
+
+// 결제 관련 화면 4개
+import {
+  PaymentPage,
+  PaymentCompletePage,
+  PaymentHistoryPage,
+  PaymentDetailPage,
+} from "./features/my-payment/PaymentPages.jsx";
 
 export default function App() {
   return (
@@ -47,9 +56,43 @@ export default function App() {
 
         <Route path="/mypage/qna" element={<MyQnaPage />} />
         <Route path="/mypage/cart" element={<MyCartPage />} />
-
-        {/* B의 쿠폰·포인트 화면을 추가합니다. */}
         <Route path="/mypage/bnf" element={<BenefitsPage />} />
+
+        {/* B의 결제 관련 주소를 그대로 연결합니다. */}
+        <Route path="/mypage/buy" element={<PaymentPage />} />
+        <Route
+          path="/mypage/buy/complete"
+          element={<PaymentCompletePage />}
+        />
+        <Route
+          path="/mypage/buy/history"
+          element={<PaymentHistoryPage />}
+        />
+        <Route
+          path="/mypage/buy/history/:orderId"
+          element={<PaymentDetailPage />}
+        />
+
+        {/* 등록되지 않은 React 주소에 안내 화면을 표시합니다. */}
+        <Route
+          path="*"
+          element={
+            <>
+              <Header />
+              <main className="container">
+                <section className="home-hero">
+                  <h1>페이지를 찾을 수 없습니다.</h1>
+                  <p className="hero-description">
+                    요청한 화면은 아직 준비되지 않았거나 주소가 올바르지 않습니다.
+                  </p>
+                  <a className="button button-primary" href="/">
+                    홈으로
+                  </a>
+                </section>
+              </main>
+            </>
+          }
+        />
       </Routes>
 
       {/* 모든 React 화면에서 공통으로 표시합니다. */}
