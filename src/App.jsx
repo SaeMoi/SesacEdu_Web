@@ -20,6 +20,9 @@ import MyQnaPage from "./features/my-qna/MyQnaPage.jsx";
 import MyCartPage from "./features/my-cart/MyCartPage.jsx";
 import BenefitsPage from "./features/my-benefits/BenefitsPage.jsx";
 
+// 강사 신청 화면
+import InstructorApplyPage from "./features/instructor-apply/InstructorApplyPage.jsx";
+
 // 결제 관련 화면 4개
 import {
   PaymentPage,
@@ -72,7 +75,11 @@ export default function App() {
           path="/mypage/buy/history/:orderId"
           element={<PaymentDetailPage />}
         />
-
+        {/* B의 강사 신청 화면을 연결합니다. */}
+        <Route
+          path="/instructor/apply"
+          element={<InstructorApplyPage />}
+        />
         {/* 등록되지 않은 React 주소에 안내 화면을 표시합니다. */}
         <Route
           path="*"
