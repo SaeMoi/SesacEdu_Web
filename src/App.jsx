@@ -14,18 +14,18 @@ import ProfileEditPage from "./features/profile-edit/ProfileEditPage.jsx";
 import MyLearningPage from "./features/my-learning/MyLearningPage.jsx";
 import ReviewWritePage from "./features/my-learning/ReviewWritePage.jsx";
 
-// 내 질문·답변
+// 내 질문·답변과 장바구니
 import MyQnaPage from "./features/my-qna/MyQnaPage.jsx";
+import MyCartPage from "./features/my-cart/MyCartPage.jsx";
 
 export default function App() {
   return (
     <>
       <Routes>
-        {/* 메인과 마이페이지 */}
+        {/* 기존 화면의 경로를 유지합니다. */}
         <Route path="/" element={<HomePage />} />
         <Route path="/mypage" element={<MyPage />} />
 
-        {/* 본인 확인과 프로필 수정 */}
         <Route
           path="/mypage/verify-password"
           element={<VerifyPasswordPage />}
@@ -35,7 +35,6 @@ export default function App() {
           element={<ProfileEditPage />}
         />
 
-        {/* 내 학습과 강의별 리뷰 작성 */}
         <Route
           path="/mypage/learning"
           element={<MyLearningPage />}
@@ -45,8 +44,10 @@ export default function App() {
           element={<ReviewWritePage />}
         />
 
-        {/* B의 내 질문·답변 화면을 연결합니다. */}
         <Route path="/mypage/qna" element={<MyQnaPage />} />
+
+        {/* B의 장바구니 화면을 추가합니다. */}
+        <Route path="/mypage/cart" element={<MyCartPage />} />
       </Routes>
 
       {/* 모든 React 화면에서 공통으로 표시합니다. */}
