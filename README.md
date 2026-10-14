@@ -82,6 +82,13 @@ API 경로와 요청/응답 스키마가 서로 일치하지 않아 실제 요�
 저장소에 구현되어 있지 않습니다. 백엔드 주소는 `VITE_API_BASE_URL`로 설정할 수 있으며,
 인증 연결 시 `MyLearningAuthProvider`에 기존 Access Token을 전달해야 합니다.
 
+## 마이페이지 Q&A 목록
+
+프론트엔드 `/mypage/qna` 화면은 백엔드 `GET /mypage/qna`를 호출합니다.
+두 경로가 같으므로 `VITE_API_BASE_URL`에 백엔드 origin을 설정해야 합니다.
+현재 프로젝트에는 로그인 Access Token 공급 또는 `/login/replc` 토큰 갱신 구현이
+없으므로, Q&A 인증 provider에는 추후 기존 인증 상태를 연결해야 합니다.
+
 ## 담당 범위
 
 - A: 메인, 로그인, 회원가입, 강의 목록·상세, 학습 화면, 질문답변, 커뮤니티, 챗봇

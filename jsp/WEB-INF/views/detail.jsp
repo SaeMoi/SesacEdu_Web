@@ -88,11 +88,14 @@
               실제 영상·자료 접근 권한은 백엔드에서 검증해야 합니다.
             --%>
             <a
-              href="${pageContext.request.contextPath}/qna"
-              data-preview-classroom-link
-            >
-              강의상세 →
-            </a>
+              <%-- 상세 API를 불러온 후 현재 강의 ID에 맞는 주소를 연결합니다. --%>
+               <a
+               data-preview-classroom-link
+               data-context-path="${pageContext.request.contextPath}"
+               hidden
+               >
+               강의상세 →
+               </a>
           </nav>
         </section>
 

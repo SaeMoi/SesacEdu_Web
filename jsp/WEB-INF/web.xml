@@ -9,8 +9,9 @@
 <servlet-mapping><servlet-name>courses</servlet-name><url-pattern>/courses</url-pattern></servlet-mapping>
 <servlet><servlet-name>detail</servlet-name><jsp-file>/WEB-INF/views/detail.jsp</jsp-file></servlet>
 <servlet-mapping><servlet-name>detail</servlet-name><url-pattern>/courses/detail</url-pattern></servlet-mapping>
-<servlet><servlet-name>qna</servlet-name><jsp-file>/WEB-INF/views/qna.jsp</jsp-file></servlet>
-<servlet-mapping><servlet-name>qna</servlet-name><url-pattern>/qna</url-pattern></servlet-mapping>
+<!-- 강의 학습 화면: JSP 내부에서 /lectures/숫자/learn 형식을 확인합니다. -->
+<servlet><servlet-name>lecture</servlet-name><jsp-file>/WEB-INF/views/lecture.jsp</jsp-file></servlet>
+<servlet-mapping><servlet-name>lecture</servlet-name><url-pattern>/lectures/*</url-pattern></servlet-mapping>
 <servlet><servlet-name>chatbot</servlet-name><jsp-file>/WEB-INF/views/chatbot.jsp</jsp-file></servlet>
 <servlet-mapping><servlet-name>chatbot</servlet-name><url-pattern>/chatbot</url-pattern></servlet-mapping>
 <servlet><servlet-name>community</servlet-name><jsp-file>/WEB-INF/views/community.jsp</jsp-file></servlet>

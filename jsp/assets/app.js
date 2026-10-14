@@ -393,8 +393,20 @@ if (document.querySelector("[data-lecture-detail]")) {
       ) {
         throw new Error("강의 상세 응답 형식이 올바르지 않습니다.");
       }
-
+      // 상세 API에서 받은 강사 정보입니다. 없으면 빈 객체를 사용합니다.
       const teacher = data.instructor || {};
+      // 선택한 강의의 학습 화면으로 이동하도록 연결합니다.
+      // 이 링크 자체가 로그인·수강 권한을 확인하는 것은 아닙니다.
+      const classroomLink = document.querySelector(
+        "[data-preview-classroom-link]",
+      );
+
+      if (classroomLink) {
+        const contextPath = classroomLink.dataset.contextPath || "";
+        classroomLink.href =
+          `${contextPath}/lectures/${encodeURIComponent(lectureId)}/learn`;
+        classroomLink.hidden = false;
+      }
 
       // 상단 배너
       document.title = `${data.name} · 새싹에듀`;
