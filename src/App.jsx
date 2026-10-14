@@ -20,6 +20,8 @@ import {
   InstructorSettlementListPage,
 } from "./features/instructor-settlement/InstructorSettlementPages.jsx";
 import { InstructorProfilePage } from "./features/instructor-profile/InstructorProfilePage.jsx";
+import { InstructorCouponPage } from "./features/instructor-coupons/InstructorCouponPage.jsx";
+import "./features/instructor-center/instructorCenter.css";
 
 const categories = [
   "웹 보안",
@@ -152,6 +154,11 @@ function App() {
 <Route
   path="/instructor/profile"
   element={<InstructorProfilePage />}
+/>
+{/* 쿠폰 발행 */}
+<Route
+  path="/instructor/coupon"
+  element={<InstructorCouponPage />}
 />
 </Routes>
   );

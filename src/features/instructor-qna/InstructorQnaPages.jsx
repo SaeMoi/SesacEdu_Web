@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { InstructorCenterLayout as SharedInstructorCenterLayout } from "../instructor-center/InstructorCenterLayout.jsx";
 import {
   deleteInstructorQnaAnswer,
   getInstructorQna,
@@ -18,73 +19,9 @@ const FILTERS = [
 
 function InstructorQnaLayout({ children }) {
   return (
-    <div className="instructor-qna-app">
-      <header className="instructor-qna-header">
-        <Link className="instructor-qna-brand" to="/" aria-label="새싹에듀 홈">
-          새싹<span>에듀</span>
-        </Link>
-        <nav className="instructor-qna-global-nav" aria-label="주요 메뉴">
-          <span aria-disabled="true">강의</span>
-          <span aria-disabled="true">커뮤니티</span>
-        </nav>
-        <div className="instructor-qna-header-actions">
-          <label className="instructor-qna-search">
-            <span aria-hidden="true">⌕</span>
-            <input aria-label="강의 검색" placeholder="어떤 배움을 찾고 있나요?" />
-          </label>
-          <span>강사센터</span>
-          <span aria-disabled="true" className="instructor-qna-cart">장바구니</span>
-        </div>
-      </header>
-
-      <div className="instructor-qna-workspace">
-        <aside className="instructor-qna-sidebar" aria-label="강사센터 메뉴">
-          <p className="instructor-qna-eyebrow">INSTRUCTOR</p>
-          <h2>강사센터</h2>
-          <section className="instructor-qna-side-group">
-            <p>운영</p>
-            <Link to="/instructor/lectures">강의 관리</Link>
-          </section>
-          <section className="instructor-qna-side-group">
-            <p>학습 관리</p>
-            <Link to="/instructor/assignments">과제 피드백</Link>
-            <Link
-              aria-current="page"
-              className="is-active"
-              to="/instructor/qna"
-            >
-              Q&amp;A 관리
-            </Link>
-          </section>
-          <section className="instructor-qna-side-group">
-            <p>정산</p>
-            <span aria-disabled="true">정산 관리</span>
-          </section>
-          <section className="instructor-qna-side-group">
-            <p>강사 정보</p>
-            <span aria-disabled="true">경력 관리</span>
-            <span aria-disabled="true">강사 정보 관리</span>
-          </section>
-          <section className="instructor-qna-side-group">
-            <p>혜택</p>
-            <span aria-disabled="true">쿠폰 발행</span>
-          </section>
-          <div className="instructor-qna-sidebar-footer">
-            <span aria-disabled="true">고객센터</span>
-            <span aria-disabled="true">공지사항</span>
-          </div>
-        </aside>
-
-        <main className="instructor-qna-main">
-          <nav className="instructor-qna-breadcrumb" aria-label="현재 위치">
-            <Link to="/instructor/qna">강사공간</Link>
-            <span aria-hidden="true">/</span>
-            <span>강사센터</span>
-          </nav>
-          {children}
-        </main>
-      </div>
-    </div>
+    <SharedInstructorCenterLayout variant="qna">
+      {children}
+    </SharedInstructorCenterLayout>
   );
 }
 

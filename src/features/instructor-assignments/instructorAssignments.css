@@ -152,7 +152,8 @@
   margin: 20px 0 34px;
 }
 
-.assignment-top-tabs a {
+.assignment-top-tabs > a,
+.assignment-top-tabs > span {
   display: grid;
   min-height: 39px;
   place-items: center;
@@ -161,7 +162,7 @@
   font-size: 12px;
 }
 
-.assignment-top-tabs a.is-active {
+.assignment-top-tabs > .is-active {
   background: var(--color-sage);
   color: #5d7544;
 }

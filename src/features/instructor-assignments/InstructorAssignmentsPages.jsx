@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
+import { InstructorCenterLayout as SharedInstructorCenterLayout } from "../instructor-center/InstructorCenterLayout.jsx";
 import {
   deleteInstructorAssignmentFeedback,
   getInstructorAssignment,
@@ -17,75 +18,19 @@ const assignmentStatusLabels = {
 
 function InstructorCenterLayout({ children }) {
   return (
-    <div className="assignment-app">
-      <header className="assignment-header">
-        <Link className="assignment-brand" to="/" aria-label="새싹에듀 홈">
-          새싹<span>에듀</span>
-        </Link>
-        <nav className="assignment-global-nav" aria-label="주요 메뉴">
-          <a href="#lectures">강의</a>
-          <a href="#community">커뮤니티</a>
-        </nav>
-        <div className="assignment-header-actions">
-          <label className="assignment-search">
-            <span aria-hidden="true">⌕</span>
-            <input aria-label="강의 검색" placeholder="어떤 배움을 찾고 있나요?" />
-          </label>
-          <span>강사센터</span>
-          <a className="assignment-cart" href="#cart">장바구니</a>
-        </div>
-      </header>
-
-      <div className="assignment-workspace">
-        <aside className="assignment-sidebar" aria-label="강사센터 메뉴">
-          <p className="assignment-sidebar-eyebrow">INSTRUCTOR</p>
-          <h2>강사센터</h2>
-          <div className="assignment-menu-group">
-            <span>운영</span>
-            <a href="#lectures">강의 관리</a>
-          </div>
-          <div className="assignment-menu-group">
-            <span>학습 관리</span>
-            <Link className="is-active" to="/instructor/assignments" aria-current="page">
-              과제 피드백
-            </Link>
-            <a href="#qa">Q&amp;A 관리</a>
-          </div>
-          <div className="assignment-menu-group">
-            <span>정산</span>
-            <a href="#settlement">정산 관리</a>
-          </div>
-          <div className="assignment-menu-group">
-            <span>강사 정보</span>
-            <a href="#career">경력 관리</a>
-            <a href="#profile">강사 정보 관리</a>
-          </div>
-          <div className="assignment-menu-group">
-            <span>혜택</span>
-            <a href="#coupons">쿠폰 발행</a>
-          </div>
-          <div className="assignment-sidebar-footer">
-            <a href="#support">고객센터</a>
-            <a href="#notice">공지사항</a>
-          </div>
-        </aside>
-
-        <main className="assignment-main">
-          <div className="assignment-breadcrumb">강사공간&nbsp; / &nbsp;강사센터</div>
-          {children}
-        </main>
-      </div>
-    </div>
+    <SharedInstructorCenterLayout variant="assignments">
+      {children}
+    </SharedInstructorCenterLayout>
   );
 }
 
 function InstructorCenterTabs() {
   return (
     <nav className="assignment-top-tabs" aria-label="강사센터 영역">
-      <a href="#dashboard">운영 현황</a>
-      <a href="#lectures">강의</a>
-      <a className="is-active" href="#learning" aria-current="page">학습 관리</a>
-      <a href="#settlements">정산</a>
+      <span>운영 현황</span>
+      <span>강의</span>
+      <span className="is-active" aria-current="page">학습 관리</span>
+      <span>정산</span>
     </nav>
   );
 }
