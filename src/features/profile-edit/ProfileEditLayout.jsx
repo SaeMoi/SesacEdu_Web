@@ -1,28 +1,7 @@
 import { Link } from "react-router";
+// 메인·JSP와 동일한 공통 React 헤더입니다.
+import SiteHeader from "../../components/navigation/Header.jsx";
 
-function SiteHeader() {
-  return (
-    <header className="site-header">
-      <div className="container header-inner">
-        <Link className="brand" to="/" aria-label="새싹에듀 홈">
-          새싹<span>에듀</span>
-        </Link>
-        <nav className="main-nav" aria-label="주요 메뉴">
-          <span className="nav-active">강의</span>
-          <span>커뮤니티</span>
-        </nav>
-        <label className="profile-edit-search">
-          <span aria-hidden="true">⌕</span>
-          <input type="search" placeholder="어떤 배움을 찾고 있나요?" />
-        </label>
-        <nav className="header-actions" aria-label="사용자 메뉴">
-          <Link to="/mypage">마이페이지</Link>
-          <span className="profile-edit-cart">장바구니</span>
-        </nav>
-      </div>
-    </header>
-  );
-}
 
 function Sidebar() {
   return (

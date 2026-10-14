@@ -1,30 +1,7 @@
 import { Link } from "react-router";
 
-function Header() {
-  return (
-    <header className="site-header">
-      <div className="container header-inner">
-        <Link className="brand" to="/" aria-label="새싹에듀 홈">
-          새싹<span>에듀</span>
-        </Link>
-        <nav className="main-nav" aria-label="주요 메뉴">
-          <span className="nav-active">강의</span>
-          <span>커뮤니티</span>
-        </nav>
-        <label className="cart-header-search">
-          <span aria-hidden="true">⌕</span>
-          <input type="search" placeholder="어떤 배움을 찾고 있나요?" />
-        </label>
-        <nav className="header-actions" aria-label="사용자 메뉴">
-          <span>마이페이지</span>
-          <Link aria-current="page" className="cart-header-link" to="/mypage/cart">
-            장바구니
-          </Link>
-        </nav>
-      </div>
-    </header>
-  );
-}
+// 페이지마다 별도 헤더를 만들지 않고 공통 컴포넌트를 사용합니다.
+import Header from "../../components/navigation/Header.jsx";
 
 function Sidebar() {
   return (
