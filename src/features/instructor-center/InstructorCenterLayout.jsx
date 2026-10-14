@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, NavLink, useLocation } from "react-router";
-import logoUrl from "../../assets/saesak-edu-logo.png";
+import { Link, NavLink, useLocation, useNavigate } from "react-router";
+import Header from "../../components/navigation/Header.jsx";
 
 const MENU_ITEMS = [
   { label: "강의 관리", to: "/instructor/lectures" },
@@ -14,12 +14,6 @@ const MENU_ITEMS = [
 const LAYOUT_STYLES = {
   assignments: {
     app: "assignment-app",
-    header: "assignment-header",
-    brand: "assignment-brand",
-    globalNav: "assignment-global-nav",
-    headerActions: "assignment-header-actions",
-    search: "assignment-search",
-    cart: "assignment-cart",
     workspace: "assignment-workspace",
     sidebar: "assignment-sidebar",
     eyebrow: "assignment-sidebar-eyebrow",
@@ -30,15 +24,6 @@ const LAYOUT_STYLES = {
     breadcrumb: "assignment-breadcrumb",
   },
   courses: {
-    header: "site-header instructor-courses-header",
-    headerInner: "header-inner",
-    brand: "brand",
-    globalNav: "main-nav",
-    globalNavActive: "nav-active",
-    headerActions: "header-actions",
-    search: "instructor-courses-search",
-    cart: "instructor-courses-cart",
-    cartTo: "/mypage/cart",
     workspace: "instructor-courses-layout",
     sidebar: "instructor-courses-sidebar",
     eyebrow: "instructor-courses-eyebrow",
@@ -51,12 +36,6 @@ const LAYOUT_STYLES = {
   },
   qna: {
     app: "instructor-qna-app",
-    header: "instructor-qna-header",
-    brand: "instructor-qna-brand",
-    globalNav: "instructor-qna-global-nav",
-    headerActions: "instructor-qna-header-actions",
-    search: "instructor-qna-search",
-    cart: "instructor-qna-cart",
     workspace: "instructor-qna-workspace",
     sidebar: "instructor-qna-sidebar",
     eyebrow: "instructor-qna-eyebrow",
@@ -68,12 +47,6 @@ const LAYOUT_STYLES = {
   },
   settlement: {
     app: "instructor-settlement-app",
-    header: "instructor-settlement-header",
-    brand: "instructor-settlement-brand",
-    globalNav: "instructor-settlement-global-nav",
-    headerActions: "instructor-settlement-header-actions",
-    search: "instructor-settlement-search",
-    cart: "instructor-settlement-cart",
     workspace: "instructor-settlement-workspace",
     sidebar: "instructor-settlement-sidebar",
     eyebrow: "instructor-settlement-eyebrow",
@@ -85,12 +58,6 @@ const LAYOUT_STYLES = {
   },
   profile: {
     app: "instructor-profile-app",
-    header: "instructor-profile-header",
-    brand: "instructor-profile-brand",
-    globalNav: "instructor-profile-global-nav",
-    headerActions: "instructor-profile-header-actions",
-    search: "instructor-profile-search",
-    cart: "instructor-profile-cart",
     workspace: "instructor-profile-workspace",
     sidebar: "instructor-profile-sidebar",
     eyebrow: "instructor-profile-eyebrow",
@@ -102,12 +69,6 @@ const LAYOUT_STYLES = {
   },
   coupons: {
     app: "instructor-coupons-app",
-    header: "instructor-coupons-header",
-    brand: "instructor-coupons-brand",
-    globalNav: "instructor-coupons-global-nav",
-    headerActions: "instructor-coupons-header-actions",
-    search: "instructor-coupons-search",
-    cart: "instructor-coupons-cart",
     workspace: "instructor-coupons-workspace",
     sidebar: "instructor-coupons-sidebar",
     eyebrow: "instructor-coupons-eyebrow",
@@ -130,59 +91,37 @@ const MENU_GROUPS = [
   { heading: "혜택", items: [MENU_ITEMS[5]] },
 ];
 
-function InstructorCenterLogo({ className }) {
-  return (
-    <Link className={className} to="/" aria-label="새싹에듀 홈">
-      <img alt="" src={logoUrl} />
-    </Link>
-  );
-}
-
 export function InstructorCenterLayout({ children, variant }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const styles = LAYOUT_STYLES[variant];
   const location = useLocation();
+  const navigate = useNavigate();
   const currentMenu = MENU_ITEMS.find(
     ({ to }) =>
       location.pathname === to || location.pathname.startsWith(`${to}/`),
   );
   const GroupHeading = styles.groupHeading;
-  const headerContent = (
-    <>
-      <InstructorCenterLogo className={styles.brand} />
-      <nav className={styles.globalNav} aria-label="주요 메뉴">
-        <span aria-disabled="true" className={styles.globalNavActive}>
-          강의
-        </span>
-        <span aria-disabled="true">커뮤니티</span>
-      </nav>
-      <div className={styles.headerActions}>
-        <label className={styles.search}>
-          <span aria-hidden="true">⌕</span>
-          <input aria-label="강의 검색" placeholder="어떤 배움을 찾고 있나요?" />
-        </label>
-        <span>강사센터</span>
-        {styles.cartTo ? (
-          <Link className={styles.cart} to={styles.cartTo}>
-            장바구니
-          </Link>
-        ) : (
-          <span aria-disabled="true" className={styles.cart}>
-            장바구니
-          </span>
-        )}
-      </div>
-    </>
-  );
   const layout = (
     <>
-      <header className={`${styles.header} instructor-center-header`}>
-        <div
-          className={`${styles.headerInner ?? ""} instructor-center-header-inner`}
-        >
-          {headerContent}
-        </div>
-      </header>
+      <div
+        className="instructor-center-common-header"
+        onClickCapture={(event) => {
+          if (!(event.target instanceof Element)) return;
+          const anchor = event.target.closest("a");
+          if (!anchor) return;
+          const destination = new URL(anchor.href, window.location.href);
+          if (
+            destination.origin !== window.location.origin ||
+            destination.pathname !== "/"
+          ) {
+            return;
+          }
+          event.preventDefault();
+          navigate(`${destination.pathname}${destination.search}${destination.hash}`);
+        }}
+      >
+        <Header />
+      </div>
 
       <div className={`${styles.workspace} instructor-center-workspace`}>
         <aside

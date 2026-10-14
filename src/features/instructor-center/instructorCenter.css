@@ -12,110 +12,117 @@ html {
   color: #234659;
 }
 
-.instructor-center-shell .instructor-center-header {
-  display: block;
-  width: 100%;
-  height: 68px;
-  min-height: 68px;
-  padding: 0;
-  border: 0;
-  background: #fff;
+.instructor-center-common-header .ui-header,
+.instructor-center-common-header .ui-header * {
+  box-sizing: border-box;
 }
 
-.instructor-center-header-inner {
+.instructor-center-common-header .ui-header {
+  width: 100%;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  line-height: 1.5;
+}
+
+.instructor-center-common-header .ui-header-inner {
   display: flex;
   align-items: center;
-  gap: 38px;
-  width: min(877px, calc(100% - 48px));
-  height: 68px;
-  min-height: 68px;
+  gap: 40px;
+  width: min(var(--content-width), calc(100% - 48px));
+  min-height: 88px;
   margin-inline: auto;
-  padding-inline: 9px 0;
 }
 
-.instructor-center-header-inner > a:first-child {
+.instructor-center-common-header .ui-header a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.instructor-center-common-header .ui-logo {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   width: 100px;
-  height: 52px;
+  height: 49px;
 }
 
-.instructor-center-header-inner > a:first-child img {
+.instructor-center-common-header .ui-logo img {
   display: block;
   width: 100%;
   height: auto;
   object-fit: contain;
 }
 
-.instructor-center-header-inner > nav {
+.instructor-center-common-header .ui-nav {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 40px;
-  color: #123244;
-  font-size: 12px;
-  font-weight: 500;
+  gap: 24px;
+  font-size: 14px;
+  font-weight: 600;
   white-space: nowrap;
 }
 
-.instructor-center-header-inner > nav > span {
+.instructor-center-common-header .ui-nav .active {
+  color: #426f29;
+}
+
+.instructor-center-common-header .ui-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(245px, 22vw);
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-muted);
+}
+
+.instructor-center-common-header .ui-search button {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: inherit;
 }
 
-.instructor-center-header-inner > div {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-left: auto;
-  color: #123244;
-  font-size: 10px;
-  white-space: nowrap;
-}
-
-.instructor-center-header-inner label {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: 194px;
-  min-height: 31px;
-  margin: 0;
-  padding: 0 11px;
-  border-radius: 7px;
-  background: #f2f5f3;
-  color: #89999e;
-}
-
-.instructor-center-header-inner label input {
+.instructor-center-common-header .ui-search input {
   width: 100%;
   min-width: 0;
   padding: 0;
   border: 0;
   outline: 0;
   background: transparent;
-  color: #234659;
-  font-size: 9px;
+  color: var(--color-text);
+  font-size: 11px;
 }
 
-.instructor-center-header-inner label input::placeholder {
-  color: #89999e;
+.instructor-center-common-header .ui-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.instructor-center-header-inner > div > a:last-child,
-.instructor-center-header-inner > div > span:last-child {
+.instructor-center-common-header .ui-actions .btn.primary {
   display: inline-flex;
-  flex: 0 0 74px;
   align-items: center;
   justify-content: center;
-  min-height: 30px;
-  margin-left: 18px;
-  padding: 0 8px;
-  border-radius: 7px;
-  background: #adf046;
-  color: #365d29;
-  font-size: 9px;
-  font-weight: 600;
+  min-height: 44px;
+  padding: 10px 22px;
+  border-radius: var(--radius-small);
+  background: var(--color-primary);
+}
+
+.instructor-center-common-header .ui-actions .btn.primary:hover {
+  background: var(--color-primary-hover);
 }
 
 .instructor-center-shell .instructor-center-workspace {
@@ -514,8 +521,7 @@ html {
 }
 
 @media (max-width: 800px) {
-  .instructor-center-header-inner {
-    width: calc(100% - 32px);
+  .instructor-center-common-header .ui-header-inner {
     gap: 24px;
   }
 
@@ -529,12 +535,8 @@ html {
     margin-left: 0;
   }
 
-  .instructor-center-header-inner > nav {
-    gap: 22px;
-  }
-
-  .instructor-center-header-inner label {
-    width: clamp(120px, 20vw, 194px);
+  .instructor-center-common-header .ui-search {
+    width: clamp(120px, 20vw, 245px);
   }
 
   .instructor-center-main .instructor-lecture-toolbar {
@@ -548,45 +550,31 @@ html {
 }
 
 @media (max-width: 640px) {
-  .instructor-center-header-inner {
+  .instructor-center-common-header .ui-header-inner {
     flex-wrap: wrap;
-    align-content: flex-start;
-    gap: 8px 16px;
-  }
-
-  .instructor-center-shell .instructor-center-header {
-    height: auto;
-    min-height: 68px;
-  }
-
-  .instructor-center-header-inner {
-    height: auto;
-    min-height: 68px;
-    padding-block: 8px 10px;
-  }
-
-  .instructor-center-header-inner > nav {
-    order: 0;
-    width: auto;
     gap: 16px;
+    width: calc(100% - 32px);
+    padding-block: 16px;
   }
 
-  .instructor-center-header-inner > div {
+  .instructor-center-common-header .ui-nav {
     order: 3;
     width: 100%;
-    gap: 8px;
+  }
+
+  .instructor-center-common-header .ui-search {
+    order: 4;
+    width: 100%;
     margin-left: 0;
   }
 
-  .instructor-center-header-inner label {
-    width: auto;
-    min-width: 0;
-    flex: 1;
+  .instructor-center-common-header .ui-actions {
+    gap: 12px;
+    margin-left: auto;
   }
 
-  .instructor-center-header-inner > div > a:last-child,
-  .instructor-center-header-inner > div > span:last-child {
-    margin-left: 4px;
+  .instructor-center-common-header .ui-actions .btn.primary {
+    padding-inline: 14px;
   }
 
   .instructor-center-shell .instructor-center-workspace {
@@ -717,5 +705,12 @@ html {
   .instructor-center-main .instructor-settlement-table,
   .instructor-center-main .instructor-coupons-table {
     min-width: 560px;
+  }
+}
+
+@media (max-width: 380px) {
+  .instructor-center-common-header .ui-actions {
+    width: 100%;
+    margin-left: 0;
   }
 }
