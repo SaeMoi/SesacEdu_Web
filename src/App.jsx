@@ -19,6 +19,7 @@ import {
   InstructorSettlementDetailPage,
   InstructorSettlementListPage,
 } from "./features/instructor-settlement/InstructorSettlementPages.jsx";
+import { InstructorProfilePage } from "./features/instructor-profile/InstructorProfilePage.jsx";
 
 const categories = [
   "웹 보안",
@@ -102,6 +103,7 @@ function HomePage() {
 
 function App() {
   return (
+    
     <Routes>
   <Route path="/" element={<HomePage />} />
 
@@ -146,6 +148,11 @@ function App() {
     path="/instructor/settlement/:sid"
     element={<InstructorSettlementDetailPage />}
   />
+  {/* 강사 정보 관리 */}
+<Route
+  path="/instructor/profile"
+  element={<InstructorProfilePage />}
+/>
 </Routes>
   );
 }
