@@ -1,9 +1,10 @@
+// 공통 사이드바와 탭으로 페이지 이동을 연결합니다.
+import { MyPageSidebar, MyPageTabs } from "../components/navigation/MyPageNavigation.jsx";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { getProfile, ProfileApiError } from "../api/profile.js";
 import SiteHeader from "../components/SiteHeader.jsx";
 import "./MyPage.css";
-
 const profileFields = [
   ["이름", "name"],
   ["이메일", "email"],
@@ -54,45 +55,6 @@ function getErrorMessage(error) {
     default:
       return error.message || "프로필 정보를 불러오지 못했습니다.";
   }
-}
-
-function Sidebar() {
-  return (
-    <aside className="mypage-sidebar" aria-label="마이페이지 메뉴">
-      <p className="sidebar-eyebrow">MY PAGE</p>
-      <h2>마이페이지</h2>
-
-      <section className="sidebar-group" aria-label="프로필">
-        <p className="sidebar-group-title">프로필 관리</p>
-        <Link className="sidebar-link is-active" to="/mypage" aria-current="page">
-          프로필 관리
-        </Link>
-      </section>
-
-      <section className="sidebar-group" aria-label="학습">
-        <p className="sidebar-group-title">학습</p>
-        <span className="sidebar-link">내 학습</span>
-        <span className="sidebar-link">내 질문</span>
-        <span className="sidebar-link">장바구니</span>
-      </section>
-
-      <section className="sidebar-group" aria-label="구매 및 혜택">
-        <p className="sidebar-group-title">구매 / 혜택</p>
-        <span className="sidebar-link">쿠폰 / 포인트</span>
-        <span className="sidebar-link">결제 내역</span>
-      </section>
-
-      <section className="sidebar-group" aria-label="강사 활동">
-        <p className="sidebar-group-title">강사 활동</p>
-        <span className="sidebar-link">강사 신청</span>
-      </section>
-
-      <section className="sidebar-group" aria-label="고객센터">
-        <p className="sidebar-group-title">고객센터</p>
-        <span className="sidebar-link">공지사항</span>
-      </section>
-    </aside>
-  );
 }
 
 function ProfileContent() {
@@ -152,14 +114,7 @@ function ProfileContent() {
         <p>회원님의 기본 정보를 확인하고 관리할 수 있어요.</p>
       </header>
 
-      <nav className="profile-tabs" aria-label="마이페이지 분류">
-        <Link className="profile-tab is-active" to="/mypage" aria-current="page">
-          내 정보
-        </Link>
-        <span className="profile-tab">내 학습</span>
-        <span className="profile-tab">구매 / 혜택</span>
-        <span className="profile-tab">질문</span>
-      </nav>
+      <MyPageTabs active="profile" />
 
       {status === "loading" && (
         <p className="profile-message" role="status">
@@ -247,7 +202,7 @@ function MyPage() {
     <>
       <SiteHeader />
       <div className="mypage-layout">
-        <Sidebar />
+        <MyPageSidebar />
         <ProfileContent />
       </div>
     </>

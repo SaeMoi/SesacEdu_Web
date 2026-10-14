@@ -1,3 +1,5 @@
+// 공통 사이드바와 탭으로 페이지 이동을 연결합니다.
+import { MyPageSidebar, MyPageTabs } from "../../components/navigation/MyPageNavigation.jsx";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -8,48 +10,11 @@ import { useInstructorApplyAuth } from "./instructorApplyAuthContext.js";
 import "./instructorApply.css";
 // 전체 페이지에서 동일한 공통 헤더를 사용합니다.
 import Header from "../../components/navigation/Header.jsx";
-
-
 const statusLabels = {
   NONE: "미신청 / 승인 후 강사센터 이용 가능",
   PENDING: "승인 대기 중입니다.",
   APPROVED: "승인 완료 / 강사센터 이용 가능",
 };
-
-
-function Sidebar() {
-  return (
-    <aside className="instructor-sidebar" aria-label="마이페이지 메뉴">
-      <p className="instructor-sidebar-eyebrow">MY PAGE</p>
-      <h2>마이페이지</h2>
-      <section className="instructor-sidebar-group">
-        <p>프로필 관리</p>
-        <span>프로필 관리</span>
-      </section>
-      <section className="instructor-sidebar-group">
-        <p>학습</p>
-        <span>내 학습</span>
-        <span>내 질문</span>
-        <span>장바구니</span>
-      </section>
-      <section className="instructor-sidebar-group">
-        <p>구매 / 혜택</p>
-        <span>쿠폰 / 포인트</span>
-        <span>결제 내역</span>
-      </section>
-      <section className="instructor-sidebar-group">
-        <p>강사 활동</p>
-        <Link aria-current="page" className="is-active" to="/instructor/apply">
-          강사 신청
-        </Link>
-      </section>
-      <section className="instructor-sidebar-group instructor-customer-group">
-        <p>고객센터</p>
-        <span>공지사항</span>
-      </section>
-    </aside>
-  );
-}
 
 function InstructorApplyPage() {
   const { accessToken } = useInstructorApplyAuth();
@@ -156,7 +121,7 @@ function InstructorApplyPage() {
     <>
       <Header />
       <div className="instructor-layout">
-        <Sidebar />
+        <MyPageSidebar />
         <main className="instructor-main">
           <nav className="instructor-breadcrumb" aria-label="현재 위치">
             <Link to="/">사용자공간</Link>
@@ -167,14 +132,7 @@ function InstructorApplyPage() {
             <h1>강사 신청</h1>
             <p>당신의 경험과 지식을 새싹에듀에서 나눠주세요.</p>
           </header>
-          <nav className="instructor-tabs" aria-label="마이페이지 분류">
-            <span aria-current="page" className="is-active">
-              내 정보
-            </span>
-            <span>내 학습</span>
-            <span>구매 / 혜택</span>
-            <span>질문</span>
-          </nav>
+          <MyPageTabs />
 
           <form className="instructor-application-form" onSubmit={handleSubmit}>
             <div className="instructor-form-field">
