@@ -55,6 +55,13 @@ UI에는 연결하지 않습니다. 화면 단계와 수정 모드는 React Rout
 - 이 브랜치의 `src/main.jsx`에는 로그인/JWT 공급자나 `InstructorAssignmentsAuthProvider`가 연결되어 있지 않습니다. 따라서 현재는 토큰이 필요한 API 요청을 보낼 수 없으며, 토큰 저장 방식은 이 기능에서 추정하거나 별도 저장하지 않습니다.
 - 목록 응답 예시에는 페이지 메타데이터가 없으므로 페이지네이션은 응답에 `totalPages`가 포함된 경우에만 표시합니다.
 - 제공된 목록 URL(`/instructor/assignments`)과 본문 예시 URL(`/api/instructor/lectures/{lid}/assignments`)은 계약 확인이 필요합니다. 구현은 우선 지정된 목록 URL을 사용합니다.
+## 강사센터 정산
+
+- 목록 URL: `/instructor/settlement`
+- 상세 URL: `/instructor/settlement/:sid`
+- API: `GET /instructor/settlement?page={page}`, `GET /instructor/settlement/{sid}?page={page}`
+- 요청은 `VITE_API_BASE_URL`과 `Authorization: Bearer {accessToken}`을 사용합니다. 현재 브랜치에는 로그인 토큰 공급자가 연결되어 있지 않습니다.
+- 정산 응답에 페이지 메타데이터가 없으면 실제 다음 페이지를 조회해 데이터 존재 여부를 확인하며, 페이지 수를 임의로 만들지 않습니다.
 
 ## 협업 방식
 

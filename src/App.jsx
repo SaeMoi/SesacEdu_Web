@@ -15,6 +15,11 @@ import {
   InstructorQnaListPage,
 } from "./features/instructor-qna/InstructorQnaPages.jsx";
 
+import {
+  InstructorSettlementDetailPage,
+  InstructorSettlementListPage,
+} from "./features/instructor-settlement/InstructorSettlementPages.jsx";
+
 const categories = [
   "웹 보안",
   "네트워크",
@@ -128,6 +133,18 @@ function App() {
   <Route
     path="/instructor/qna/:qnaid"
     element={<InstructorQnaDetailPage />}
+  />
+
+  {/* 정산 관리 목록 */}
+  <Route
+    path="/instructor/settlement"
+    element={<InstructorSettlementListPage />}
+  />
+
+  {/* 정산 관리 상세 */}
+  <Route
+    path="/instructor/settlement/:sid"
+    element={<InstructorSettlementDetailPage />}
   />
 </Routes>
   );
