@@ -3,6 +3,10 @@ import { Route, Routes } from "react-router";
 import {
   InstructorCoursesPage,
 } from "./features/instructor-courses/InstructorCoursesPages.jsx";
+import {
+  InstructorAssignmentsDetailPage,
+  InstructorAssignmentsListPage,
+} from "./features/instructor-assignments/InstructorAssignmentsPages.jsx";
 
 const categories = [
   "웹 보안",
@@ -87,12 +91,26 @@ function HomePage() {
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route
-        path="/instructor/lectures"
-        element={<InstructorCoursesPage />}
-      />
-    </Routes>
+  <Route path="/" element={<HomePage />} />
+
+  {/* 강의 관리 */}
+  <Route
+    path="/instructor/lectures"
+    element={<InstructorCoursesPage />}
+  />
+
+  {/* 과제 피드백 목록 */}
+  <Route
+    path="/instructor/assignments"
+    element={<InstructorAssignmentsListPage />}
+  />
+
+  {/* 과제 피드백 상세 */}
+  <Route
+    path="/instructor/assignments/:assid"
+    element={<InstructorAssignmentsDetailPage />}
+  />
+</Routes>
   );
 }
 
