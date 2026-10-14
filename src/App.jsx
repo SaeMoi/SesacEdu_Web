@@ -1,12 +1,19 @@
 import "./App.css";
 import { Route, Routes } from "react-router";
+
 import {
   InstructorCoursesPage,
 } from "./features/instructor-courses/InstructorCoursesPages.jsx";
+
 import {
   InstructorAssignmentsDetailPage,
   InstructorAssignmentsListPage,
 } from "./features/instructor-assignments/InstructorAssignmentsPages.jsx";
+
+import {
+  InstructorQnaDetailPage,
+  InstructorQnaListPage,
+} from "./features/instructor-qna/InstructorQnaPages.jsx";
 
 const categories = [
   "웹 보안",
@@ -109,6 +116,18 @@ function App() {
   <Route
     path="/instructor/assignments/:assid"
     element={<InstructorAssignmentsDetailPage />}
+  />
+
+  {/* Q&A 목록 */}
+  <Route
+    path="/instructor/qna"
+    element={<InstructorQnaListPage />}
+  />
+
+  {/* Q&A 상세 */}
+  <Route
+    path="/instructor/qna/:qnaid"
+    element={<InstructorQnaDetailPage />}
   />
 </Routes>
   );
