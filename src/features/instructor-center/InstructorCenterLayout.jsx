@@ -137,8 +137,12 @@ export function InstructorCenterLayout({ children, variant }) {
             <span>강사센터 메뉴</span>
             <span aria-hidden="true">{mobileMenuOpen ? "−" : "+"}</span>
           </button>
-          <p className={styles.eyebrow}>INSTRUCTOR</p>
-          <h2>강사센터</h2>
+          <p
+            className={`${styles.eyebrow} instructor-center-sidebar-eyebrow`}
+          >
+            INSTRUCTOR
+          </p>
+          <h2 className="instructor-center-sidebar-title">강사센터</h2>
           {MENU_GROUPS.map(({ heading, items }) => (
             <section
               className={`${styles.group} instructor-center-menu-group`}

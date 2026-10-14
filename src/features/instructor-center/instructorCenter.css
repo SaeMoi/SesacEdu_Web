@@ -127,12 +127,11 @@ html {
 
 .instructor-center-shell .instructor-center-workspace {
   display: grid;
-  grid-template-columns: 161px minmax(0, 1fr);
-  gap: 36px;
+  grid-template-columns: 175px minmax(0, 1fr);
+  gap: clamp(30px, 4vw, 54px);
   align-items: start;
-  width: min(877px, calc(100% - 48px));
-  height: calc(100vh - 68px);
-  min-height: calc(100vh - 68px);
+  width: min(var(--content-width), calc(100% - 48px));
+  min-height: calc(100vh - 88px);
   margin: 0 auto;
   padding: 28px 0 62px;
 }
@@ -140,27 +139,31 @@ html {
 .instructor-center-sidebar {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 158px);
+  width: 100%;
+  min-width: 0;
   min-height: 0;
   padding-top: 0;
-  margin-left: 9px;
+  margin: 0;
   color: #234659;
   font-size: 10px;
 }
 
-.instructor-center-sidebar > p:first-child {
+.instructor-center-sidebar-eyebrow {
+  margin: 0;
   color: #78905f;
   font-size: 8px;
   font-weight: 600;
   line-height: 12px;
+  letter-spacing: 0;
 }
 
-.instructor-center-sidebar > h2 {
-  margin-top: 8px;
+.instructor-center-sidebar-title {
+  margin: 8px 0 0;
   color: #234659;
   font-size: 20px;
   font-weight: 500;
   line-height: 28px;
+  letter-spacing: 0;
 }
 
 .instructor-center-menu-group {
@@ -520,6 +523,75 @@ html {
   color: #fff;
 }
 
+.instructor-center-shell .instructor-center-sidebar > .instructor-center-sidebar-eyebrow {
+  margin: 0;
+  padding: 0;
+  color: #78905f;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 12px;
+  letter-spacing: 0;
+}
+
+.instructor-center-shell .instructor-center-sidebar > .instructor-center-sidebar-title {
+  margin: 8px 0 0;
+  padding: 0;
+  color: #234659;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 28px;
+  letter-spacing: 0;
+}
+
+.instructor-center-shell .instructor-center-sidebar .instructor-center-menu-group {
+  width: 100%;
+  margin-inline: 0;
+}
+
+.instructor-center-shell .instructor-center-sidebar .instructor-center-menu-group > a,
+.instructor-center-shell .instructor-center-sidebar .instructor-center-menu-group > span {
+  width: 100%;
+  box-sizing: border-box;
+  font-weight: 400;
+}
+
+.instructor-center-shell .instructor-center-sidebar .instructor-center-menu-group > .is-active {
+  font-weight: 600;
+}
+
+.instructor-center-shell .instructor-center-main .instructor-qna-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-bottom: 26px;
+}
+
+.instructor-center-shell .instructor-center-main .instructor-qna-filters button {
+  display: inline-flex;
+  flex: 0 0 82px;
+  align-items: center;
+  justify-content: center;
+  width: 82px;
+  min-width: 82px;
+  height: 31px;
+  min-height: 31px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: 10px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.instructor-center-shell .instructor-center-main .instructor-qna-filters button.is-active {
+  background: var(--color-sage);
+  color: #527c30;
+  font-weight: 600;
+}
+
 @media (max-width: 800px) {
   .instructor-center-common-header .ui-header-inner {
     gap: 24px;
@@ -527,12 +599,11 @@ html {
 
   .instructor-center-shell .instructor-center-workspace {
     grid-template-columns: 152px minmax(0, 1fr);
-    gap: 24px;
-    width: calc(100% - 40px);
+    gap: clamp(20px, 3vw, 30px);
   }
 
   .instructor-center-sidebar {
-    margin-left: 0;
+    min-height: 0;
   }
 
   .instructor-center-common-header .ui-search {
