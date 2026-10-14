@@ -1,7 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" session="false" %>
 <% String pageTitle="강의 목록"; %>
 <%@ include file="../fragments/head.jspf" %>
-<%@ include file="../fragments/data.jspf" %>
+
 <main id="main" class="wrap catalog" data-catalog>
 <nav class="category-tabs" aria-label="강의 분야">
 <% for(String c:new String[]{"전체","웹 보안","네트워크","개발 기초","로그 분석","클라우드"}){ %>
@@ -23,12 +23,13 @@
 </div>
 <div class="catalog-controls">
 <p role="status">
-<strong id="course-count"><%=courses.length%></strong>개의 강의</p>
+<strong id="course-count">0</strong>개의 강의</p>
 <div>
 <select id="level-filter" aria-label="난이도">
 <option value="all">모든 난이도</option>
 <option value="입문">입문</option>
 <option value="초급">초급</option>
+<option value="중급">중급</option>
 </select>
 <select id="sort-filter" aria-label="정렬">
 <option value="default">기본순</option>
@@ -37,8 +38,8 @@
 </select>
 </div>
 </div>
-<div class="course-grid">
-<%@ include file="../fragments/cards.jspf" %>
+<!-- api에서 받은 강의 데이터를 JavaScript로 이 영역에 표시합니다.-->
+<div id="course-grid" class="course-grid" aria-busy="true">
 </div>
 <nav id="course-pagination" class="course-pagination" aria-label="강의 목록 페이지"></nav>
 <p id="course-page-status" class="screen-note" role="status"></p>
@@ -47,6 +48,12 @@
 <p>다른 분야를 선택하거나 검색어를 바꿔보세요.</p>
 <button class="btn secondary" id="reset-courses">전체 강의 보기</button>
 </section>
-<p class="screen-note">강의 데이터는 예시입니다.</p>
+<!-- 로딩 상태와 api 요청 실패 메시지를 표시합니다.-->
+ <p id="course-api-status" class="screen-note" role="status">
+    강의 목록을 불러오는 중입니다.
+ </p>
+ <button id="retry-courses" class="btn secondary" type="button" hidden>
+    다시 불러오기
+ </button>
 </main>
 <%@ include file="../fragments/footer.jspf" %>

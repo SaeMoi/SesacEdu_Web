@@ -7,6 +7,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+            // /backend/lectures 요청을 Java 서버의 /lectures로 전달합니다.
+      "/backend": {
+        target: "http://127.0.0.1:8080",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/backend/, ""),
+      },
       "^/(login|signup|courses|qna|community|chatbot|assignments)(/|\\?|$)":
         "http://127.0.0.1:8088",
       "/ui/": "http://127.0.0.1:8088",

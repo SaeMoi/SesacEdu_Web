@@ -77,66 +77,428 @@ if (byId("signup-form")) {
 // 카테고리·검색·정렬은 JSP에서 출력한 예시 카드에 적용합니다.
 // 현재는 예시 데이터를 브라우저에서 필터링한 뒤 페이지당 6개씩 표시합니다.
 // API 연결 시 검색/정렬/페이지 조건을 서버에 보내고 전체 결과 수를 받습니다.
+
+// 강의 목록: 검색·필터·정렬·페이지 조건을 백엔드에 전달합니다.
 if (byId("course-search")) {
-  const cards = all("[data-course]");
+  const grid = byId("course-grid");
+  const search = byId("course-search");
+  const level = byId("level-filter");
+  const sort = byId("sort-filter");
+  const pagination = byId("course-pagination");
+  const status = byId("course-api-status");
+  const retry = byId("retry-courses");
   const chips = all(".category-tabs [data-category]");
-  const params = new URLSearchParams(location.search);
-  let category = chips.some(b => b.dataset.category === params.get("category")) ? params.get("category") : "전체";
+
+  const initial = new URLSearchParams(location.search);
+  const initialCategory = initial.get("category");
+
+  let category = chips.some(
+    (button) => button.dataset.category === initialCategory,
+  ) ? initialCategory : "전체";
+
   let page = 1;
+  let activeRequest = null;
   const pageSize = 6;
-  byId("course-search").value = params.get("q") || "";
-  const apply = () => {
-    const q = byId("course-search").value.trim().toLowerCase();
-    const matches = cards.filter(card =>
-      (category === "전체" || card.dataset.category === category) &&
-      card.textContent.toLowerCase().includes(q) &&
-      (byId("level-filter").value === "all" || byId("level-filter").value === card.dataset.level));
-    const sort = byId("sort-filter").value;
-    if (sort !== "default") matches.sort((a,b) => (Number(a.dataset.price)-Number(b.dataset.price))*(sort === "low" ? 1 : -1));
-    const totalPages = Math.ceil(matches.length / pageSize);
-    page = Math.min(page, Math.max(totalPages, 1));
-    cards.forEach(card => {card.hidden=true;});
-    matches.forEach((card,index) => {
-      card.hidden = index < (page-1)*pageSize || index >= page*pageSize;
-      document.querySelector(".course-grid").append(card);
-    });
-    chips.forEach(b => b.setAttribute("aria-pressed", String(b.dataset.category === category)));
-    byId("catalog-title").textContent=category+" 강의";
-    byId("course-count").textContent=matches.length;
-    byId("course-empty").hidden=matches.length !== 0;
-    const pagination=byId("course-pagination");
+
+  search.value = initial.get("q") || "";
+
+  // 화면의 정렬 선택값을 백엔드에서 받는 값으로 변환합니다.
+  const sortValues = {
+    default: "lid_desc",
+    low: "price_asc",
+    high: "price_desc",
+  };
+
+  // 서버의 문자열을 HTML로 해석하지 않고 글자로 표시합니다.
+  const makeElement = (tag, className, text) => {
+    const element = document.createElement(tag);
+    if (className) element.className = className;
+    if (text !== undefined) element.textContent = text;
+    return element;
+  };
+
+  const makeCard = (lecture, index) => {
+    // 클릭한 강의의 숫자 ID를 상세 페이지에 전달합니다.
+    const card = makeElement("a", "course-card");
+    card.dataset.courseId = String(lecture.lid);
+    card.href = `/courses/detail?id=${encodeURIComponent(lecture.lid)}`;
+
+    const colors = ["sage", "navy", "lavender"];
+    const art = makeElement(
+      "div",
+      `course-art ${colors[index % colors.length]}`,
+    );
+
+    // 이미지가 없거나 로딩에 실패하면 제목 배경을 사용합니다.
+    art.append(makeElement(
+      "strong",
+      "",
+      lecture.headline || lecture.name,
+    ));
+
+    if (lecture.picture) {
+      try {
+        const imageUrl = new URL(lecture.picture, location.origin);
+
+        if (["http:", "https:"].includes(imageUrl.protocol)) {
+          const image = document.createElement("img");
+          image.src = imageUrl.href;
+          image.alt = "";
+          image.loading = "lazy";
+          image.style.cssText =
+            "width:100%;height:100%;object-fit:cover;";
+
+          image.addEventListener("load", () => {
+            art.style.padding = "0";
+            art.replaceChildren(image);
+          }, { once: true });
+        }
+      } catch {
+        // 올바르지 않은 이미지 주소면 제목 배경을 유지합니다.
+      }
+    }
+
+    const price = makeElement("div", "course-price");
+    price.append(makeElement(
+      "strong",
+      "",
+      `${Number(lecture.price).toLocaleString("ko-KR")}원`,
+    ));
+
+    card.append(
+      art,
+      makeElement("span", "pill", lecture.level || "난이도 미정"),
+      makeElement("h3", "", lecture.name),
+      makeElement(
+        "p",
+        "",
+        `${lecture.category || ""} · ${lecture.instructor || "강사 미정"}`,
+      ),
+      price,
+    );
+
+    return card;
+  };
+
+  const renderPagination = (pageInfo) => {
     pagination.replaceChildren();
-    pagination.hidden=totalPages<=1;
-    const addButton=(label,target,disabled=false,current=false) => {
-      const button=document.createElement("button");
-      button.type="button";button.textContent=label;button.disabled=disabled;
-      button.setAttribute("aria-label", /^\d+$/.test(label) ? label+"페이지" : label+" 페이지");
-      if(current) button.setAttribute("aria-current","page");
-      button.addEventListener("click",()=>{
-        page=target;apply();
-        // 페이지 버튼 재생성 후 현재 페이지로 키보드 포커스를 복원합니다.
-        pagination.querySelector('[aria-current="page"]')?.focus({preventScroll:true});
+    pagination.hidden = pageInfo.totalPages <= 1;
+
+    const addButton = (label, target, disabled, current = false) => {
+      const button = makeElement("button", "", label);
+      button.type = "button";
+      button.disabled = disabled;
+      button.setAttribute(
+        "aria-label",
+        current ? `${target}페이지, 현재 페이지` : `${label} 페이지`,
+      );
+
+      if (current) button.setAttribute("aria-current", "page");
+
+      button.addEventListener("click", () => {
+        page = target;
+        loadCourses(true);
       });
+
       pagination.append(button);
     };
-    if(totalPages>1){
-      addButton("이전",page-1,page===1);
-      for(let n=1;n<=totalPages;n++) addButton(String(n),n,false,n===page);
-      addButton("다음",page+1,page===totalPages);
+
+    if (pageInfo.totalPages > 1) {
+      addButton("이전", page - 1, page === 1);
+
+      // 현재 페이지 주변의 번호를 최대 5개까지 표시합니다.
+      const start = Math.max(
+        1,
+        Math.min(page - 2, pageInfo.totalPages - 4),
+      );
+      const end = Math.min(pageInfo.totalPages, start + 4);
+
+      for (let number = start; number <= end; number += 1) {
+        addButton(String(number), number, false, number === page);
+      }
+
+      addButton("다음", page + 1, page === pageInfo.totalPages);
     }
-    byId("course-page-status").textContent=matches.length ? `${page} / ${totalPages} 페이지 · ${(page-1)*pageSize+1}–${Math.min(page*pageSize,matches.length)} / ${matches.length}개` : "검색 결과가 없습니다.";
   };
-  // 검색 조건을 바꾸면 첫 페이지부터 보여줍니다.
-  const resetPage=()=>{page=1;apply();};
-  chips.forEach(b=>b.addEventListener("click",()=>{category=b.dataset.category;resetPage();}));
-  on("course-search","input",resetPage);
-  on("level-filter","change",resetPage);
-  on("sort-filter","change",resetPage);
-  on("reset-courses","click",()=>{
-    category="전체";byId("course-search").value="";
-    byId("level-filter").value="all";byId("sort-filter").value="default";resetPage();
+
+  async function loadCourses(restoreFocus = false) {
+    // 검색 조건이 바뀌면 이전 요청을 취소합니다.
+    // 늦게 도착한 이전 결과가 최신 화면을 덮는 것을 막습니다.
+    activeRequest?.abort();
+    const controller = new AbortController();
+    activeRequest = controller;
+
+    const query = new URLSearchParams({
+      page: String(page),
+      size: String(pageSize),
+      sort: sortValues[sort.value] || "lid_desc",
+    });
+
+    const keyword = search.value.trim();
+    if (keyword) query.set("keyword", keyword);
+    if (category !== "전체") query.set("category", category);
+    if (level.value !== "all") query.set("level", level.value);
+
+    chips.forEach((button) => {
+      button.setAttribute(
+        "aria-pressed",
+        String(button.dataset.category === category),
+      );
+    });
+
+    byId("catalog-title").textContent = `${category} 강의`;
+    grid.setAttribute("aria-busy", "true");
+    grid.replaceChildren();
+    pagination.replaceChildren();
+    pagination.hidden = true;
+    byId("course-empty").hidden = true;
+    byId("course-count").textContent = "…";
+    byId("course-page-status").textContent = "";
+    status.textContent = "강의 목록을 불러오는 중입니다.";
+    retry.hidden = true;
+
+    try {
+      const response = await fetch(`/backend/lectures?${query}`, {
+        signal: controller.signal,
+        headers: { Accept: "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error(`서버 응답 오류: HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!Array.isArray(data.lectures) || !data.page) {
+        throw new Error("강의 목록 응답 형식이 올바르지 않습니다.");
+      }
+
+      if (controller.signal.aborted) return;
+
+      // 전체 개수와 페이지 정보는 서버가 계산한 값을 사용합니다.
+      page = data.page.current;
+      byId("course-count").textContent = String(data.page.total);
+
+      grid.replaceChildren(...data.lectures.map(makeCard));
+      byId("course-empty").hidden = data.lectures.length !== 0;
+      renderPagination(data.page);
+
+      byId("course-page-status").textContent =
+        data.lectures.length > 0
+          ? `${page} / ${data.page.totalPages} 페이지 · 총 ${data.page.total}개`
+          : "검색 결과가 없습니다.";
+
+      status.textContent = "";
+
+      if (restoreFocus) {
+        pagination.querySelector('[aria-current="page"]')
+          ?.focus({ preventScroll: true });
+      }
+    } catch (error) {
+      if (controller.signal.aborted) return;
+
+      // 조회 실패를 '강의 0개'로 표시하지 않습니다.
+      byId("course-count").textContent = "—";
+      status.textContent =
+        `강의 목록을 불러오지 못했습니다. ${error.message}`;
+      retry.hidden = false;
+    } finally {
+      if (activeRequest === controller) {
+        grid.setAttribute("aria-busy", "false");
+      }
+    }
+  }
+
+  // 검색 조건이 바뀌면 첫 페이지부터 다시 조회합니다.
+  const resetPage = () => {
+    page = 1;
+    loadCourses();
+  };
+
+  chips.forEach((button) => {
+    button.addEventListener("click", () => {
+      category = button.dataset.category;
+      resetPage();
+    });
   });
-  apply();
+
+  search.addEventListener("input", resetPage);
+  level.addEventListener("change", resetPage);
+  sort.addEventListener("change", resetPage);
+  retry.addEventListener("click", () => loadCourses());
+
+  on("reset-courses", "click", () => {
+    category = "전체";
+    search.value = "";
+    level.value = "all";
+    sort.value = "default";
+    resetPage();
+  });
+
+  loadCourses();
+}
+// 상세 페이지에서만 실행합니다.
+if (document.querySelector("[data-lecture-detail]")) {
+  const content = byId("detail-content");
+  const status = byId("detail-status");
+  const retry = byId("retry-detail");
+  const purchase = byId("open-purchase");
+
+  // /courses/detail?id=1 에서 강의 ID를 읽습니다.
+  const lectureId = new URLSearchParams(location.search).get("id");
+
+  const setText = (id, value) => {
+    // 서버의 문자열을 HTML이 아닌 일반 텍스트로 표시합니다.
+    byId(id).textContent = value ?? "";
+  };
+
+  async function loadDetail() {
+    content.hidden = true;
+    purchase.hidden = true;
+    retry.hidden = true;
+    retry.disabled = true;
+    status.textContent = "강의 정보를 불러오는 중입니다.";
+
+    // 잘못된 ID로는 서버에 요청하지 않습니다.
+    if (!lectureId || !/^[1-9]\d*$/.test(lectureId)) {
+      status.textContent =
+        "강의 주소가 올바르지 않습니다. 강의 목록에서 다시 선택해 주세요.";
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/backend/lectures/${encodeURIComponent(lectureId)}`,
+        {
+          headers: { Accept: "application/json" },
+        },
+      );
+
+      if (response.status === 404) {
+        status.textContent = "존재하지 않거나 공개되지 않은 강의입니다.";
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`서버 응답 오류: HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (
+        !data ||
+        String(data.lectureId) !== lectureId ||
+        typeof data.name !== "string" ||
+        typeof data.price !== "number"
+      ) {
+        throw new Error("강의 상세 응답 형식이 올바르지 않습니다.");
+      }
+
+      const teacher = data.instructor || {};
+
+      // 상단 배너
+      document.title = `${data.name} · 새싹에듀`;
+      setText(
+        "detail-category-level",
+        [data.category, data.level].filter(Boolean).join(" / "),
+      );
+      setText("detail-name", data.name);
+      setText("detail-summary", data.summary || data.headline || "");
+      setText("detail-level", data.level);
+      setText("detail-instructor-name", teacher.iname || "강사 정보 없음");
+
+      // 강의 소개: 응답 배열을 목록으로 표시합니다.
+      const intro = byId("detail-intro");
+      intro.replaceChildren();
+
+      const descriptions = Array.isArray(data.intro)
+        ? data.intro.filter(
+            (item) => typeof item === "string" && item.trim(),
+          )
+        : [];
+
+      if (descriptions.length === 0) {
+        descriptions.push(data.summary || "등록된 강의 소개가 없습니다.");
+      }
+
+      descriptions.forEach((description) => {
+        const item = document.createElement("li");
+        item.textContent = description;
+        intro.append(item);
+      });
+
+      // 강사 소개
+      const teacherName = teacher.iname || "강사 정보 없음";
+      setText("teacher-name", teacherName);
+      setText("teacher-avatar", teacher.iname ? teacher.iname.slice(0, 1) : "?");
+      setText("teacher-field", teacher.field);
+      setText("teacher-bio", teacher.bio || "등록된 강사 소개가 없습니다.");
+      setText("teacher-career", teacher.career);
+
+      setText("teacher-catchphrase", teacher.catchphrase);
+      byId("teacher-catchphrase").hidden = !teacher.catchphrase;
+
+      // 평점이 null이면 '0점'으로 오해하지 않도록 구분합니다.
+      const reviewCount = data.reviewCount ?? 0;
+      const ratingText = data.rating == null
+        ? "평점 없음"
+        : `평점 ${data.rating}`;
+
+      setText(
+        "detail-review-summary",
+        `${ratingText} · 수강평 ${reviewCount}개`,
+      );
+
+      // 구매 카드
+      setText("purchase-level", data.level ? `${data.level} 과정` : "");
+      setText("purchase-name", data.name);
+      setText(
+        "purchase-price",
+        `${data.price.toLocaleString("ko-KR")}원`,
+      );
+      setText("purchase-difficulty", data.level);
+      setText("purchase-category", data.category);
+
+      // 로그인 링크에 강의 ID를 전달합니다.
+      // 실제 로그인 후 복귀 처리는 로그인 연동 단계에서 구현합니다.
+      const loginLink = byId("detail-login-link");
+      const loginUrl = new URL(loginLink.href);
+      loginUrl.searchParams.set("course", lectureId);
+      loginLink.href = loginUrl.href;
+
+      // 현재는 인증 토큰을 보내지 않으므로 공개 상세 조회입니다.
+      // 구매 버튼은 안내 모달만 열며 실제 결제는 실행하지 않습니다.
+      if (data.viewerState === "guest" && data.action === "purchase") {
+        purchase.hidden = false;
+        setText(
+          "purchase-status",
+          "수강하려면 로그인이 필요합니다. 로그인·결제 연결은 준비 중입니다.",
+        );
+      } else if (data.viewerState === "enrolled") {
+        setText(
+          "purchase-status",
+          "수강 중인 강의입니다. 학습 화면 연결은 준비 중입니다.",
+        );
+      } else {
+        setText(
+          "purchase-status",
+          "구매·수강 기능 연결은 준비 중입니다.",
+        );
+      }
+
+      status.textContent = "";
+      content.hidden = false;
+    } catch (error) {
+      status.textContent =
+        `강의 정보를 불러오지 못했습니다. ${error.message}`;
+      retry.hidden = false;
+    } finally {
+      retry.disabled = false;
+    }
+  }
+
+  retry.addEventListener("click", loadDetail);
+  loadDetail();
 }
 const switchTab = (name) => {
   all("[data-tab]").forEach((b) => {
