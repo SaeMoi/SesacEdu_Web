@@ -2,10 +2,10 @@ import "./App.css";
 import { Route, Routes } from "react-router";
 
 // 메인·마이페이지·공통 요소
-import HomePage from "./pages/HomePage";
+import HomePage from "./pages/HomePage.jsx";
 import MyPage from "./pages/MyPage.jsx";
 import Header from "./components/navigation/Header.jsx";
-import Chatbot from "./components/chatbot/Chatbot";
+import Chatbot from "./components/chatbot/Chatbot.jsx";
 
 // 본인 확인·프로필 수정
 import VerifyPasswordPage from "./features/profile-edit/VerifyPasswordPage.jsx";
