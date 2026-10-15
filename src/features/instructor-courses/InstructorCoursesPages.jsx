@@ -334,12 +334,6 @@ export function LectureEditorPage() {
       setSaveError("강의 썸네일 파일을 선택해주세요.");
       return;
     }
-    if (isEditing && !values.thumbnail) {
-      setSaveError(
-        "수정 API 명세에서 썸네일은 필수입니다. 기존 썸네일을 유지하는 방법이 확인되지 않아 새 파일을 선택해주세요.",
-      );
-      return;
-    }
 
     submitLock.current = true;
     setIsSaving(true);
@@ -350,22 +344,13 @@ export function LectureEditorPage() {
         price: Number(values.price),
         lid: isEditing ? lid : null,
       });
-      if (values.status === "draft") {
-        navigate("/instructor/lectures", {
-          state: {
-            view: "list",
-            notice: result.message ?? "강의가 임시 저장되었습니다.",
-          },
-        });
-      } else {
-        navigate("/instructor/lectures", {
-          state: {
-            view: "files",
-            lid: result.lid,
-            lectureName: values.name,
-          },
-        });
-      }
+            navigate("/instructor/lectures", {
+        state: {
+          view: "files",
+          lid: isEditing ? lid : result.lid,
+          lectureName: values.name,
+        },
+      });
     } catch (error) {
       setSaveError(getInstructorCoursesErrorMessage(error));
     } finally {
