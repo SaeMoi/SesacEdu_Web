@@ -1,9 +1,33 @@
 /** 전체 페이지 공통 React 헤더. JSP에서는 mountHeader로 이 컴포넌트만 실행합니다. */
+import { useSyncExternalStore } from "react";
+import {
+  getSessionSnapshot,
+  subscribeSession,
+} from "../../auth/session.js";
+
+
+
 export default function Header({
-  member = null,
+  member: suppliedMember,
   authLoading = false,
   basePath = "",
 }) {
+  const sessionSnapshot = useSyncExternalStore(
+    subscribeSession,
+    getSessionSnapshot,
+    () => null,
+  );
+
+  const session = sessionSnapshot
+    ? JSON.parse(sessionSnapshot)
+    : null;
+
+  const member =
+    suppliedMember === undefined
+      ? session?.member ?? null
+      : suppliedMember;
+
+
   const base =
     basePath.startsWith("/") && !basePath.startsWith("//")
       ? basePath.replace(/\/+$/, "")

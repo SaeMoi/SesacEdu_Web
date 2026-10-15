@@ -1,4 +1,4 @@
-import { mountHeader } from "../ui/header.js";
+import { mountHeader, saveSession } from "../ui/header.js";
 // JSP 본문을 유지한 채 공통 헤더만 React로 연결합니다.
 const header = document.getElementById("shared-header");
 if (header) mountHeader(header);
@@ -6,7 +6,7 @@ const byId = (id) => document.getElementById(id);
 const all = (selector) => [...document.querySelectorAll(selector)];
 const on = (id, event, callback) => byId(id)?.addEventListener(event, callback);
 // 시연 화면에는 계정/게시글 저장 서버가 없습니다. 입력값을 전송하거나 보관하지 않습니다.
-["login-form", "signup-form", "question-form"].forEach((id) => {
+[ "signup-form", "question-form"].forEach((id) => {
   const form = byId(id);
   form?.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -19,11 +19,9 @@ const on = (id, event, callback) => byId(id)?.addEventListener(event, callback);
           : "입력 확인 완료. 질문은 서버에 저장되지 않습니다.";
   });
 });
-on("show-login-error", "click", () => {
-  byId("login-error").hidden = false;
-  byId("pw").classList.add("invalid");
-});
-// 인증 상태 변화는 UI 시연용입니다. 실제 인증은 백엔드가 검증해야 합니다.
+
+
+
 if (byId("signup-form")) {
   const form = byId("signup-form");
   let verified = false;
@@ -644,3 +642,97 @@ all("[data-format]").forEach((b) =>
 all("fieldset[data-enable]").forEach((f) => {
   f.disabled = false;
 });
+
+
+
+// 로그인 화면에서만 실제 로그인 요청을 처리합니다.
+const loginForm = document.getElementById("login-form");
+
+if (loginForm) {
+  let submitting = false;
+
+  loginForm.addEventListener("submit", async (event) => {
+    // 기본 폼 제출로 페이지가 새로고침되는 것을 막습니다.
+    event.preventDefault();
+
+    if (submitting || !loginForm.reportValidity()) return;
+
+    const emailInput = loginForm.querySelector('[name="email"]');
+    const passwordInput = loginForm.querySelector('[name="pw"]');
+    const submitButton = loginForm.querySelector('[type="submit"]');
+    const status = loginForm.querySelector(".form-status");
+    const errorBox = document.getElementById("login-error");
+
+    submitting = true;
+    submitButton.disabled = true;
+    errorBox.hidden = true;
+    passwordInput.classList.remove("invalid");
+    status.textContent = "로그인 확인 중입니다.";
+
+    try {
+      // 프론트 /backend/login → Vite → Java 서버 :8081/login
+      const response = await fetch("/backend/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: emailInput.value.trim(),
+          pw: passwordInput.value,
+        }),
+      });
+
+      // 서버 오류 등으로 JSON이 아닌 응답이 올 수도 있습니다.
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const messages = {
+          400: "이메일과 비밀번호 입력값을 확인해 주세요.",
+          401: "이메일 또는 비밀번호를 확인해 주세요.",
+          403: "이용이 제한된 계정입니다.",
+          429: "요청이 많습니다. 잠시 후 다시 시도해 주세요.",
+        };
+
+        throw new Error(
+          messages[response.status] ||
+            "로그인 서버에서 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
+        );
+      }
+
+      // 회원 정보는 본문, 인증 토큰은 응답 헤더에 있습니다.
+      const member = data?.result?.member;
+      const authorization = response.headers.get("Authorization");
+
+      if (
+        data?.code !== "LOGIN_SUCCESS" ||
+        !member ||
+        !authorization?.startsWith("Bearer ")
+      ) {
+        throw new Error("로그인 응답에 필요한 정보가 없습니다.");
+      }
+
+      // 이번 단계에서는 성공 여부만 표시합니다.
+      // 토큰 보관·공통 인증 상태·화면 이동은 다음 단계에서 연결합니다.
+      // 받은 JWT와 회원 정보를 보관합니다.
+      saveSession(authorization, member);
+
+      // 비밀번호는 저장하지 않고 입력란에서도 지웁니다.
+      passwordInput.value = "";
+      status.textContent = "로그인되었습니다. 메인으로 이동합니다.";
+
+      // 로그인 화면을 메인 화면으로 대체합니다.
+      window.location.replace((header?.dataset.basePath || "") + "/");
+    } catch (error) {
+      status.textContent = "";
+      errorBox.textContent =
+        error instanceof TypeError
+          ? "로그인 서버에 연결하지 못했습니다. 서버 실행 상태를 확인해 주세요."
+          : error.message;
+      errorBox.hidden = false;
+    } finally {
+      // 성공·실패와 관계없이 버튼을 다시 사용할 수 있게 합니다.
+      submitting = false;
+      submitButton.disabled = false;
+    }
+  });
+}

@@ -20,11 +20,7 @@
 <span>새싹에듀가 처음인가요?</span>
 <a href="${pageContext.request.contextPath}/signup">회원가입</a>
 </div>
-<p class="screen-note">구매 중 진입한 경우 로그인 후 선택한 강의의 구매 단계로 복귀합니다.</p>
-<details class="demo-controls">
-<summary>화면 상태 확인</summary>
-<button id="show-login-error" type="button">로그인 오류 화면</button>
-<p>실제 인증 서버 연결 전입니다. 입력값은 전송·저장하지 않습니다.</p>
-</details>
+
+
 </main>
 <%@ include file="../fragments/footer.jspf" %>

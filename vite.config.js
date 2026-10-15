@@ -7,6 +7,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+            // 로그인·토큰 재발급·로그아웃 요청은 로그인 서버로 전달합니다.
+      "^/backend/(login|logout)(/|\\?|$)": {
+        target: "http://127.0.0.1:8081",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/backend/, ""),
+      },
             // /backend/lectures 요청을 Java 서버의 /lectures로 전달합니다.
       "/backend": {
         target: "http://127.0.0.1:8080",
