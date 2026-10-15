@@ -1,3 +1,5 @@
+import { authFetch } from "../../auth/session.js";
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(
   /\/+$/,
   "",
@@ -44,7 +46,7 @@ export async function getMyQna({
   });
   let response;
   try {
-    response = await fetch(
+    response = await authFetch(
       `${API_BASE_URL}${MY_QNA_API_PATH}?${params.toString()}`,
       {
         method: "GET",

@@ -1,3 +1,5 @@
+import { authFetch, resolveApiAssetUrl } from "../../auth/session.js";
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(
   /\/+$/,
   "",
@@ -7,12 +9,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(
 export const MY_COURSES_API_PATH = "/mypage/lectures";
 
 export function getLearningAssetUrl(path) {
-  if (typeof path !== "string" || !path.trim()) return "";
-  try {
-    return new URL(path, API_BASE_URL || window.location.origin).href;
-  } catch {
-    return "";
-  }
+  return resolveApiAssetUrl(path);
 }
 
 export class MyLearningApiError extends Error {
@@ -45,7 +42,7 @@ export async function getMyCourses({
     page: String(page),
     size: String(size),
   });
-  const response = await fetch(
+  const response = await authFetch(
     `${API_BASE_URL}${MY_COURSES_API_PATH}?${params.toString()}`,
     {
       method: "GET",

@@ -4,34 +4,15 @@ import { BrowserRouter } from "react-router";
 import "./index.css";
 import App from "./App.jsx";
 
-// 기존 기능에 필요한 공유 상태입니다.
-import { ProfileEditSessionProvider } from "./features/profile-edit/ProfileEditSession.jsx";
-import { MyLearningAuthProvider } from "./features/my-learning/MyLearningAuthProvider.jsx";
-import { QnaAuthProvider } from "./features/my-qna/QnaAuthProvider.jsx";
-import { CartAuthProvider } from "./features/my-cart/CartAuthProvider.jsx";
-import { BenefitsAuthProvider } from "./features/my-benefits/BenefitsAuthProvider.jsx";
-
-// 결제 기능에 필요한 공유 상태입니다.
-import { PaymentAuthProvider } from "./features/my-payment/PaymentAuthProvider.jsx";
+// 로그인 세션의 토큰을 기존 기능별 Provider(프로필·학습·Q&A·장바구니·혜택·결제)에 전달합니다.
+import AuthProviders from "./auth/AuthProviders.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
-      {/* 기존 기능의 Provider를 모두 유지합니다. */}
-      <ProfileEditSessionProvider>
-        <MyLearningAuthProvider>
-          <QnaAuthProvider>
-            <CartAuthProvider>
-              <BenefitsAuthProvider>
-                {/* 결제 화면에 필요한 Provider를 추가합니다. */}
-                <PaymentAuthProvider>
-                  <App />
-                </PaymentAuthProvider>
-              </BenefitsAuthProvider>
-            </CartAuthProvider>
-          </QnaAuthProvider>
-        </MyLearningAuthProvider>
-      </ProfileEditSessionProvider>
+      <AuthProviders>
+        <App />
+      </AuthProviders>
     </BrowserRouter>
   </StrictMode>,
 );

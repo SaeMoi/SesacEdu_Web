@@ -2,6 +2,7 @@
 import { useSyncExternalStore } from "react";
 import {
   getSessionSnapshot,
+  logout,
   subscribeSession,
 } from "../../auth/session.js";
 
@@ -73,6 +74,16 @@ export default function Header({
               <a className="btn primary" href={href("/mypage/cart")}>
                 장바구니
               </a>
+              <button
+                className="ui-logout"
+                type="button"
+                onClick={async () => {
+                  await logout();
+                  window.location.replace(href("/"));
+                }}
+              >
+                로그아웃
+              </button>
             </>
           ) : (
             <>

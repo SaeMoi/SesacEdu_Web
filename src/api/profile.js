@@ -1,3 +1,5 @@
+import { authFetch } from "../auth/session.js";
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
 
 export class ProfileApiError extends Error {
@@ -12,7 +14,7 @@ export async function getProfile({ accessToken, signal } = {}) {
   const headers = accessToken
     ? { Authorization: `Bearer ${accessToken}` }
     : undefined;
-  const response = await fetch(`${API_BASE_URL}/mypage`, {
+  const response = await authFetch(`${API_BASE_URL}/mypage`, {
     method: "GET",
     headers,
     signal,

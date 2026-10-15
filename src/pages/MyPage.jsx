@@ -3,6 +3,8 @@ import { MyPageSidebar, MyPageTabs } from "../components/navigation/MyPageNaviga
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { getProfile, ProfileApiError } from "../api/profile.js";
+import { useAccessToken } from "../auth/useAccessToken.js";
+import { resolveApiAssetUrl } from "../auth/session.js";
 import SiteHeader from "../components/SiteHeader.jsx";
 import "./MyPage.css";
 const profileFields = [
@@ -58,6 +60,7 @@ function getErrorMessage(error) {
 }
 
 function ProfileContent() {
+  const accessToken = useAccessToken();
   const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState("loading");
   const [errorMessage, setErrorMessage] = useState("");
@@ -65,7 +68,7 @@ function ProfileContent() {
 
   const loadProfile = async (signal) => {
     try {
-      const result = await getProfile({ signal });
+      const result = await getProfile({ accessToken, signal });
       setProfile(result);
       setStatus("success");
     } catch (error) {
@@ -76,8 +79,9 @@ function ProfileContent() {
   };
 
   useEffect(() => {
+    if (!accessToken) return undefined;
     const controller = new AbortController();
-    getProfile({ signal: controller.signal })
+    getProfile({ accessToken, signal: controller.signal })
       .then((result) => {
         setProfile(result);
         setStatus("success");
@@ -88,7 +92,7 @@ function ProfileContent() {
         setStatus("error");
       });
     return () => controller.abort();
-  }, []);
+  }, [accessToken]);
 
   const name = displayValue(profile?.name);
   const role =
@@ -98,7 +102,7 @@ function ProfileContent() {
   const imageUrl =
     typeof profile?.profileImageUrl === "string" &&
     profile.profileImageUrl.trim()
-      ? profile.profileImageUrl
+      ? resolveApiAssetUrl(profile.profileImageUrl)
       : "";
 
   return (

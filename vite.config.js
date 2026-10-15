@@ -7,17 +7,16 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-            // 로그인·토큰 재발급·로그아웃 요청은 로그인 서버로 전달합니다.
-      "^/backend/(login|logout)(/|\\?|$)": {
-        target: "http://127.0.0.1:8081",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/backend/, ""),
-      },
-            // /backend/lectures 요청을 Java 서버의 /lectures로 전달합니다.
+      // /backend/* 요청을 백엔드(8080)로 전달합니다. 예: /backend/login → :8080/login
+      // 로그인·재발급·로그아웃·마이페이지·결제 API가 모두 같은 서버입니다.
+      // 같은 출처 요청이므로 브라우저 Origin 헤더를 지워 백엔드 CORS 검사를 거치지 않게 합니다.
       "/backend": {
         target: "http://127.0.0.1:8080",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/backend/, ""),
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyReq) => proxyReq.removeHeader("origin"));
+        },
       },
       "^/(login|signup|courses|community|chatbot|assignments)(/|\\?|$)":
         "http://127.0.0.1:8088",

@@ -1,3 +1,5 @@
+import { authFetch } from "../../auth/session.js";
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(
   /\/+$/,
   "",
@@ -34,7 +36,7 @@ async function requestCart(path, { accessToken, ...options } = {}) {
 
   let response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    response = await authFetch(`${API_BASE_URL}${path}`, {
       ...options,
       headers,
     });

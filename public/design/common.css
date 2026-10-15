@@ -271,6 +271,14 @@ img {
   min-height: 38px;
   padding: 9px 18px;
 }
+.ui-actions .ui-logout {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
 .ui-header-inner {
   column-gap: 60px;
 }

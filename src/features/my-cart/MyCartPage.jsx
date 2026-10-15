@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router";
+import { navigateToPayment } from "../my-payment/paymentNavigation.js";
 import { useCartAuth } from "./cartAuthContext.js";
 import {
   deleteCartCourses,
@@ -18,6 +20,7 @@ function formatWon(value) {
 
 function MyCartPage() {
   const { accessToken } = useCartAuth();
+  const navigate = useNavigate();
   const [cart, setCart] = useState(null);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [pageNumber, setPageNumber] = useState(0);
@@ -164,7 +167,10 @@ function MyCartPage() {
 
   function handleCheckout() {
     if (!selectedPurchasableIds.length) return;
-    setIsCheckoutNotice(true);
+    // 선택한 강의 ID를 결제 화면(/mypage/buy)의 Router state로 넘깁니다.
+    if (!navigateToPayment(navigate, selectedPurchasableIds)) {
+      setIsCheckoutNotice(true);
+    }
   }
 
   return (
@@ -179,7 +185,7 @@ function MyCartPage() {
 
       {isCheckoutNotice && (
         <p className="cart-notice" role="status">
-          결제 페이지 연동이 필요합니다. 결제 요청은 전송되지 않았습니다.
+          결제할 수 있는 강의를 선택해 주세요.
         </p>
       )}
 

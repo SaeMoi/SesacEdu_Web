@@ -386,20 +386,50 @@ export function PaymentPage() {
     if (previewError) return previewError;
     if (paymentMethod === "CARD") {
       const cardNumber = card.number.replace(/\D/g, "");
-      if (!/^\d{12,19}$/.test(cardNumber)) {
-        return "카드 번호를 확인해주세요.";
+      if (!/^\d{14,16}$/.test(cardNumber)) {
+        return "카드 번호는 숫자 14~16자리로 입력해주세요.";
       }
       if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(card.expiry)) {
         return "유효기간을 MM/YY 형식으로 입력해주세요.";
       }
-      if (!/^\d{3,4}$/.test(card.cvc)) return "CVC를 확인해주세요.";
+      if (!/^\d{3}$/.test(card.cvc)) return "CVC는 숫자 3자리로 입력해주세요.";
       if (!/^(0|[2-9]|1[0-2])$/.test(card.installment)) {
         return "할부 개월을 확인해주세요.";
       }
     } else {
-      return "계좌이체 요청 본문 필드 명세가 확정되지 않아 API 요청을 보류합니다.";
+      if (!/^\d{3}$/.test(transfer.bankCode.trim())) {
+        return "은행 코드는 숫자 3자리로 입력해주세요.";
+      }
+      if (!/^\d{10,14}$/.test(transfer.accountNumber)) {
+        return "계좌번호는 숫자 10~14자리로 입력해주세요.";
+      }
+      const holder = transfer.accountHolder.trim();
+      if (!holder || holder.length > 20) {
+        return "예금주를 1~20자로 입력해주세요.";
+      }
     }
     return "";
+  }
+
+  // POST /payment 본문의 결제 수단 정보. 주문의 payMethod와 같은 종류만 보냅니다.
+  function paymentDetails() {
+    if (paymentMethod === "CARD") {
+      return {
+        card: {
+          number: card.number.replace(/\D/g, ""),
+          expiry: card.expiry,
+          cvc: card.cvc,
+          installment: Number(card.installment),
+        },
+      };
+    }
+    return {
+      transfer: {
+        bankCode: transfer.bankCode.trim(),
+        accountNumber: transfer.accountNumber,
+        holderName: transfer.accountHolder.trim(),
+      },
+    };
   }
 
   function paymentCompleteState(orderResult, paymentResult = null) {
@@ -437,12 +467,7 @@ export function PaymentPage() {
     try {
       const body = await submitPayment(accessToken, {
         orderId,
-        card: {
-          number: card.number.replace(/\D/g, ""),
-          expiry: card.expiry,
-          cvc: card.cvc,
-          installment: Number(card.installment),
-        },
+        ...paymentDetails(),
       });
       if (body.code === "PAYMENT_COMPLETED") {
         navigate(
@@ -526,12 +551,7 @@ export function PaymentPage() {
       setRetryPayment({ orderId: orderResult.orderId, orderResult });
       const paymentBody = await submitPayment(accessToken, {
         orderId: orderResult.orderId,
-        card: {
-          number: card.number.replace(/\D/g, ""),
-          expiry: card.expiry,
-          cvc: card.cvc,
-          installment: Number(card.installment),
-        },
+        ...paymentDetails(),
       });
       if (paymentBody.code === "PAYMENT_COMPLETED") {
         navigate(
@@ -780,7 +800,7 @@ export function PaymentPage() {
                   <input
                     autoComplete="cc-csc"
                     inputMode="numeric"
-                    maxLength={4}
+                    maxLength={3}
                     onChange={(event) =>
                       setCard((current) => ({
                         ...current,
@@ -823,7 +843,9 @@ export function PaymentPage() {
                         bankCode: event.target.value,
                       }))
                     }
-                    placeholder="은행 코드"
+                    inputMode="numeric"
+                    maxLength={3}
+                    placeholder="은행 코드 (숫자 3자리)"
                     value={transfer.bankCode}
                   />
                 </label>
@@ -856,10 +878,6 @@ export function PaymentPage() {
                     value={transfer.accountHolder}
                   />
                 </label>
-                <p className="payment-field-error payment-transfer-note">
-                  계좌이체 요청 필드 명세가 확정되기 전까지 결제 API 호출은
-                  비활성화됩니다.
-                </p>
               </div>
             )}
           </fieldset>
@@ -902,7 +920,7 @@ export function PaymentPage() {
           </div>
           <button
             className="payment-submit-button"
-            disabled={!orderReady || paymentMethod !== "CARD"}
+            disabled={!orderReady}
             onClick={handlePay}
             type="button"
           >
@@ -912,11 +930,6 @@ export function PaymentPage() {
                 ? `${formatWon(displayedFinal)} 결제 다시 시도`
                 : `${formatWon(displayedFinal)} 결제`}
           </button>
-          {paymentMethod === "TRANSFER" && (
-            <p className="payment-summary-warning">
-              계좌이체 API 요청 필드 확정 후 사용할 수 있습니다.
-            </p>
-          )}
         </aside>
       </div>
 

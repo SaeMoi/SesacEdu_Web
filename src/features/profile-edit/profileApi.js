@@ -1,3 +1,5 @@
+import { authFetch, resolveApiAssetUrl } from "../../auth/session.js";
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(
   /\/+$/,
   "",
@@ -25,7 +27,7 @@ async function request(path, { accessToken, reauthToken, ...options } = {}) {
   headers.set("Authorization", `Bearer ${accessToken}`);
   if (reauthToken) headers.set("X-Reauth-Token", reauthToken);
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await authFetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers,
   });
@@ -166,10 +168,5 @@ export async function updatePassword(
 }
 
 export function getProfileImageSrc(imageUrl) {
-  if (typeof imageUrl !== "string" || !imageUrl.trim()) return "";
-  try {
-    return new URL(imageUrl, API_BASE_URL || window.location.origin).href;
-  } catch {
-    return "";
-  }
+  return resolveApiAssetUrl(imageUrl);
 }

@@ -1,7 +1,12 @@
 import { createRoot } from "react-dom/client";
 import Header from "../components/navigation/Header";
 
+import { startSessionKeeper } from "../auth/session.js";
+
 export { saveSession } from "../auth/session.js";
+
+// JSP 화면에서도 토큰 만료 직후 자동 재발급을 실행합니다.
+startSessionKeeper();
 // 같은 HTML 요소에 root를 중복 생성하지 않도록 보관합니다.
 const mountedHeaders = new WeakMap();
 

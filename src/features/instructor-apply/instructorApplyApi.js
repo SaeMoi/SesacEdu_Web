@@ -1,3 +1,5 @@
+import { authFetch } from "../../auth/session.js";
+
 export class InstructorApplyApiError extends Error {
   constructor(code, message, status = 0) {
     super(message);
@@ -64,7 +66,7 @@ export async function getInstructorApplicationStatus({
   requireConfiguration(endpoint, accessToken);
   let response;
   try {
-    response = await fetch(endpoint, {
+    response = await authFetch(endpoint, {
       method: "GET",
       headers: { Authorization: `Bearer ${accessToken}` },
       signal,
@@ -106,7 +108,7 @@ export async function submitInstructorApplication({
 
   let response;
   try {
-    response = await fetch(endpoint, {
+    response = await authFetch(endpoint, {
       method: "POST",
       headers: { Authorization: `Bearer ${accessToken}` },
       body: formData,
