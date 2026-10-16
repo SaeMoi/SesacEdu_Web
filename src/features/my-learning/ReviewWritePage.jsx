@@ -2,10 +2,8 @@ import { useContext, useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router";
 import { MyLearningAuthContext } from "./myLearningAuthContext.js";
 import {
-  getCourseById,
   getLearningErrorMessage,
-  getMyCourses,
-  ReviewApiNotConfiguredError,
+  getReviewCourse,
   submitReview,
 } from "./myLearningApi.js";
 import {
@@ -42,23 +40,13 @@ function ReviewWritePage() {
     if (course && String(course.courseId) === String(courseId)) return undefined;
     const controller = new AbortController();
 
-    getMyCourses({
+    getReviewCourse({
+      courseId,
       accessToken,
-      status: "ALL",
-      sort: "RECENT_ENROLL",
-      page: 0,
-      size: 50,
       signal: controller.signal,
     })
-      .then((result) => {
-        const found = getCourseById(result, courseId);
-        if (!found) {
-          setCourseError(
-            "현재 목록에서 리뷰 대상 강좌를 찾을 수 없습니다. 강좌 조회 API 연동이 필요합니다.",
-          );
-          setCourseState("error");
-          return;
-        }
+      .then((found) => {
+        if (controller.signal.aborted) return;
         setCourse(found);
         setCourseState("success");
       })
@@ -96,15 +84,31 @@ function ReviewWritePage() {
     setFormError("");
     setIsSubmitting(true);
     try {
-      await submitReview();
+      await submitReview({
+        courseId,
+        accessToken,
+        rating,
+        content,
+      });
+
+      setCourse((previous) => ({
+        ...previous,
+        reviewWritten: true,
+      }));
+      setNotice("수강평이 등록되었습니다. 강의 상세의 수강평 탭에서 확인할 수 있습니다.");
     } catch (error) {
-      if (error instanceof ReviewApiNotConfiguredError) {
-        setNotice(
-          "리뷰 등록 API의 최종 경로와 요청·응답 명세 확인 후 연결할 수 있습니다. 아직 리뷰는 저장되지 않았습니다.",
-        );
-      } else {
-        setNotice("리뷰 등록을 처리하지 못했습니다.");
+      if (error.status === 409) {
+        setCourse((previous) => ({
+          ...previous,
+          reviewWritten: true,
+        }));
       }
+
+      setNotice(
+        error instanceof TypeError
+          ? "등록 결과를 확인하지 못했습니다. 강의 상세에서 등록 여부를 확인해 주세요."
+          : error.message || "리뷰 등록을 처리하지 못했습니다.",
+      );
     } finally {
       setIsSubmitting(false);
     }

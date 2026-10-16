@@ -176,14 +176,45 @@ export function PaymentPage() {
   const { accessToken } = usePaymentAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const passedCourseIds = location.state?.courseIds;
-  const courseIds = useMemo(
-    () =>
-      Array.isArray(passedCourseIds)
-        ? [...new Set(passedCourseIds.filter((id) => Number.isInteger(id) && id > 0))]
-        : [],
-    [passedCourseIds],
-  );
+const passedCourseIds = location.state?.courseIds;
+
+const courseIds = useMemo(() => {
+  // React 내부에서 이동한 경우 기존 방식도 유지합니다.
+  if (Array.isArray(passedCourseIds)) {
+    return [
+      ...new Set(
+        passedCourseIds.filter(
+          (id) => Number.isSafeInteger(id) && id > 0,
+        ),
+      ),
+    ];
+  }
+
+  // JSP에서 이동한 경우 주소의 courseIds를 읽습니다.
+  const raw = new URLSearchParams(location.search).get("courseIds");
+
+  if (!raw) return [];
+
+  const parts = raw.split(",");
+
+  if (
+    parts.length > 50 ||
+    parts.some((part) => !/^[1-9]\d*$/.test(part))
+  ) {
+    return [];
+  }
+
+  const ids = parts.map(Number);
+
+  if (ids.some((id) => !Number.isSafeInteger(id))) {
+    return [];
+  }
+
+  return [...new Set(ids)];
+}, [passedCourseIds, location.search]);
+
+
+
   const courseKey = courseIds.join(",");
   const [initialRecord, setInitialRecord] = useState(null);
   const [retryLoad, setRetryLoad] = useState(0);
@@ -620,7 +651,7 @@ export function PaymentPage() {
         description="할인과 포인트를 적용하고 결제 정보를 확인하세요."
         title="결제"
       />
-      {!location.state?.courseIds && (
+      {courseIds.length === 0 && (
         <div className="payment-notice" role="alert">
           {loadError}
           <button onClick={() => navigate(-1)} type="button">
@@ -628,7 +659,7 @@ export function PaymentPage() {
           </button>
         </div>
       )}
-      {location.state?.courseIds && loadState === "error" && (
+      {courseIds.length > 0 && loadState === "error" && (
         <div className="payment-notice" role="alert">
           <span>{loadError}</span>
           <button

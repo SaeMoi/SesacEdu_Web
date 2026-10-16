@@ -95,8 +95,99 @@ export class ReviewApiNotConfiguredError extends Error {
   }
 }
 
-export async function submitReview() {
-  throw new ReviewApiNotConfiguredError();
+// REVIEW_API_CONNECTED
+async function requestReviewApi(path, accessToken, options = {}) {
+  if (!accessToken) {
+    throw new MyLearningApiError(
+      "UNAUTHORIZED",
+      "로그인 후 이용해 주세요.",
+      401,
+    );
+  }
+
+  const response = await authFetch(
+    `${API_BASE_URL || "/backend"}${path}`,
+    {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+        ...options.headers,
+      },
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new MyLearningApiError(
+      body?.code || `HTTP_${response.status}`,
+      body?.message || `요청 실패: HTTP ${response.status}`,
+      response.status,
+    );
+  }
+
+  return response;
+}
+
+// 목록 첫 페이지에 없는 강의도 강의 번호로 직접 확인합니다.
+export async function getReviewCourse({ courseId, accessToken, signal }) {
+  if (!/^[1-9]\d*$/.test(String(courseId))) {
+    throw new Error("강의 번호가 올바르지 않습니다.");
+  }
+
+  const response = await requestReviewApi(
+    `/lectures/${courseId}`,
+    accessToken,
+    { signal },
+  );
+  const data = await response.json();
+
+  if (
+    String(data.lectureId) !== String(courseId) ||
+    typeof data.name !== "string"
+  ) {
+    throw new Error("강의 정보 응답 형식이 올바르지 않습니다.");
+  }
+
+  if (data.viewerState !== "enrolled") {
+    throw new Error("수강 중인 강의에만 수강평을 작성할 수 있습니다.");
+  }
+
+  return {
+    courseId: data.lectureId,
+    title: data.name,
+    category: { name: data.category || "" },
+  };
+}
+
+export async function submitReview({
+  courseId,
+  accessToken,
+  rating,
+  content,
+}) {
+  if (!/^[1-9]\d*$/.test(String(courseId))) {
+    throw new Error("강의 번호가 올바르지 않습니다.");
+  }
+
+  const response = await requestReviewApi(
+    `/lectures/${courseId}/reviews`,
+    accessToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        star: rating,
+        review: content.trim(),
+      }),
+    },
+  );
+
+  // 이 API는 등록 성공 시 본문 없이 201을 반환합니다.
+  if (response.status !== 201) {
+    throw new Error("리뷰 등록 결과를 확인하지 못했습니다.");
+  }
 }
 
 export function getCourseById(result, courseId) {
