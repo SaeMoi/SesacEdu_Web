@@ -450,11 +450,6 @@ export function LectureEditorPage() {
             <div className="instructor-course-form-field">
               <label htmlFor="lecture-thumbnail">
                 썸네일
-                {isEditing && values.thumbnail === null && (
-                  <span className="instructor-required-note">
-                    수정 시 새 파일 필요
-                  </span>
-                )}
               </label>
               <div className="instructor-thumbnail-control">
                 <input
@@ -525,8 +520,13 @@ function formatFileSize(size) {
 export function LectureFilesPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const lid = location.state?.lid;
-  const [lectureName, setLectureName] = useState(location.state?.lectureName ?? "");
+  const [lid, setLid] = useState(location.state?.lid ?? null);
+  const [lectureName, setLectureName] = useState(
+  location.state?.lectureName ?? ""
+  );
+  const [lectures, setLectures] = useState([]);
+  const [lecturesLoading, setLecturesLoading] = useState(true);
+  const [lecturesError, setLecturesError] = useState("");
   const [files, setFiles] = useState({ video: null, material: null });
   const [notice, setNotice] = useState("");
   const [retry, setRetry] = useState(0);
@@ -535,6 +535,40 @@ export function LectureFilesPage() {
   const [uploadSuccess, setUploadSuccess] = useState("");
   const uploadLock = useRef(false);
   const { accessToken } = useInstructorCoursesAuth();
+
+useEffect(() => {
+  const controller = new AbortController();
+
+  async function loadLectures() {
+    setLecturesLoading(true);
+    setLecturesError("");
+
+    try {
+      const result = await getInstructorLectures(accessToken, {
+        page: 1,
+        signal: controller.signal,
+      });
+
+      if (!controller.signal.aborted) {
+        setLectures(
+          Array.isArray(result?.content) ? result.content : []
+        );
+      }
+    } catch (error) {
+      if (error.name !== "AbortError" && !controller.signal.aborted) {
+        setLecturesError(getInstructorCoursesErrorMessage(error));
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        setLecturesLoading(false);
+      }
+    }
+  }
+
+  loadLectures();
+
+  return () => controller.abort();
+}, [accessToken]);
 
   useEffect(() => {
     if (lectureName || !lid) return undefined;
@@ -604,8 +638,8 @@ export function LectureFilesPage() {
     setUploadError("");
     setUploadSuccess("");
     try {
-      await uploadLectureFiles(accessToken, lid, files);
-      setUploadSuccess("강의 자료를 업로드했습니다.");
+    await uploadLectureFiles(accessToken, lid, files);
+    setUploadSuccess("강의 자료를 업로드했습니다.");
       setFiles({ video: null, material: null });
     } catch (error) {
       setUploadError(getInstructorCoursesErrorMessage(error));
@@ -632,14 +666,45 @@ export function LectureFilesPage() {
         <span>강의 관리&nbsp; / &nbsp;자료 업로드</span>
       </div>
       <div className="instructor-course-form-field instructor-lesson-select">
-        <label htmlFor="lecture-lesson">수업 선택 *</label>
-        <select disabled id="lecture-lesson" value="">
-          <option value="">
-            수업 목록 API 및 데이터 명세 확인 필요
-          </option>
-        </select>
-        <p>현재 제공된 API에는 수업 목록 조회 및 수업 식별 정보가 없습니다.</p>
-      </div>
+  <label htmlFor="lecture-lesson">강의 선택 *</label>
+
+  <select
+    id="lecture-lesson"
+    value={lid == null ? "" : String(lid)}
+    disabled={lecturesLoading || Boolean(lecturesError) || isUploading}
+    onChange={(event) => {
+      const selectedId = event.target.value;
+      const selectedLecture = lectures.find(
+        (lecture) => String(lecture.lid) === selectedId
+      );
+
+      setLid(selectedId ? Number(selectedId) : null);
+      setLectureName(selectedLecture?.name ?? "");
+      setFiles({ video: null, material: null });
+      setUploadError("");
+      setUploadSuccess("");
+      setNotice("");
+    }}
+  >
+    <option value="">
+      {lecturesLoading
+        ? "강의 목록을 불러오는 중입니다..."
+        : lecturesError
+          ? "강의 목록 조회 실패"
+          : "강의를 선택해주세요"}
+    </option>
+
+    {lectures.map((lecture) => (
+      <option key={lecture.lid} value={String(lecture.lid)}>
+        {lecture.name || `강의 ${lecture.lid}`}
+      </option>
+    ))}
+  </select>
+
+  {lecturesError && (
+    <p role="alert">{lecturesError}</p>
+  )}
+</div>
       <section
         className="instructor-file-drop"
         onDragOver={(event) => event.preventDefault()}
@@ -709,7 +774,7 @@ export function LectureFilesPage() {
           <p className="instructor-files-empty">아직 선택한 파일이 없습니다.</p>
         )}
         <p className="instructor-upload-note">
-          수업 선택 API가 확정되면 업로드한 자료를 수업에 연결할 수 있습니다.
+          선택한 강의에 영상(MP4) 또는 학습 자료(PDF, ZIP)를 업로드할 수 있습니다.
         </p>
       </section>
       {notice && (
