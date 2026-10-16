@@ -15,7 +15,7 @@ if (assignmentArea) {
   }
 
   const card = document.createElement("article");
-  card.className = "assignment-card";
+  card.className = "assignment-card assignment-guide";
 
   const title = document.createElement("h2");
   title.textContent = "과제 안내";
@@ -27,15 +27,25 @@ if (assignmentArea) {
   content.style.whiteSpace = "pre-wrap";
 
   const fileType = document.createElement("p");
-  const submissionState = document.createElement("p");
+  const submissionState = document.createElement("div");
+  submissionState.className = "assignment-submission-state";
+  const submissionCard = document.createElement("article");
+  submissionCard.className = "assignment-card assignment-live-submission";
+  submissionCard.hidden = true;
+  const feedbackCard = document.createElement("article");
+  feedbackCard.className = "assignment-card assignment-feedback";
+  feedbackCard.hidden = true;
 
   card.append(
     title,
     status,
     content,
-    fileType,
     submissionState,
   );
+  const assignmentBottom = document.createElement("div");
+  assignmentBottom.className = "assignment-bottom";
+  assignmentBottom.append(fileType, submissionState);
+  card.append(assignmentBottom);
   assignmentArea.append(card);
   const submitForm = document.createElement("form");
   submitForm.className = "assignment-card";
@@ -43,7 +53,7 @@ if (assignmentArea) {
 
   const label = document.createElement("label");
   label.htmlFor = "assignment-api-note";
-  label.textContent = "과제 내용";
+  label.textContent = "제출 메모";
 
   const noteInput = document.createElement("textarea");
   noteInput.id = "assignment-api-note";
@@ -61,7 +71,10 @@ if (assignmentArea) {
   submitMessage.setAttribute("role", "status");
 
   submitForm.append(label, noteInput, submitButton, submitMessage);
-  assignmentArea.append(submitForm);
+  assignmentArea.append(submitForm, submissionCard, feedbackCard);
+  const submitHeading = document.createElement("h2");
+  submitHeading.textContent = "과제 제출";
+  submitForm.prepend(submitHeading);
 
   let submitting = false;
     let currentSubmission = null;
@@ -82,14 +95,17 @@ if (assignmentArea) {
   deleteButton.textContent = "삭제";
 
   actions.append(editButton, deleteButton);
-  card.append(actions);
+  submissionCard.append(actions);
 
   const cancelEdit = document.createElement("button");
   cancelEdit.type = "button";
   cancelEdit.className = "btn secondary";
   cancelEdit.textContent = "수정 취소";
   cancelEdit.hidden = true;
-  submitForm.insertBefore(cancelEdit, submitMessage);
+  const submitActions = document.createElement("div");
+  submitActions.className = "form-actions assignment-submit-actions";
+  submitActions.append(cancelEdit, submitButton);
+  submitForm.insertBefore(submitActions, submitMessage);
 
   editButton.addEventListener("click", () => {
     if (submitting || !currentSubmission) return;
@@ -266,6 +282,8 @@ if (assignmentArea) {
     content.textContent = "";
     fileType.textContent = "";
     submissionState.textContent = "";
+    submissionCard.hidden = true;
+    feedbackCard.hidden = true;
 
 
     if (!session?.authorization) {
@@ -347,43 +365,58 @@ if (assignmentArea) {
         );
 
 
-        const lines = [
-          "내 제출 상태: 제출 완료",
-          "",
-          "[제출 내용]",
-          submission.note || "작성된 내용이 없습니다.",
-          "",
-          "[채점 상태]",
-          isScored
-            ? `채점 완료 · ${submission.score}점`
-            : "아직 채점되지 않았습니다.",
-          "",
-          "[강사 피드백]",
-          submission.feedback?.trim() ||
-            "등록된 피드백이 없습니다.",
-        ];
-
-        if (submission.submittedAt) {
-          lines.push(
-            "",
-            `제출 일시: ${submission.submittedAt.replace("T", " ")}`,
+        const make = (tag, text, className = "") => {
+          const element = document.createElement(tag);
+          element.textContent = text;
+          element.className = className;
+          return element;
+        };
+        const headingRow = make("div", "", "section-heading");
+        headingRow.append(
+          make("h2", "내가 제출한 과제"),
+          make("span", "제출 완료", "assignment-badge"),
+        );
+        const submittedAt = make("p", submission.submittedAt
+          ? `제출 일시: ${submission.submittedAt.replace("T", " ")}` : "");
+        submissionCard.replaceChildren(
+          headingRow, submittedAt, make("h3", data.title),
+          make("p", submission.note || "작성된 내용이 없습니다.", "assignment-memo"),
+          actions,
+        );
+        if (submission.filename) {
+          const attachment = make("div", "", "assignment-download");
+          attachment.append(make("strong", submission.filename));
+          actions.before(attachment);
+        }
+        const feedbackHeading = make("div", "", "section-heading");
+        feedbackHeading.append(
+          make("h2", "강사 피드백"),
+          make("span", isScored ? "채점 완료" : "피드백 대기", "assignment-badge"),
+        );
+        const feedback = make("div", "", submission.feedback?.trim()
+          ? "assignment-memo" : "feedback-wait");
+        if (submission.feedback?.trim()) {
+          feedback.append(make("p", submission.feedback));
+        } else {
+          feedback.append(
+            make("h3", "강사님의 피드백을 기다리고 있어요."),
+            make("p", "피드백이 등록되면 이곳에서 확인할 수 있어요."),
           );
         }
-
-        if (submission.feedbackAt) {
-          lines.push(
-            `피드백 일시: ${submission.feedbackAt.replace("T", " ")}`,
-          );
-        }
-
-        submissionState.textContent = lines.join("\n");
+        if (isScored) feedback.append(make("p", `점수: ${submission.score}점`));
+        if (submission.feedbackAt) feedback.append(make("p",
+          `피드백 일시: ${submission.feedbackAt.replace("T", " ")}`));
+        feedbackCard.replaceChildren(feedbackHeading, feedback);
+        submissionCard.hidden = false;
+        feedbackCard.hidden = false;
+        submissionState.append(make("span", "제출 완료", "assignment-badge"));
         submitForm.hidden = true;
       } else {
         submissionState.textContent = "내 제출 상태: 미제출";
         submitForm.hidden = false;
       }
 
-      status.textContent = "과제 안내를 불러왔습니다.";
+      status.textContent = "";
 
     } catch (error) {
       status.textContent =

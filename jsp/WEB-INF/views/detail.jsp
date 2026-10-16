@@ -41,9 +41,14 @@
       <div class="hero-preview">
         <!-- 현재 상세 응답에는 이미지가 없어 공통 장식 이미지를 사용합니다. -->
         <img
+          id="detail-picture"
+          data-fallback="${pageContext.request.contextPath}/design/course-hero.png"
           src="${pageContext.request.contextPath}/design/course-hero.png"
           alt=""
         >
+        <button type="button" data-preview-video aria-controls="video-preview">
+          <span>강의 미리보기</span><span aria-hidden="true">▷</span>
+        </button>
       </div>
     </section>
 
@@ -80,27 +85,20 @@
           <!-- intro 배열을 JavaScript가 li 요소로 만들어 추가합니다. -->
           <ul id="detail-intro" class="learning-list"></ul>
 
-          <nav class="small-links" aria-label="학습 화면 이동">
-            <%--
-              로그인 연동 전 UI 확인을 위한 임시 링크입니다.
-              현재 강의에 대한 실제 수강 기능과는 연결되지 않았습니다.
-              인증 연동 시 정식 수강 경로로 교체해야 합니다.
-              실제 영상·자료 접근 권한은 백엔드에서 검증해야 합니다.
-            --%>
-            <a
-              <%-- 상세 API를 불러온 후 현재 강의 ID에 맞는 주소를 연결합니다. --%>
-               <a
-               data-preview-classroom-link
-               data-context-path="${pageContext.request.contextPath}"
-               hidden
-               >
-               강의상세 →
-               </a>
-          </nav>
+          <div id="video-preview" class="video-preview" hidden>
+            <video id="detail-preview-video" controls playsinline preload="none"
+              aria-label="강의 미리보기" hidden></video>
+            <div id="preview-placeholder">
+              <button id="play-detail-preview" type="button" class="play-button"
+                aria-label="미리보기 영상 재생">▷</button>
+              <h3 id="preview-title">강의 소개</h3>
+              <p id="preview-message" role="status"></p>
+            </div>
+          </div>
         </section>
 
         <section data-panel="teacher" hidden>
-          <h2>강사 소개</h2>
+          <h2 id="teacher-heading">강사 소개</h2>
 
           <div class="teacher-profile">
             <span id="teacher-avatar" class="avatar"></span>
@@ -113,11 +111,17 @@
           </div>
 
           <!-- 값이 없는 소개 문구는 JavaScript에서 숨긴 상태를 유지합니다. -->
-          <p id="teacher-catchphrase" class="body-copy" hidden></p>
+
 
           <!-- instructor.bio / instructor.career -->
           <p id="teacher-bio" class="body-copy"></p>
           <p id="teacher-career" class="body-copy"></p>
+          <section class="teacher-other-section">
+            <h2>강사의 다른 강의</h2>
+            <p id="teacher-other-description" class="body-copy"></p>
+            <div id="teacher-other-courses" class="course-grid"></div>
+            <p id="teacher-other-empty" class="screen-note" hidden>등록된 다른 강의가 없습니다.</p>
+          </section>
         </section>
 
         <section data-panel="reviews" hidden>

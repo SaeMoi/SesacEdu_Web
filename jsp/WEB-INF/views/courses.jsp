@@ -32,7 +32,7 @@
 <option value="중급">중급</option>
 </select>
 <select id="sort-filter" aria-label="정렬">
-<option value="default">기본순</option>
+<option value="default">최신순</option>
 <option value="low">낮은 가격순</option>
 <option value="high">높은 가격순</option>
 </select>

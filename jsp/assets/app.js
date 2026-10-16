@@ -8,6 +8,27 @@ import {
 // JSP 본문을 유지한 채 공통 헤더만 React로 연결합니다.
 const header = document.getElementById("shared-header");
 if (header) mountHeader(header);
+// 설계안에 사용한 방패·문서·책 아이콘. 서버 문자열을 HTML로 넣지 않습니다.
+function courseLineIcon(index) {
+  const paths = [
+    "M24 3 43 11v12c0 11-19 21-19 21S5 34 5 23V11Z M14 23l7 7 13-15",
+    "M11 3h17l11 11v30H11Z M28 3v12h11 M16 24h16 M16 33h16",
+    "M24 9c-6-6-12-4-20-4v33c8 0 14-2 20 5 6-7 12-5 20-5V5c-8 0-14-2-20 4Z M24 9v34",
+  ];
+  const icon = document.createElement("span");
+  icon.className = "line-icon";
+  icon.setAttribute("aria-hidden", "true");
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 48 48");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2.2");
+  const path = document.createElementNS(svg.namespaceURI, "path");
+  path.setAttribute("d", paths[index % paths.length]);
+  svg.append(path);
+  icon.append(svg);
+  return icon;
+}
 const byId = (id) => document.getElementById(id);
 const all = (selector) => [...document.querySelectorAll(selector)];
 const on = (id, event, callback) => byId(id)?.addEventListener(event, callback);
@@ -140,6 +161,8 @@ if (byId("course-search")) {
       lecture.headline || lecture.name,
     ));
 
+    art.append(courseLineIcon(index));
+
     if (lecture.picture) {
       try {
         const imageUrl = new URL(lecture.picture, location.origin);
@@ -169,14 +192,18 @@ if (byId("course-search")) {
       `${Number(lecture.price).toLocaleString("ko-KR")}원`,
     ));
 
+    const arrow = makeElement("span", "", "→");
+    arrow.setAttribute("aria-hidden", "true");
+    price.append(arrow);
+
     card.append(
       art,
-      makeElement("span", "pill", lecture.level || "난이도 미정"),
+      makeElement("span", "pill", lecture.level ? `${lecture.level} 과정` : "난이도 미정"),
       makeElement("h3", "", lecture.name),
       makeElement(
         "p",
         "",
-        `${lecture.category || ""} · ${lecture.instructor || "강사 미정"}`,
+        lecture.instructor || "강사 미정",
       ),
       price,
     );
@@ -428,25 +455,21 @@ if (document.querySelector("[data-lecture-detail]")) {
           writeReviewLink.id = "course-review-write";
           writeReviewLink.className = "btn secondary";
           writeReviewLink.textContent = "수강평 작성";
-          reviewPanel.querySelector("h2").after(writeReviewLink);
         }
+
+        let reviewHeading = reviewPanel.querySelector(".course-review-heading");
+        if (!reviewHeading) {
+          const title = reviewPanel.querySelector("h2");
+          reviewHeading = document.createElement("div");
+          reviewHeading.className = "course-review-heading";
+          title.before(reviewHeading);
+          reviewHeading.append(title);
+        }
+        reviewHeading.append(writeReviewLink);
 
         writeReviewLink.href =
           `/mypage/learning/${encodeURIComponent(lectureId)}/review`;
         writeReviewLink.hidden = data.viewerState !== "enrolled";
-      }
-
-      // 선택한 강의의 학습 화면으로 이동하도록 연결합니다.
-      // 이 링크 자체가 로그인·수강 권한을 확인하는 것은 아닙니다.
-      const classroomLink = document.querySelector(
-        "[data-preview-classroom-link]",
-      );
-
-      if (classroomLink) {
-        const contextPath = classroomLink.dataset.contextPath || "";
-        classroomLink.href =
-          `${contextPath}/lectures/${encodeURIComponent(lectureId)}/learn`;
-        classroomLink.hidden = false;
       }
 
       // 상단 배너
@@ -455,7 +478,34 @@ if (document.querySelector("[data-lecture-detail]")) {
         "detail-category-level",
         [data.category, data.level].filter(Boolean).join(" / "),
       );
-      setText("detail-name", data.name);
+      setText("detail-name", data.headline?.trim() || data.name);
+      const cover = byId("detail-picture");
+      const defaultCover = cover.dataset.fallback;
+      cover.onerror = () => {
+        cover.onerror = null;
+        cover.src = defaultCover;
+      };
+      cover.src = defaultCover;
+      if (data.picture) {
+        try {
+          const url = new URL(data.picture, location.origin);
+          if (["http:", "https:"].includes(url.protocol)) cover.src = url.href;
+        } catch { /* 이미지 주소가 없으면 설계안의 기본 이미지를 유지합니다. */ }
+      }
+      byId("preview-title").textContent = `${data.name} · 강의 소개`;
+      const preview = byId("detail-preview-video");
+      preview.pause();
+      preview.removeAttribute("src");
+      preview.load();
+      preview.hidden = true;
+      byId("preview-placeholder").hidden = false;
+      byId("preview-message").textContent = "";
+      byId("play-detail-preview").disabled = !data.preview;
+      byId("play-detail-preview").hidden = !data.preview;
+      preview.dataset.available = String(Boolean(data.preview));
+      if (!data.preview) {
+        byId("preview-message").textContent = "등록된 미리보기 영상이 없습니다.";
+      }
       setText("detail-summary", data.summary || data.headline || "");
       setText("detail-level", data.level);
       setText("detail-instructor-name", teacher.iname || "강사 정보 없음");
@@ -488,8 +538,38 @@ if (document.querySelector("[data-lecture-detail]")) {
       setText("teacher-bio", teacher.bio || "등록된 강사 소개가 없습니다.");
       setText("teacher-career", teacher.career);
 
-      setText("teacher-catchphrase", teacher.catchphrase);
-      byId("teacher-catchphrase").hidden = !teacher.catchphrase;
+      setText("teacher-heading", teacher.catchphrase || "강사 소개");
+      const others = byId("teacher-other-courses");
+      others.replaceChildren();
+      const otherLectures = Array.isArray(data.otherLectures) ? data.otherLectures : [];
+      byId("teacher-other-empty").hidden = otherLectures.length > 0;
+      byId("teacher-other-description").textContent = `${teacherName}의 다른 강의도 만나보세요.`;
+      for (const [index, other] of otherLectures.entries()) {
+        if (!Number.isSafeInteger(other.lid) || other.lid <= 0) continue;
+        const card = document.createElement("a");
+        card.className = "course-card";
+        card.href = `/courses/detail?id=${other.lid}`;
+        const art = document.createElement("div");
+        art.className = `course-art ${["navy", "lavender", "sage"][index % 3]}`;
+        const artTitle = document.createElement("strong");
+        artTitle.textContent = other.name;
+        art.append(artTitle, courseLineIcon(index + 1));
+        const title = document.createElement("h3");
+        title.textContent = other.name;
+        const instructor = document.createElement("p");
+        instructor.textContent = teacherName;
+        const price = document.createElement("div");
+        price.className = "course-price";
+        const amount = document.createElement("strong");
+        amount.textContent = typeof other.price === "number"
+          ? `${other.price.toLocaleString("ko-KR")}원` : "가격 확인";
+        const arrow = document.createElement("span");
+        arrow.textContent = "→";
+        arrow.setAttribute("aria-hidden", "true");
+        price.append(amount, arrow);
+        card.append(art, title, instructor, price);
+        others.append(card);
+      }
 
       // 평점이 null이면 '0점'으로 오해하지 않도록 구분합니다.
       const reviewCount = data.reviewCount ?? 0;
@@ -577,6 +657,27 @@ all("[data-preview-video]").forEach((b) =>
     });
   }),
 );
+on("play-detail-preview", "click", async () => {
+  const video = byId("detail-preview-video");
+  const lectureId = new URLSearchParams(location.search).get("id");
+  if (video.dataset.available !== "true" || !/^[1-9]\d*$/.test(lectureId || "")) return;
+  byId("preview-message").textContent = "";
+  if (!video.getAttribute("src")) video.src = `/backend/lectures/${lectureId}/preview`;
+  video.hidden = false;
+  byId("preview-placeholder").hidden = true;
+  try {
+    await video.play();
+  } catch {
+    byId("preview-placeholder").hidden = false;
+    video.hidden = true;
+    byId("preview-message").textContent = "미리보기 영상을 재생하지 못했습니다. 다시 시도해 주세요.";
+  }
+});
+on("detail-preview-video", "error", () => {
+  byId("detail-preview-video").hidden = true;
+  byId("preview-placeholder").hidden = false;
+  byId("preview-message").textContent = "미리보기 영상을 불러오지 못했습니다.";
+});
 all("[data-video-note]").forEach((b) =>
   b.addEventListener("click", () => {
     b.parentElement.querySelector(".video-status").textContent =
@@ -1508,7 +1609,7 @@ if (learningPathMatch && classroom) {
 
     showOutlineMessage(
       data.chapters.length
-        ? "강의의 주제별 구성입니다."
+        ? "하나의 영상, 주제별로 살펴보세요."
         : "등록된 목차가 없습니다.",
     );
 
@@ -1815,8 +1916,8 @@ if (learningPathMatch && classroom) {
     if (writeButton) writeButton.hidden = false;
     if (questionForm) questionForm.hidden = true;
 
-    // 목록은 카드 형태로 표시하므로 기존 표 머리글은 제거합니다.
-    panel.querySelector(".qna-table-head")?.remove();
+    // 설계안의 제목·닉네임 행 구조를 유지합니다.
+    const tableHead = panel.querySelector(".qna-table-head");
 
     const message = document.createElement("p");
     message.className = "lecture-qna-message";
@@ -1827,6 +1928,8 @@ if (learningPathMatch && classroom) {
     pagination.className = "form-actions";
 
     panel.append(message, list, pagination);
+    if (tableHead) list.before(tableHead);
+    list.className = "lecture-qna-list";
 
     let page = 1;
     let loading = false;
@@ -1890,9 +1993,9 @@ if (learningPathMatch && classroom) {
           heading.append(toggle);
 
           const info = document.createElement("p");
-          info.textContent =
-            `${question.nickname || "작성자"} · ` +
-            (question.answered ? "답변 완료" : "답변 대기");
+          info.className = "lecture-qna-author";
+          info.textContent = question.nickname || "작성자";
+          info.title = question.answered ? "답변 완료" : "답변 대기";
 
           row.append(heading, info);
 
@@ -1995,9 +2098,8 @@ if (learningPathMatch && classroom) {
                 answerBox.append(answeredAt);
               }
 
-              info.textContent =
-                `${data.nickname || "작성자"} · ` +
-                (hasAnswer ? "답변 완료" : "답변 대기");
+              info.textContent = data.nickname || "작성자";
+              info.title = hasAnswer ? "답변 완료" : "답변 대기";
 
               detail.replaceChildren(
                 questionLabel,
@@ -2017,6 +2119,7 @@ if (learningPathMatch && classroom) {
 
           if (question.accessible === false) {
             const restricted = document.createElement("p");
+            restricted.className = "lecture-qna-restricted";
             restricted.textContent = "열람 권한이 없는 비밀글입니다.";
             row.append(restricted);
           }
@@ -2088,14 +2191,20 @@ if (learningPathMatch && classroom) {
       secretInput.type = "checkbox";
 
       const secretText = document.createElement("span");
-      secretText.textContent =
-        "비밀글로 등록 · 작성자와 담당 강사만 열람";
+      secretText.textContent = "비밀글로 작성";
+      const secretHelp = document.createElement("p");
+      secretHelp.className = "lecture-qna-secret-help";
+      secretHelp.id = "question-secret-help";
+      secretHelp.textContent = "선택하면 작성자와 담당 강사만 볼 수 있어요.";
+      secretInput.setAttribute("aria-describedby", secretHelp.id);
       secretLabel.append(secretInput, secretText);
 
       fieldset.insertBefore(
         secretLabel,
         fieldset.querySelector(".form-actions"),
       );
+
+      secretLabel.after(secretHelp);
 
       let posting = false;
 
@@ -2207,7 +2316,19 @@ if (learningPathMatch && classroom) {
     navigation.className = "course-review-pagination";
     navigation.setAttribute("aria-label", "수강평 페이지");
 
-    panel.append(status, list, navigation);
+    const emptyReview = document.createElement("div");
+    emptyReview.className = "empty-panel course-review-empty";
+    emptyReview.hidden = true;
+    const emptyIcon = document.createElement("span");
+    emptyIcon.className = "empty-icon";
+    emptyIcon.setAttribute("aria-hidden", "true");
+    emptyIcon.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v15M12 5C9 3 6 3 2 4v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1Z"/></svg>';
+    const emptyTitle = document.createElement("h3");
+    emptyTitle.textContent = "첫 번째 학습 경험을 기다려요.";
+    const emptyDescription = document.createElement("p");
+    emptyDescription.textContent = "아직 등록된 수강평이 없습니다.";
+    emptyReview.append(emptyIcon, emptyTitle, emptyDescription);
+    panel.append(status, emptyReview, list, navigation);
     let loading = false;
 
     // REVIEW_EDIT_DELETE
@@ -2390,6 +2511,7 @@ if (learningPathMatch && classroom) {
       if (loading || mutating) return;
       loading = true;
       status.classList.remove("is-empty");
+      emptyReview.hidden = true;
       status.textContent = "수강평을 불러오는 중입니다.";
       list.replaceChildren();
       navigation.replaceChildren();
@@ -2466,10 +2588,8 @@ if (learningPathMatch && classroom) {
           list.append(card);
         }
 
-        status.classList.toggle("is-empty", data.reviews.length === 0);
-        status.textContent = data.reviews.length === 0
-          ? "아직 등록된 수강평이 없어요."
-          : "";
+        emptyReview.hidden = data.reviews.length !== 0;
+        status.textContent = "";
 
         if (data.page.totalPages > 1) {
           const current = data.page.current;

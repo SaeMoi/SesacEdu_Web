@@ -14,3 +14,27 @@
 .assignment-download {background:#f4f7f3;border-radius:12px;padding:20px;margin:24px 0}.assignment-download strong {overflow-wrap:anywhere}.assignment-download p {margin:4px 0;font-size:13px}
 .assignment-feedback {background:#f3f7eb}.feedback-wait {text-align:center;padding:24px 0}.assignment-memo {white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:600px){.assignment-card{padding:18px}.assignment-card .section-heading,.assignment-bottom,.assignment-download,.assignment-drop{align-items:flex-start;flex-direction:column}.assignment-card h2{font-size:20px}}
+
+/* 설계안의 과제 안내 / 내 제출 내용 / 강사 피드백 구성을 API 데이터에 적용합니다. */
+#assignment-area .assignment-card[hidden],
+#assignment-area .form-actions[hidden] { display: none; }
+#assignment-area .assignment-card .section-heading { margin-bottom: 20px; }
+#assignment-area .assignment-card h3 { margin: 18px 0 12px; }
+#assignment-area .assignment-guide > p:empty { display: none; }
+#assignment-area .assignment-guide > p { margin-top: 14px; }
+#assignment-area .assignment-submission-state {
+  border-top: 1px solid var(--line); margin-top: 24px; padding-top: 16px;
+  text-align: right; color: var(--muted); font-size: 13px;
+}
+#assignment-area .assignment-submission-state:empty { display: none; }
+#assignment-area .assignment-submit-actions {
+  justify-content: flex-end; gap: 12px; padding-top: 18px;
+  border-top: 1px solid var(--line); margin-top: 22px;
+}
+#assignment-area .assignment-live-submission > .form-actions {
+  justify-content: flex-end; gap: 12px;
+}
+
+#assignment-area .assignment-bottom .assignment-submission-state {
+  border: 0; padding: 0; margin: 0;
+}
