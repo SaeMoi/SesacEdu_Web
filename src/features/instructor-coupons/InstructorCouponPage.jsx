@@ -6,7 +6,7 @@ import {
   getInstructorCoupons,
   getInstructorLecturesForCoupons,
 } from "./instructorCouponsApi.js";
-import { useInstructorCouponsAuth } from "./instructorCouponsAuthContext.js";
+import { useInstructorCoursesAuth } from "../instructor-courses/instructorCoursesAuthContext.js";
 import "./instructorCoupons.css";
 
 const INITIAL_FORM = {
@@ -451,7 +451,7 @@ function CouponForm({ accessToken, onPublished }) {
 }
 
 export function InstructorCouponPage() {
-  const { accessToken } = useInstructorCouponsAuth();
+  const { accessToken } = useInstructorCoursesAuth();
   const [view, setView] = useState("list");
   const [listRevision, setListRevision] = useState(0);
   const [notice, setNotice] = useState("");
