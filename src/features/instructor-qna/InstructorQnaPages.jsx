@@ -7,7 +7,7 @@ import {
   getInstructorQnaList,
   saveInstructorQnaAnswer,
 } from "./instructorQnaApi.js";
-import { useInstructorQnaAuth } from "./instructorQnaAuthContext.js";
+import { useInstructorCoursesAuth } from "../instructor-courses/instructorCoursesAuthContext.js";
 import "./instructorQna.css";
 
 const PAGE_SIZE = 10;
@@ -66,13 +66,13 @@ function formatDate(date) {
 }
 
 export function InstructorQnaListPage() {
-  const auth = useInstructorQnaAuth();
-  const accessToken = auth?.accessToken;
+  const { accessToken } = useInstructorCoursesAuth();
   const location = useLocation();
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [retry, setRetry] = useState(0);
   const [qnaList, setQnaList] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -84,11 +84,16 @@ export function InstructorQnaListPage() {
       setLoading(true);
       setError("");
       try {
-        const items = await getInstructorQnaList(accessToken, {
-          status,
-          signal: controller.signal,
-        });
-        if (active) setQnaList(items);
+        const result = await getInstructorQnaList(accessToken, {
+  page,
+  status,
+  signal: controller.signal,
+});
+
+if (active) {
+  setQnaList(result.qnaList);
+  setTotalPages(result.totalPages);
+}
       } catch (loadError) {
         if (active && loadError.name !== "AbortError") setError(loadError.message);
       } finally {
@@ -101,13 +106,10 @@ export function InstructorQnaListPage() {
       active = false;
       controller.abort();
     };
-  }, [accessToken, status, retry]);
+  }, [accessToken, status, page, retry]);
 
-  const pageCount = Math.ceil(qnaList.length / PAGE_SIZE);
-  const visibleQna = useMemo(
-    () => qnaList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
-    [qnaList, page],
-  );
+  const pageCount = totalPages;
+  const visibleQna = qnaList;
 
   function selectFilter(value) {
     setStatus(value);
@@ -215,8 +217,7 @@ export function InstructorQnaListPage() {
 }
 
 export function InstructorQnaDetailPage() {
-  const auth = useInstructorQnaAuth();
-  const accessToken = auth?.accessToken;
+  const { accessToken } = useInstructorCoursesAuth();
   const { qnaid } = useParams();
   const navigate = useNavigate();
   const [qna, setQna] = useState(null);

@@ -64,18 +64,31 @@ function unwrapResponse(body) {
   return body?.result ?? body;
 }
 
-export async function getInstructorQnaList(accessToken, { status, signal } = {}) {
+export async function getInstructorQnaList(
+  accessToken,
+  { page = 1, status, signal } = {},
+) {
   const params = new URLSearchParams();
-  if (status) params.set("status", status);
-  const query = params.toString();
-  const body = await request(`${API_PATH}${query ? `?${query}` : ""}`, accessToken, {
-    signal,
-  });
+
+  params.set("page", String(page));
+
+  if (status) {
+    params.set("status", status);
+  }
+
+  const body = await request(
+    `${API_PATH}?${params.toString()}`,
+    accessToken,
+    { signal },
+  );
+
   const result = unwrapResponse(body);
+
   if (!Array.isArray(result?.qnaList)) {
     throw new Error("Q&A 목록 응답 형식이 올바르지 않습니다.");
   }
-  return result.qnaList;
+
+  return result;
 }
 
 export async function getInstructorQna(accessToken, qnaid, { signal } = {}) {
