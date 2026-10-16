@@ -138,9 +138,11 @@
         <section data-panel="news" hidden>
           <h2>강의의 새로운 소식</h2>
 
-          <p class="screen-note">
-            새소식 조회 기능은 아직 연결되지 않았습니다.
-          </p>
+          <!-- 새소식 API 연결 전의 빈 화면입니다. 조회 결과와 오류는 추후 분리합니다. -->
+          <div class="course-news-empty">
+            <h3>새 소식이 등록되면 알려드릴게요.</h3>
+            <p>아직 등록된 새소식이 없습니다.</p>
+          </div>
         </section>
 
       </div>

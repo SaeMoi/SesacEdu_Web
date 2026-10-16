@@ -32,73 +32,215 @@ function courseLineIcon(index) {
 const byId = (id) => document.getElementById(id);
 const all = (selector) => [...document.querySelectorAll(selector)];
 const on = (id, event, callback) => byId(id)?.addEventListener(event, callback);
-// 시연 화면에는 계정/게시글 저장 서버가 없습니다. 입력값을 전송하거나 보관하지 않습니다.
-[ "signup-form"].forEach((id) => {
-  const form = byId(id);
-  form?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (!form.reportValidity()) return;
-    form.querySelector(".form-status").textContent =
-      id === "login-form"
-        ? "화면 미리보기입니다. 인증 서버 연결 전이라 실제 로그인은 진행되지 않습니다."
-        : id === "signup-form"
-          ? "입력 확인 완료. 실제 계정은 생성되지 않습니다."
-          : "입력 확인 완료. 질문은 서버에 저장되지 않습니다.";
-  });
-});
-
-
-
+// 회원가입: 이메일 발송 → 인증 확인 → 계정 생성
 if (byId("signup-form")) {
   const form = byId("signup-form");
-  let verified = false;
+  const status = form.querySelector(".form-status");
+  const email = byId("email");
+  let verificationToken = "";
+  let verifiedEmail = "";
+  let busy = false;
+
+  const emailValue = () => email.value.trim().toLowerCase();
+
+  const message = (element, text, error = false) => {
+    element.textContent = text;
+    element.classList.toggle("error", error);
+  };
+
   const update = () => {
     const mismatch =
       byId("pwcheck").value !== "" &&
       byId("pwcheck").value !== byId("pw").value;
+
     byId("pwcheck").setCustomValidity(
       mismatch ? "비밀번호가 일치하지 않습니다." : "",
     );
     byId("password-error").hidden = !mismatch;
-    byId("signup-submit").disabled = !verified || !form.checkValidity();
+
+    byId("signup-submit").disabled =
+      busy ||
+      !verificationToken ||
+      verifiedEmail !== emailValue() ||
+      !form.checkValidity();
+
+    for (const id of ["check-email", "resend-code", "verify-code"]) {
+      byId(id).disabled = busy;
+    }
+    email.readOnly = busy;
   };
-  const request = () => {
-    if (!byId("email").reportValidity()) return;
-    verified = false;
-    byId("verification").hidden = false;
-    byId("email-status").className = "field-status";
-    byId("email-status").textContent =
-      "인증 화면 미리보기입니다. 실제 메일은 발송하지 않았어요.";
-    byId("code-status").textContent = "예시 인증번호: 123456";
-    update();
+
+  const resetVerification = () => {
+    verificationToken = "";
+    verifiedEmail = "";
   };
-  on("check-email", "click", request);
-  on("resend-code", "click", request);
-  on("verify-code", "click", () => {
-    verified = byId("code").value === "123456";
-    byId("code-status").textContent = verified
-      ? "인증 완료 상태 미리보기입니다."
-      : "인증번호가 올바르지 않습니다. 다시 확인해 주세요.";
-    byId("code-status").className = verified
-      ? "field-status"
-      : "field-status error";
-    update();
-  });
-  on("email", "input", () => {
-    verified = false;
+
+  const post = async (url, payload, expectedCode) => {
+    let response;
+    try {
+      response = await fetch(`/backend${url}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      throw new Error("서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+    }
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok || data?.code !== expectedCode) {
+      const errors = data?.result?.errors;
+      const details = Array.isArray(errors)
+        ? errors.map((item) => item.reason).filter(Boolean).join(" ")
+        : "";
+      const retryAfter = Number(data?.result?.retryAfter);
+      const retryMessage = retryAfter > 0
+        ? ` ${retryAfter}초 후 다시 시도해 주세요.`
+        : "";
+
+      const error = new Error(
+        (details || data?.message || `요청에 실패했습니다. (${response.status})`) +
+        retryMessage,
+      );
+      error.code = data?.code;
+      throw error;
+    }
+    return data.result;
+  };
+
+  const requestCode = async () => {
+    email.value = emailValue();
+    if (busy || !email.reportValidity()) return;
+
+    busy = true;
+    resetVerification();
     byId("verification").hidden = true;
-    byId("email-status").textContent = "";
+    byId("code").value = "";
+    message(status, "");
+    message(byId("code-status"), "");
+    message(byId("email-status"), "인증번호를 발송하고 있습니다.");
+    update();
+
+    try {
+      await post("/email-auth", { email: emailValue() }, "EMAIL_SENT");
+      byId("verification").hidden = false;
+      message(
+        byId("email-status"),
+        "인증번호를 발송했습니다. 이메일을 확인해 주세요.",
+      );
+      message(byId("code-status"), "인증번호는 5분 동안 유효합니다.");
+      byId("code").focus();
+    } catch (error) {
+      message(byId("email-status"), error.message, true);
+    } finally {
+      busy = false;
+      update();
+    }
+  };
+
+  on("check-email", "click", requestCode);
+  on("resend-code", "click", requestCode);
+
+  on("verify-code", "click", async () => {
+    if (busy) return;
+    const code = byId("code").value.trim();
+    if (!/^[0-9]{6}$/.test(code)) {
+      message(byId("code-status"), "인증번호 6자리를 입력해 주세요.", true);
+      return;
+    }
+
+    busy = true;
+    resetVerification();
+    message(byId("code-status"), "인증번호를 확인하고 있습니다.");
+    update();
+
+    try {
+      const result = await post(
+        "/email-auth/verify",
+        { email: emailValue(), code },
+        "EMAIL_VERIFIED",
+      );
+      if (!result?.verificationToken) {
+        throw new Error("인증 응답을 확인할 수 없습니다. 다시 인증해 주세요.");
+      }
+      verificationToken = result.verificationToken;
+      verifiedEmail = emailValue();
+      message(byId("code-status"), "이메일 인증이 완료되었습니다.");
+    } catch (error) {
+      message(byId("code-status"), error.message, true);
+    } finally {
+      busy = false;
+      update();
+    }
+  });
+
+  on("email", "input", () => {
+    resetVerification();
+    byId("verification").hidden = true;
+    byId("code").value = "";
+    message(byId("email-status"), "");
+    message(byId("code-status"), "");
+    message(status, "");
     update();
   });
-  on("duplicate-email", "click", () => {
-    verified = false;
-    byId("email-status").className = "field-status error";
-    byId("email-status").textContent =
-      "이미 사용 중인 이메일입니다. (중복 상태 미리보기)";
-    update();
-  });
+
   form.addEventListener("input", update);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (busy) return;
+    update();
+    if (!form.reportValidity()) return;
+
+    if (!verificationToken || verifiedEmail !== emailValue()) {
+      message(status, "이메일 인증을 먼저 완료해 주세요.", true);
+      return;
+    }
+
+    const payload = {
+      email: emailValue(),
+      verificationToken,
+      pw: byId("pw").value,
+      pwcheck: byId("pwcheck").value,
+      name: byId("name").value.trim(),
+      nickname: byId("nickname").value.trim(),
+      phone: byId("phone").value.trim().replace(/[-\s]/g, ""),
+      b_date: byId("birthday").value.trim().replace(/\./g, "-"),
+      address: byId("address").value.trim(),
+    };
+
+    busy = true;
+    update();
+    message(status, "회원가입을 처리하고 있습니다.");
+
+    try {
+      await post("/signup", payload, "SIGNUP_SUCCESS");
+      resetVerification();
+      byId("pw").value = "";
+      byId("pwcheck").value = "";
+      message(status, "회원가입이 완료되었습니다. 로그인 화면으로 이동합니다.");
+      window.location.assign(
+        document.querySelector(".signup-login a").href,
+      );
+    } catch (error) {
+      if (error.code === "INVALID_VERIFICATION") {
+        resetVerification();
+        message(
+          byId("code-status"),
+          "인증이 만료되었습니다. 인증번호를 다시 요청해 주세요.",
+          true,
+        );
+      }
+      message(status, error.message, true);
+    } finally {
+      busy = false;
+      update();
+    }
+  });
+
+  update();
 }
+
 // 카테고리·검색·정렬은 JSP에서 출력한 예시 카드에 적용합니다.
 // 현재는 예시 데이터를 브라우저에서 필터링한 뒤 페이지당 6개씩 표시합니다.
 // API 연결 시 검색/정렬/페이지 조건을 서버에 보내고 전체 결과 수를 받습니다.
