@@ -5,7 +5,7 @@ import {
   getInstructorProfile,
   updateInstructorProfile,
 } from "./instructorProfileApi.js";
-import { useInstructorProfileAuth } from "./instructorProfileAuthContext.js";
+import { useInstructorCoursesAuth } from "../instructor-courses/instructorCoursesAuthContext.js";
 import "./instructorProfile.css";
 
 const EMPTY_PROFILE = {
@@ -68,7 +68,7 @@ function buildProfileFormData(profile, careerFile) {
 }
 
 export function InstructorProfilePage() {
-  const { accessToken } = useInstructorProfileAuth();
+  const { accessToken } = useInstructorCoursesAuth();
   const fileInputRef = useRef(null);
   const [profile, setProfile] = useState(EMPTY_PROFILE);
   const [careerFile, setCareerFile] = useState(null);
@@ -96,7 +96,7 @@ export function InstructorProfilePage() {
         setProfile(getProfileValues(result));
         setMaskedAccount(isMaskedAccount(result.account) ? result.account : "");
         setExistingCareerFileName(
-          typeof result.careerFileName === "string" ? result.careerFileName : "",
+          typeof result.careerFilename === "string" ? result.careerFilename : "",
         );
         setBankMode(result.bank ? "existing" : "select");
       } catch (loadError) {
@@ -160,7 +160,7 @@ export function InstructorProfilePage() {
       setProfile(getProfileValues(result));
       setMaskedAccount(isMaskedAccount(result.account) ? result.account : "");
       setExistingCareerFileName(
-        typeof result.careerFileName === "string" ? result.careerFileName : "",
+        typeof result.careerFilename === "string" ? result.careerFilename : "",
       );
       setCareerFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";

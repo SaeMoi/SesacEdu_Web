@@ -63,8 +63,31 @@ export async function getInstructorProfile(accessToken, { signal } = {}) {
   return result;
 }
 
-export async function updateInstructorProfile() {
-  throw new Error(
-    "프로필 수정 API의 요청 URL과 HTTP 메서드가 확정되지 않았습니다. 백엔드 명세 확인 후 연결해야 합니다.",
-  );
+export async function updateInstructorProfile(accessToken, formData) {
+  const params = new URLSearchParams();
+
+  for (const field of [
+    "iname",
+    "bio",
+    "career",
+    "field",
+    "link",
+    "bank",
+    "account",
+  ]) {
+    params.set(field, String(formData.get(field) ?? ""));
+  }
+
+  const body = new FormData();
+  const careerFile = formData.get("careerFile");
+
+  if (careerFile instanceof File) {
+    body.append("file", careerFile);
+  }
+
+  return request(`${API_PATH}?${params.toString()}`, accessToken, {
+    method: "PUT",
+    body,
+  });
 }
+
