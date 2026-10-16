@@ -84,18 +84,28 @@ export async function getInstructorSettlements(accessToken, page, { signal } = {
   };
 }
 
-export async function getInstructorSettlement(accessToken, sid, page, { signal } = {}) {
+export async function getInstructorSettlement(
+  accessToken,
+  sid,
+  page,
+  { signal } = {},
+) {
   const params = new URLSearchParams({ page: String(page) });
+
   const result = await request(
     `${API_PATH}/${encodeURIComponent(sid)}?${params.toString()}`,
     accessToken,
     { signal },
   );
-  if (!result || typeof result !== "object" || !Array.isArray(result.items)) {
+
+  if (!result || !Array.isArray(result.lectures)) {
     throw new Error("정산 상세 응답 형식이 올바르지 않습니다.");
   }
+
   return {
     ...result,
+    items: result.lectures,
+    amount: result.totalAmount,
     ...getPagination(result),
   };
 }

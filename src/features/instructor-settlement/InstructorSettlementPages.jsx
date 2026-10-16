@@ -5,7 +5,7 @@ import {
   getInstructorSettlement,
   getInstructorSettlements,
 } from "./instructorSettlementApi.js";
-import { useInstructorSettlementAuth } from "./instructorSettlementAuthContext.js";
+import { useInstructorCoursesAuth } from "../instructor-courses/instructorCoursesAuthContext.js";
 import "./instructorSettlement.css";
 
 function InstructorSettlementLayout({ children }) {
@@ -61,7 +61,9 @@ function formatWon(value) {
 
 function formatStatus(status) {
   if (status === "requested") return "승인 대기";
+  if (status === "approved") return "승인 완료";
   if (status === "paid") return "지급 완료";
+  if (status === "rejected") return "반려";
   return status || "-";
 }
 
@@ -112,7 +114,7 @@ function Pagination({ page, totalPages, hasNext, loading, onPageChange }) {
 }
 
 export function InstructorSettlementListPage() {
-  const { accessToken } = useInstructorSettlementAuth();
+  const { accessToken } = useInstructorCoursesAuth();
   const [page, setPage] = useState(1);
   const [retry, setRetry] = useState(0);
   const [data, setData] = useState(null);
@@ -240,7 +242,7 @@ export function InstructorSettlementListPage() {
 }
 
 export function InstructorSettlementDetailPage() {
-  const { accessToken } = useInstructorSettlementAuth();
+  const { accessToken } = useInstructorCoursesAuth();
   const { sid } = useParams();
   const [page, setPage] = useState(1);
   const [retry, setRetry] = useState(0);
@@ -354,7 +356,11 @@ export function InstructorSettlementDetailPage() {
             </div>
             <div className="instructor-settlement-account">
               <span>
-                {data.status === "requested" ? "지급 예정일: 승인 후 안내" : null}
+                {data.payDate
+                  ? `지급일: ${data.payDate}`
+                  : data.status === "requested" || data.status === "approved"
+                    ? "지급 예정일: 승인 후 안내"
+                    : null}
               </span>
               <span>은행: {data.bank || "-"}</span>
               <span>계좌: {data.account || "-"}</span>
