@@ -8,7 +8,7 @@ import {
   getInstructorAssignments,
   saveInstructorAssignmentFeedback,
 } from "./instructorAssignmentsApi.js";
-import { useInstructorAssignmentsAuth } from "./instructorAssignmentsAuthContext.js";
+import { useInstructorCoursesAuth } from "../instructor-courses/instructorCoursesAuthContext.js";
 import "./instructorAssignments.css";
 
 const assignmentStatusLabels = {
@@ -68,11 +68,11 @@ function formatSubmittedDate(value) {
 }
 
 export function InstructorAssignmentsListPage() {
-  const auth = useInstructorAssignmentsAuth();
-  const accessToken = auth?.accessToken;
+  const { accessToken } = useInstructorCoursesAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("all");
   const [retry, setRetry] = useState(0);
   const [result, setResult] = useState(null);
   const [requestError, setRequestError] = useState("");
@@ -85,7 +85,10 @@ export function InstructorAssignmentsListPage() {
       setLoading(true);
       setRequestError("");
       try {
-        const data = await getInstructorAssignments(accessToken, { page });
+        const data = await getInstructorAssignments(accessToken, {
+  page,
+  ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+});
         if (active) setResult(data);
       } catch (error) {
         if (active) setRequestError(error.message);
@@ -98,7 +101,7 @@ export function InstructorAssignmentsListPage() {
     return () => {
       active = false;
     };
-  }, [accessToken, page, retry]);
+  }, [accessToken, page, retry, statusFilter]);
 
   const assignments = useMemo(
     () => result?.assignments ?? [],
@@ -113,6 +116,27 @@ export function InstructorAssignmentsListPage() {
         description="학생이 제출한 과제를 확인하고 피드백을 작성하세요."
       />
       <InstructorCenterTabs />
+
+<div className="assignment-status-filters" aria-label="피드백 상태 필터">
+  {[
+    { value: "all", label: "전체" },
+    { value: "none", label: "미작성" },
+    { value: "done", label: "작성완료" },
+  ].map((filter) => (
+    <button
+      key={filter.value}
+      type="button"
+      className={statusFilter === filter.value ? "is-active" : ""}
+      aria-pressed={statusFilter === filter.value}
+      onClick={() => {
+        setStatusFilter(filter.value);
+        setPage(1);
+      }}
+    >
+      {filter.label}
+    </button>
+  ))}
+</div>
       {location.state?.notice && (
         <p className="assignment-notice" role="status">{location.state.notice}</p>
       )}
@@ -131,7 +155,11 @@ export function InstructorAssignmentsListPage() {
                 <th scope="col">학생</th>
                 <th scope="col">강의명</th>
                 <th scope="col">제출일</th>
-                <th scope="col">피드백 상세</th>
+                <th scope="col">
+                  <span className="assignment-feedback-column-title">
+                    피드백 상세
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -199,8 +227,7 @@ export function InstructorAssignmentsListPage() {
 }
 
 export function InstructorAssignmentsDetailPage() {
-  const auth = useInstructorAssignmentsAuth();
-  const accessToken = auth?.accessToken;
+  const { accessToken } = useInstructorCoursesAuth();
   const { assid } = useParams();
   const navigate = useNavigate();
   const [assignment, setAssignment] = useState(null);
