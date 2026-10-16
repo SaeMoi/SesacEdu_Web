@@ -257,13 +257,13 @@
 .instructor-qna-table th:nth-child(3),
 .instructor-qna-table td:nth-child(3) {
   width: 18%;
-  text-align: center;
+  text-align: left;
 }
 
 .instructor-qna-table th:last-child,
 .instructor-qna-table td:last-child {
   width: 15%;
-  text-align: center;
+  text-align: left;
 }
 
 .instructor-qna-title-cell a:hover {
@@ -273,8 +273,7 @@
 
 .instructor-qna-status {
   display: inline-flex;
-  min-width: 82px;
-  justify-content: center;
+  justify-content: flex-start;
   color: #536f7c;
   font-size: 12px;
 }
