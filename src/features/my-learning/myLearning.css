@@ -707,3 +707,72 @@
     flex: 1;
   }
 }
+
+/* 리뷰 작성 화면 아래 강좌 리뷰 목록 (GET /mypage/{lectureid}/review) */
+.review-list {
+  margin-top: 28px;
+}
+
+.review-list-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 16px;
+}
+
+.review-list-title span {
+  color: var(--color-muted, #8a949c);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.review-list-items {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-list-items li {
+  padding: 14px;
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+}
+
+.review-list-items li + li {
+  margin-top: 8px;
+}
+
+.review-list-items li.is-mine {
+  outline: 2px solid #b4ef4f;
+}
+
+.review-list-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.review-list-meta time {
+  margin-left: auto;
+  color: var(--color-muted, #8a949c);
+}
+
+.review-list-stars {
+  color: #f5b400;
+}
+
+.review-mine-badge {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #1b3a4b;
+  color: #fff;
+  font-size: 11px;
+}
+
+.review-list-items p {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

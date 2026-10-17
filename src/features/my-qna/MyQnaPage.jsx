@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useQnaAuth } from "./qnaAuthContext.js";
 import { getMyQna, getQnaErrorMessage } from "./qnaApi.js";
 import { MyQnaLayout, QnaPageHeader } from "./MyQnaLayout.jsx";
+import Pagination from "../../components/pagination/Pagination.jsx";
 import "./myQna.css";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5; // 백엔드 기본값과 같은 5개씩
 
 const statusFilters = [
   ["ALL", "전체", "all"],
@@ -75,14 +76,6 @@ function MyQnaPage() {
     Number.isInteger(page?.number) && page.number >= 0
       ? page.number
       : pageNumber;
-  const firstVisiblePage = Math.max(
-    0,
-    Math.min(currentPage - 2, totalPages - 5),
-  );
-  const visiblePages = Array.from(
-    { length: Math.min(5, totalPages) },
-    (_, index) => firstVisiblePage + index,
-  );
 
   function changeStatus(nextStatus) {
     setStatus(nextStatus);
@@ -240,36 +233,12 @@ function MyQnaPage() {
           </p>
         ))}
 
-      {loadState === "success" && totalPages > 1 && (
-        <nav className="qna-pagination" aria-label="페이지 이동">
-          <button
-            aria-label="이전 페이지"
-            disabled={currentPage <= 0}
-            onClick={() => changePage(currentPage - 1)}
-            type="button"
-          >
-            ‹
-          </button>
-          {visiblePages.map((pageIndex) => (
-            <button
-              aria-current={currentPage === pageIndex ? "page" : undefined}
-              className={currentPage === pageIndex ? "is-current" : ""}
-              key={pageIndex}
-              onClick={() => changePage(pageIndex)}
-              type="button"
-            >
-              {pageIndex + 1}
-            </button>
-          ))}
-          <button
-            aria-label="다음 페이지"
-            disabled={!page?.hasNext || currentPage >= totalPages - 1}
-            onClick={() => changePage(currentPage + 1)}
-            type="button"
-          >
-            ›
-          </button>
-        </nav>
+      {loadState === "success" && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          onChange={changePage}
+        />
       )}
 
       <p className="qna-detail-hint">

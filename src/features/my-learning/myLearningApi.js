@@ -26,7 +26,7 @@ export async function getMyCourses({
   status = "ALL",
   sort = "RECENT_ENROLL",
   page = 0,
-  size = 10,
+  size = 5,
   signal,
 }) {
   if (!accessToken) {
@@ -79,6 +79,67 @@ export async function getMyCourses({
     throw new MyLearningApiError(
       body?.code ?? "INVALID_RESPONSE",
       body?.message ?? "내 학습 목록 응답 형식이 올바르지 않습니다.",
+      response.status,
+    );
+  }
+
+  return body.result;
+}
+
+// 강좌 리뷰 목록 (GET /mypage/{lectureid}/review, 기본 5개씩)
+export async function getLectureReviews({
+  accessToken,
+  courseId,
+  page = 0,
+  size = 5,
+  signal,
+}) {
+  if (!accessToken) {
+    throw new MyLearningApiError(
+      "AUTH_INTEGRATION_REQUIRED",
+      "로그인 후 리뷰 목록을 볼 수 있습니다.",
+    );
+  }
+
+  const params = new URLSearchParams({ page: String(page), size: String(size) });
+  const response = await authFetch(
+    `${API_BASE_URL}/mypage/${encodeURIComponent(courseId)}/review?${params.toString()}`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal,
+    },
+  );
+
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    throw new MyLearningApiError(
+      "INVALID_RESPONSE",
+      "리뷰 서버 응답을 확인할 수 없습니다.",
+      response.status,
+    );
+  }
+
+  if (!response.ok) {
+    throw new MyLearningApiError(
+      body?.code ?? `HTTP_${response.status}`,
+      body?.code === "LECTURE_NOT_FOUND"
+        ? "강좌를 찾을 수 없습니다."
+        : (body?.message ?? "리뷰 목록을 불러오지 못했습니다."),
+      response.status,
+    );
+  }
+
+  if (
+    body?.code !== "MY_REVIEWS_FOUND" ||
+    !Array.isArray(body?.result?.reviews) ||
+    !body.result.page
+  ) {
+    throw new MyLearningApiError(
+      body?.code ?? "INVALID_RESPONSE",
+      "리뷰 목록 응답 형식이 올바르지 않습니다.",
       response.status,
     );
   }

@@ -1595,3 +1595,49 @@ fieldset {
 
 /* 밝은 구매 버튼에서도 글자 대비를 유지합니다. */
 .preview-lock-actions .btn.primary{color:#153b4c}
+
+/* 커뮤니티 목록 페이지 번호 (2026-10-17): 참고 시안의 모양(< 1 2 3 ... >)을 커뮤니티 색(남색·연두)으로 */
+#post-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin: 40px 0 8px;
+}
+#post-pagination[hidden] { display: none; }
+#post-pagination button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #8a949c;
+  font: inherit;
+  font-size: 17px;
+  line-height: 40px;
+  cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+#post-pagination button:hover:not(:disabled):not([aria-current="page"]) {
+  background: #eef5e4;
+  color: #1b3a4b;
+}
+#post-pagination button[aria-current="page"] {
+  background: #1b3a4b;
+  color: #fff;
+  font-weight: 600;
+  cursor: default;
+}
+#post-pagination button:focus-visible {
+  outline: 3px solid #b4ef4f;
+  outline-offset: 2px;
+}
+#post-pagination .page-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1b3a4b;
+}
+#post-pagination .page-arrow svg { width: 20px; height: 20px; }
+#post-pagination .page-arrow:disabled { color: #c9cfd4; cursor: default; }

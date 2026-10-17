@@ -21,7 +21,7 @@ export async function getMyQna({
   status = "ALL",
   sort = "RECENT",
   page = 0,
-  size = 10,
+  size = 5,
   signal,
 }) {
   if (!API_BASE_URL) {

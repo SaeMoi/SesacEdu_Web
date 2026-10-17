@@ -1,5 +1,5 @@
 <%@ page pageEncoding="UTF-8" %>
-<script type="module" src="${pageContext.request.contextPath}/assets/app.js?v=lecture-detail-api-1">
+<script type="module" src="${pageContext.request.contextPath}/assets/app.js?v=forum-api-4">
 </script>
 <%-- 모든 JSP 페이지에 공통 React 챗봇을 한 번만 마운트합니다. --%>
 <div id="shared-chatbot" data-course-id="<%="web".equals(request.getAttribute("chatCourseId")) ? "web" : ""%>" data-initial-open="<%=request.getServletPath().equals("/chatbot")%>"></div>

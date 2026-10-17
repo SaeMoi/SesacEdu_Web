@@ -4,6 +4,7 @@ import { MyLearningAuthContext } from "./myLearningAuthContext.js";
 import {
   getCourseById,
   getLearningErrorMessage,
+  getLectureReviews,
   getMyCourses,
   ReviewApiNotConfiguredError,
   submitReview,
@@ -12,6 +13,7 @@ import {
   LearningPageHeader,
   MyLearningLayout,
 } from "./MyLearningLayout.jsx";
+import Pagination from "../../components/pagination/Pagination.jsx";
 import "./myLearning.css";
 
 const ratingDescriptions = {
@@ -37,6 +39,37 @@ function ReviewWritePage() {
   const [notice, setNotice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [retry, setRetry] = useState(0);
+  const [reviewPage, setReviewPage] = useState(0);
+  const [reviews, setReviews] = useState(null);
+  const [reviewsState, setReviewsState] = useState("loading");
+  const [reviewsError, setReviewsError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getLectureReviews({
+      accessToken,
+      courseId,
+      page: reviewPage,
+      signal: controller.signal,
+    })
+      .then((data) => {
+        setReviews(data);
+        setReviewsState("success");
+      })
+      .catch((error) => {
+        if (error.name === "AbortError") return;
+        setReviewsError(getLearningErrorMessage(error));
+        setReviewsState("error");
+      });
+    return () => controller.abort();
+  }, [accessToken, courseId, reviewPage]);
+
+  function changeReviewPage(nextPage) {
+    const total = reviews?.page?.totalPages ?? 0;
+    if (nextPage < 0 || nextPage >= total || nextPage === reviewPage) return;
+    setReviewsState("loading");
+    setReviewPage(nextPage);
+  }
 
   useEffect(() => {
     if (course && String(course.courseId) === String(courseId)) return undefined;
@@ -253,6 +286,63 @@ function ReviewWritePage() {
           </form>
         </>
       )}
+
+      <section className="review-list" aria-label="이 강좌의 리뷰">
+        <h2 className="review-list-title">
+          수강생 리뷰
+          {reviews?.summary && (
+            <span>
+              {reviews.summary.count}개
+              {reviews.summary.averageStar != null &&
+                ` · 평균 ★ ${reviews.summary.averageStar}`}
+            </span>
+          )}
+        </h2>
+        {reviewsState === "loading" && (
+          <p className="learning-state-message" role="status">
+            리뷰를 불러오는 중입니다.
+          </p>
+        )}
+        {reviewsState === "error" && (
+          <p className="learning-state-message learning-state-error" role="alert">
+            {reviewsError}
+          </p>
+        )}
+        {reviewsState === "success" &&
+          (reviews.reviews.length ? (
+            <ul className="review-list-items">
+              {reviews.reviews.map((item, index) => (
+                <li
+                  className={item.isMine ? "is-mine" : ""}
+                  key={`${reviews.page.number}-${index}`}
+                >
+                  <div className="review-list-meta">
+                    <strong>{item.authorNickname ?? "수강생"}</strong>
+                    {item.isMine && <span className="review-mine-badge">내 리뷰</span>}
+                    <span className="review-list-stars" aria-label={`${item.star}점`}>
+                      {"★".repeat(item.star ?? 0)}
+                    </span>
+                    {item.createdAt && (
+                      <time dateTime={item.createdAt}>
+                        {new Date(item.createdAt).toLocaleDateString("ko-KR")}
+                      </time>
+                    )}
+                  </div>
+                  <p>{item.review}</p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="learning-state-message">아직 작성된 리뷰가 없습니다.</p>
+          ))}
+        {reviewsState === "success" && (
+          <Pagination
+            page={reviews.page.number}
+            totalPages={reviews.page.totalPages}
+            onChange={changeReviewPage}
+          />
+        )}
+      </section>
     </MyLearningLayout>
   );
 }

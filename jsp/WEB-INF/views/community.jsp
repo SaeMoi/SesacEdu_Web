@@ -1,7 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" session="false" %>
 <% String pageTitle="커뮤니티"; %>
 <%@ include file="../fragments/head.jspf" %>
-<%@ include file="../fragments/posts.jspf" %>
 <main id="main" class="wrap community-page">
 <div class="community-heading">
 <div>
@@ -17,9 +16,10 @@
 <div class="community-columns">
 <section>
 <nav class="community-tabs" aria-label="이야기 분류">
-<%for(String c:new String[]{"전체","수강평","스터디","팀 프로젝트","질문·답변"}){%>
-<button data-post-category="<%=c%>" aria-pressed="<%=c.equals("전체")%>">
-<%=c%>
+<%-- 탭 값은 GET /forum?sort= 값입니다. 백엔드 분류를 프론트 탭에 맞춰 팀 프로젝트(PROJECT)로 정했습니다 (2026-10-16). --%>
+<%for(String[] c:new String[][]{{"ALL","전체"},{"REVIEW","수강평"},{"STUDY","스터디"},{"PROJECT","팀 프로젝트"},{"QUESTION","질문·답변"}}){%>
+<button type="button" data-post-category="<%=c[0]%>" aria-pressed="<%="ALL".equals(c[0])%>">
+<%=c[1]%>
 </button>
 <%}%>
 </nav>
@@ -27,28 +27,11 @@
 <h2>혼자 고민하던 것, 여기서 이야기해요.</h2>
 <p>경험을 나누고, 함께할 동료를 찾아보세요.</p>
 </div>
-<div class="post-list">
-<%for(String[] post:posts){%>
-<a class="post-item" data-post data-category="<%=post[1]%>" href="${pageContext.request.contextPath}/community/detail?id=<%=post[0]%>">
-<span class="pill <%=post[5]%>">
-<%=post[1]%>
-</span>
-<h2>
-<%=post[2]%>
-</h2>
-<p>
-<%=post[3]%>
-</p>
-<div class="author">
-<span class="avatar">
-<%=post[4]%>
-</span>
-<span>학습자 <%=post[4]%> · 예시 게시글</span>
-</div>
-</a>
-<%}%>
-</div>
+<p class="field-status" id="post-status" role="status" aria-live="polite"></p>
+<button class="btn secondary" type="button" id="retry-posts" hidden>다시 불러오기</button>
+<div class="post-list" id="post-list" aria-busy="true"></div>
 <p class="empty-state" id="post-empty" hidden>해당하는 이야기가 아직 없어요.</p>
+<nav class="pagination" id="post-pagination" aria-label="게시글 페이지" hidden></nav>
 </section>
 <aside>
 <div class="write-card">
@@ -62,7 +45,7 @@
 <p>경험과 지식을 나눠요.</p>
 <p>개인정보는 남기지 않아요.</p>
 </div>
-<p class="screen-note">목록·글은 공개, 작성은 로그인 후 이용하는 설계안입니다.</p>
+<p class="screen-note">목록·글은 누구나 볼 수 있고, 글·댓글 작성은 로그인 후 이용할 수 있어요. 검색은 현재 페이지 안에서만 찾습니다.</p>
 <nav class="small-links">
 <a href="${pageContext.request.contextPath}/qna">강의 질문·답변</a>
 <a href="${pageContext.request.contextPath}/chatbot">학습 도우미</a>

@@ -1,4 +1,11 @@
-import { mountHeader, saveSession } from "../ui/header.js";
+import {
+  API_BASE_URL,
+  authFetch,
+  getSession,
+  getStoredSession,
+  mountHeader,
+  saveSession,
+} from "../ui/header.js";
 // JSP 본문을 유지한 채 공통 헤더만 React로 연결합니다.
 const header = document.getElementById("shared-header");
 if (header) mountHeader(header);
@@ -588,36 +595,444 @@ all("[data-chapter]").forEach((b) =>
   }),
 );
 // 챗봇 동작은 공통 React 컴포넌트가 담당합니다.
-if (byId("post-search")) {
-  let category = "전체";
-  const chips = all(".community-tabs button");
-  const apply = () => {
+// ---------------------------------------------------------------------------
+// 커뮤니티(/forum) 백엔드 연동
+// 목록 GET /forum, 상세 GET /forum/{pid}, 글 작성 POST /forum/posts,
+// 댓글 작성 POST /forum/{pid}/comment, 글 삭제 DELETE /forum/{pid},
+// 댓글 삭제 DELETE /forum/{pid}/comment?commentId=
+// 쓰기 요청은 로그인 토큰(sessionStorage)을 붙여 authFetch로 보냅니다(만료 시 재발급 후 1회 재시도).
+// ---------------------------------------------------------------------------
+const forumBase = header?.dataset.basePath || "";
+const forumEl = (tag, className, text) => {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined && text !== null) node.textContent = String(text);
+  return node;
+};
+// 분류별 배지 색상입니다(기존 예시 화면과 같은 클래스).
+const forumPill = { STUDY: "", QUESTION: "blue", PROJECT: "purple", REVIEW: "" };
+const forumDate = (iso) => {
+  if (!iso) return "";
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime())
+    ? ""
+    : date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
+};
+const forumInitial = (nickname) => (nickname || "?").trim().charAt(0) || "?";
+const forumAuthHeaders = () => {
+  const session = getStoredSession();
+  return session ? { Authorization: session.authorization } : {};
+};
+// 실패 응답을 화면 문구로 바꿉니다. 400이면 result.errors[].reason을 모아 보여줍니다.
+async function forumError(response, fallback) {
+  const data = await response.json().catch(() => null);
+  const errors = data?.result?.errors;
+  if (response.status === 400 && Array.isArray(errors) && errors.length) {
+    return errors.map((e) => e.reason).join(" ");
+  }
+  const messages = {
+    401: "로그인이 필요합니다. 다시 로그인해 주세요.",
+    403:
+      data?.code === "ACCOUNT_RESTRICTED"
+        ? "이용이 제한된 계정입니다."
+        : data?.message || "권한이 없습니다.",
+    404: data?.message || "게시글을 찾을 수 없습니다.",
+  };
+  return messages[response.status] || data?.message || fallback;
+}
+
+// 목록 화면 (/community)
+if (byId("post-list")) {
+  const list = byId("post-list");
+  const status = byId("post-status");
+  const retry = byId("retry-posts");
+  const pagination = byId("post-pagination");
+  const search = byId("post-search");
+  const chips = all("[data-post-category]");
+  // 한 페이지 게시글 수(15개)는 백엔드 GET /forum이 정합니다. 프론트는 page 번호만 보냅니다.
+  const pageBlock = 10; // 아래 페이지 번호를 한 번에 10개(1~10, 11~20 ...)까지 보여줍니다.
+  let sort = "ALL";
+  let page = 0;
+  let active = null;
+
+  const makeItem = (post) => {
+    const review = post.type === "REVIEW";
+    const link = forumEl("a", "post-item");
+    link.dataset.post = "";
+    link.href = review
+      ? `${forumBase}/courses/detail?id=${encodeURIComponent(post.lectureId)}`
+      : `${forumBase}/community/detail?id=${encodeURIComponent(post.postId)}`;
+    const code = post.category?.code || "";
+    const meta = [
+      post.authorNickname || "알 수 없음",
+      forumDate(post.createdAt),
+      review && post.star ? `★ ${post.star}` : "",
+    ].filter(Boolean);
+    const author = forumEl("div", "author");
+    author.append(
+      forumEl("span", "avatar", forumInitial(post.authorNickname)),
+      forumEl("span", "", meta.join(" · ")),
+    );
+    link.append(
+      forumEl("span", `pill ${forumPill[code] || ""}`.trim(), post.category?.name || code),
+      forumEl("h2", "", post.title),
+      forumEl("p", "", post.excerpt),
+      author,
+    );
+    return link;
+  };
+
+  // 서버에는 검색 기능이 없어 현재 페이지 안에서만 걸러 보여줍니다.
+  const applySearch = () => {
+    const keyword = search.value.trim();
     let count = 0;
-    all("[data-post]").forEach((post) => {
-      post.hidden = !(
-        (category === "전체" || post.dataset.category === category) &&
-        post.textContent.includes(byId("post-search").value.trim())
-      );
-      if (!post.hidden) count++;
+    all("#post-list [data-post]").forEach((item) => {
+      item.hidden = keyword !== "" && !item.textContent.includes(keyword);
+      if (!item.hidden) count += 1;
     });
     byId("post-empty").hidden = count !== 0;
-    chips.forEach((b) =>
-      b.setAttribute("aria-pressed", String(b.textContent === category)),
-    );
   };
+
+  const renderPagination = (info) => {
+    pagination.replaceChildren();
+    // 1페이지뿐이어도 시안처럼 번호 줄을 보여줍니다. 글이 없을 때만 숨깁니다.
+    pagination.hidden = info.totalPages < 1;
+    if (info.totalPages < 1) return;
+    const add = (label, target, disabled, current = false) => {
+      const button = forumEl("button", "", label);
+      button.type = "button";
+      if (label === "이전" || label === "다음") {
+        // 화살표 아이콘 버튼 (화면 읽기 프로그램에는 이전·다음 페이지로 읽힘)
+        button.className = "page-arrow";
+        button.setAttribute("aria-label", `${label} 페이지`);
+        button.innerHTML = label === "이전"
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>';
+      } else {
+        button.setAttribute("aria-label", `${label} 페이지`);
+      }
+      button.disabled = disabled;
+      if (current) button.setAttribute("aria-current", "page");
+      button.addEventListener("click", () => {
+        page = target;
+        load();
+        list.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      pagination.append(button);
+    };
+    add("이전", page - 1, page === 0);
+    const start = Math.floor(page / pageBlock) * pageBlock;
+    const end = Math.min(info.totalPages - 1, start + pageBlock - 1);
+    for (let n = start; n <= end; n += 1) add(String(n + 1), n, false, n === page);
+    add("다음", page + 1, !info.hasNext);
+  };
+
+  async function load() {
+    active?.abort();
+    const controller = new AbortController();
+    active = controller;
+    chips.forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset.postCategory === sort)),
+    );
+    list.setAttribute("aria-busy", "true");
+    list.replaceChildren();
+    pagination.hidden = true;
+    byId("post-empty").hidden = true;
+    retry.hidden = true;
+    status.textContent = "게시글을 불러오는 중입니다.";
+    try {
+      const query = new URLSearchParams({ sort, page: String(page) });
+      const response = await fetch(`${API_BASE_URL}/forum?${query}`, {
+        signal: controller.signal,
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) throw new Error(await forumError(response, `HTTP ${response.status}`));
+      const data = await response.json();
+      const result = data?.result;
+      if (!Array.isArray(result?.posts) || !result.page) {
+        throw new Error("목록 응답 형식이 올바르지 않습니다.");
+      }
+      if (controller.signal.aborted) return;
+      list.replaceChildren(...result.posts.map(makeItem));
+      status.textContent = "";
+      byId("post-empty").hidden = result.posts.length !== 0;
+      renderPagination(result.page);
+      applySearch();
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      status.textContent =
+        error instanceof TypeError
+          ? "게시글 서버에 연결하지 못했습니다. 서버 실행 상태를 확인해 주세요."
+          : `게시글을 불러오지 못했습니다. ${error.message}`;
+      retry.hidden = false;
+    } finally {
+      if (active === controller) list.setAttribute("aria-busy", "false");
+    }
+  }
+
   chips.forEach((b) =>
     b.addEventListener("click", () => {
-      category = b.textContent;
-      apply();
+      sort = b.dataset.postCategory;
+      page = 0;
+      load();
     }),
   );
-  on("post-search", "input", apply);
+  search.addEventListener("input", applySearch);
+  retry.addEventListener("click", load);
+  load();
 }
-on("post-form", "submit", (event) => {
-  event.preventDefault();
-  if (event.target.reportValidity())
-    location.assign((header?.dataset.basePath || "") + "/community/done");
-});
+
+// 상세 화면 (/community/detail?id=)
+if (document.querySelector("[data-post-detail]")) {
+  const postId = new URLSearchParams(location.search).get("id");
+  const status = byId("detail-post-status");
+  const commentList = byId("comment-list");
+  const more = byId("comment-more");
+  const form = byId("comment-form");
+  const commentStatus = byId("comment-status");
+  const pageSize = 20;
+  let nextPage = 0;
+  let totalComments = 0;
+
+  const setCount = () => {
+    byId("comment-count").textContent = `(${totalComments})`;
+    if (totalComments === 0 && !commentList.querySelector("[data-comment]")) {
+      const empty = forumEl("p", "", "아직 등록된 댓글이 없습니다.");
+      empty.dataset.commentEmpty = "";
+      commentList.replaceChildren(empty);
+    }
+  };
+
+  const makeComment = (comment) => {
+    const item = forumEl("div", "comment-item");
+    item.dataset.comment = String(comment.commentId);
+    const author = forumEl("div", "author");
+    author.append(
+      forumEl("span", "avatar", forumInitial(comment.authorNickname)),
+      forumEl("span", "", [comment.authorNickname || "알 수 없음", forumDate(comment.createdAt)].filter(Boolean).join(" · ")),
+    );
+    // 댓글은 일반 텍스트로만 표시합니다(줄바꿈 유지).
+    const body = forumEl("p", "", comment.content);
+    body.style.whiteSpace = "pre-wrap";
+    item.append(author, body);
+    if (comment.isMine) {
+      const remove = forumEl("button", "btn secondary", "삭제");
+      remove.type = "button";
+      remove.addEventListener("click", async () => {
+        if (!confirm("댓글을 삭제할까요?")) return;
+        remove.disabled = true;
+        try {
+          const query = new URLSearchParams({ commentId: String(comment.commentId) });
+          const response = await authFetch(
+            `${API_BASE_URL}/forum/${encodeURIComponent(postId)}/comment?${query}`,
+            { method: "DELETE", headers: forumAuthHeaders() },
+          );
+          if (!response.ok) throw new Error(await forumError(response, "댓글을 삭제하지 못했습니다."));
+          item.remove();
+          totalComments = Math.max(0, totalComments - 1);
+          setCount();
+        } catch (error) {
+          alert(error instanceof TypeError ? "서버에 연결하지 못했습니다." : error.message);
+          remove.disabled = false;
+        }
+      });
+      item.append(remove);
+    }
+    return item;
+  };
+
+  async function loadPage(first) {
+    const query = new URLSearchParams({ page: String(nextPage), size: String(pageSize) });
+    // 로그인 상태면 토큰을 보내 내 글·댓글(isMine)에 삭제 버튼을 표시합니다. 없어도 조회는 됩니다.
+    const response = await fetch(
+      `${API_BASE_URL}/forum/${encodeURIComponent(postId)}?${query}`,
+      { headers: { Accept: "application/json", ...(getSession() ? forumAuthHeaders() : {}) } },
+    );
+    if (!response.ok) throw new Error(await forumError(response, `HTTP ${response.status}`));
+    const result = (await response.json())?.result;
+    if (!result?.post || !Array.isArray(result.comments) || !result.page) {
+      throw new Error("게시글 응답 형식이 올바르지 않습니다.");
+    }
+    if (first) {
+      const post = result.post;
+      const code = post.category?.code || "";
+      document.title = `${post.title} · 새싹에듀`;
+      byId("post-category").className = `pill ${forumPill[code] || ""}`.trim();
+      byId("post-category").textContent = post.category?.name || code;
+      byId("post-title").textContent = post.title;
+      byId("post-avatar").textContent = forumInitial(post.authorNickname);
+      byId("post-meta").textContent = [
+        post.authorNickname || "알 수 없음",
+        forumDate(post.createdAt),
+        post.updatedAt ? "수정됨" : "",
+      ].filter(Boolean).join(" · ");
+      // 본문은 서버가 허용 서식만 남긴(sanitize) HTML입니다.
+      byId("post-body-view").innerHTML = post.content;
+      commentList.replaceChildren();
+      const deleteButton = byId("delete-post");
+      deleteButton.hidden = !post.isMine;
+      deleteButton.onclick = async () => {
+        if (!confirm("글을 삭제할까요? 댓글도 함께 삭제됩니다.")) return;
+        deleteButton.disabled = true;
+        try {
+          const res = await authFetch(`${API_BASE_URL}/forum/${encodeURIComponent(postId)}`, {
+            method: "DELETE",
+            headers: forumAuthHeaders(),
+          });
+          if (!res.ok) throw new Error(await forumError(res, "글을 삭제하지 못했습니다."));
+          location.replace(`${forumBase}/community`);
+        } catch (error) {
+          alert(error instanceof TypeError ? "서버에 연결하지 못했습니다." : error.message);
+          deleteButton.disabled = false;
+        }
+      };
+    }
+    commentList.querySelector("[data-comment-empty]")?.remove();
+    commentList.append(...result.comments.map(makeComment));
+    totalComments = result.page.totalElements;
+    nextPage = result.page.number + 1;
+    more.hidden = !result.page.hasNext;
+    setCount();
+  }
+
+  (async () => {
+    if (!postId || !/^[1-9]\d*$/.test(postId)) {
+      status.textContent = "게시글 주소가 올바르지 않습니다. 목록에서 다시 선택해 주세요.";
+      return;
+    }
+    try {
+      await loadPage(true);
+      status.textContent = "";
+      status.hidden = true;
+      byId("post-content").hidden = false;
+      const loggedIn = Boolean(getSession());
+      form.hidden = !loggedIn;
+      byId("comment-login").hidden = loggedIn;
+    } catch (error) {
+      status.textContent =
+        error instanceof TypeError
+          ? "게시글 서버에 연결하지 못했습니다. 서버 실행 상태를 확인해 주세요."
+          : error.message;
+    }
+  })();
+
+  more.addEventListener("click", async () => {
+    more.disabled = true;
+    try {
+      await loadPage(false);
+    } catch (error) {
+      alert(error instanceof TypeError ? "서버에 연결하지 못했습니다." : error.message);
+    } finally {
+      more.disabled = false;
+    }
+  });
+
+  let sending = false;
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (sending || !form.reportValidity()) return;
+    sending = true;
+    const input = byId("comment-input");
+    const button = form.querySelector('[type="submit"]');
+    button.disabled = true;
+    commentStatus.textContent = "댓글을 등록하는 중입니다.";
+    try {
+      const response = await authFetch(
+        `${API_BASE_URL}/forum/${encodeURIComponent(postId)}/comment`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...forumAuthHeaders() },
+          body: JSON.stringify({ content: input.value }),
+        },
+      );
+      if (response.status !== 201) {
+        throw new Error(await forumError(response, "댓글을 등록하지 못했습니다."));
+      }
+      const created = (await response.json())?.result;
+      // 마지막 페이지까지 불러온 경우에만 새 댓글을 목록 끝에 붙입니다.
+      if (more.hidden && created) {
+        commentList.querySelector("[data-comment-empty]")?.remove();
+        commentList.append(makeComment(created));
+      }
+      totalComments += 1;
+      setCount();
+      input.value = "";
+      commentStatus.textContent = "댓글이 등록되었습니다.";
+    } catch (error) {
+      commentStatus.textContent =
+        error instanceof TypeError ? "서버에 연결하지 못했습니다." : error.message;
+    } finally {
+      sending = false;
+      button.disabled = false;
+    }
+  });
+}
+
+// 글 작성 화면 (/community/write)
+// 본문 입력의 간단한 표시(**굵게**, *기울임*, - 목록, [링크](주소))를 HTML로 바꿔 보냅니다.
+// 서버가 허용 서식만 다시 걸러 저장합니다.
+const forumEscape = (text) =>
+  text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const forumInline = (text) =>
+  forumEscape(text)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>');
+const forumToHtml = (text) =>
+  text
+    .replace(/\r\n/g, "\n")
+    .trim()
+    .split(/\n{2,}/)
+    .map((block) => {
+      const lines = block.split("\n");
+      if (lines.every((line) => /^\s*-\s+/.test(line))) {
+        return `<ul>${lines.map((line) => `<li>${forumInline(line.replace(/^\s*-\s+/, ""))}</li>`).join("")}</ul>`;
+      }
+      return `<p>${lines.map(forumInline).join("<br>")}</p>`;
+    })
+    .join("");
+
+if (byId("post-form")) {
+  const form = byId("post-form");
+  const status = byId("post-write-status");
+  if (!getSession()) {
+    status.textContent = "글을 등록하려면 먼저 로그인해 주세요.";
+  }
+  let sending = false;
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (sending || !form.reportValidity()) return;
+    if (!getStoredSession()) {
+      status.textContent = "글을 등록하려면 먼저 로그인해 주세요.";
+      return;
+    }
+    sending = true;
+    const button = form.querySelector('[type="submit"]');
+    button.disabled = true;
+    status.textContent = "글을 등록하는 중입니다.";
+    try {
+      const response = await authFetch(`${API_BASE_URL}/forum/posts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...forumAuthHeaders() },
+        body: JSON.stringify({
+          category: byId("post-category").value,
+          title: byId("post-title").value.trim(),
+          content: forumToHtml(byId("post-body").value),
+        }),
+      });
+      if (response.status !== 201) {
+        throw new Error(await forumError(response, "글을 등록하지 못했습니다."));
+      }
+      const created = (await response.json())?.result;
+      location.assign(`${forumBase}/community/done?id=${encodeURIComponent(created?.postId ?? "")}`);
+    } catch (error) {
+      status.textContent =
+        error instanceof TypeError ? "서버에 연결하지 못했습니다." : error.message;
+      sending = false;
+      button.disabled = false;
+    }
+  });
+}
 all("[data-format]").forEach((b) =>
   b.addEventListener("click", () => {
     const input = byId("post-body");

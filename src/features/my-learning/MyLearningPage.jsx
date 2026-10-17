@@ -10,9 +10,10 @@ import {
   LearningPageHeader,
   MyLearningLayout,
 } from "./MyLearningLayout.jsx";
+import Pagination from "../../components/pagination/Pagination.jsx";
 import "./myLearning.css";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5; // 백엔드 기본값과 같은 5개씩
 
 const statusFilters = [
   ["ALL", "전체", "all"],
@@ -80,6 +81,16 @@ function MyLearningPage() {
   function changeStatus(nextStatus) {
     setStatus(nextStatus);
     setPageNumber(0);
+    setActionNotice("");
+    setLoadState("loading");
+    setErrorMessage("");
+  }
+
+  function changePage(nextPage) {
+    if (nextPage < 0 || nextPage >= totalPages || nextPage === currentPage) {
+      return;
+    }
+    setPageNumber(nextPage);
     setActionNotice("");
     setLoadState("loading");
     setErrorMessage("");
@@ -296,49 +307,12 @@ function MyLearningPage() {
           </p>
         ))}
 
-      {loadState === "success" && totalPages > 1 && (
-        <nav className="learning-pagination" aria-label="페이지 이동">
-          <button
-            aria-label="이전 페이지"
-            disabled={currentPage <= 0}
-            onClick={() => {
-              setLoadState("loading");
-              setPageNumber((current) => Math.max(0, current - 1));
-            }}
-            type="button"
-          >
-            ‹
-          </button>
-          {Array.from({ length: totalPages }, (_, index) => index).map(
-            (page) => (
-              <button
-                aria-current={currentPage === page ? "page" : undefined}
-                className={currentPage === page ? "is-current" : ""}
-                key={page}
-                onClick={() => {
-                  setLoadState("loading");
-                  setPageNumber(page);
-                }}
-                type="button"
-              >
-                {page + 1}
-              </button>
-            ),
-          )}
-          <button
-            aria-label="다음 페이지"
-            disabled={!pageInfo?.hasNext || currentPage >= totalPages - 1}
-            onClick={() => {
-              setLoadState("loading");
-              setPageNumber((current) =>
-                Math.min(totalPages - 1, current + 1),
-              );
-            }}
-            type="button"
-          >
-            ›
-          </button>
-        </nav>
+      {loadState === "success" && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          onChange={changePage}
+        />
       )}
     </MyLearningLayout>
   );
