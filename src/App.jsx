@@ -1,167 +1,188 @@
+
 import "./App.css";
 import { Route, Routes } from "react-router";
 
+// 메인·마이페이지·공통 요소
+import HomePage from "./pages/HomePage.jsx";
+import MyPage from "./pages/MyPage.jsx";
+import Header from "./components/navigation/Header.jsx";
+import Chatbot from "./components/chatbot/Chatbot.jsx";
+
+// 본인 확인·프로필 수정
+import VerifyPasswordPage from "./features/profile-edit/VerifyPasswordPage.jsx";
+import ProfileEditPage from "./features/profile-edit/ProfileEditPage.jsx";
+
+// 내 학습·리뷰 작성
+import MyLearningPage from "./features/my-learning/MyLearningPage.jsx";
+import ReviewWritePage from "./features/my-learning/ReviewWritePage.jsx";
+
+// 내 질문·답변, 장바구니, 쿠폰·포인트
+import MyQnaPage from "./features/my-qna/MyQnaPage.jsx";
+import MyCartPage from "./features/my-cart/MyCartPage.jsx";
+import BenefitsPage from "./features/my-benefits/BenefitsPage.jsx";
+
+// 결제 관련 화면
+import {
+  PaymentPage,
+  PaymentCompletePage,
+  PaymentHistoryPage,
+  PaymentDetailPage,
+} from "./features/my-payment/PaymentPages.jsx";
+
+// 강사 신청
+import InstructorApplyPage from "./features/instructor-apply/InstructorApplyPage.jsx";
+
+// 강사센터 - 강의 관리
 import {
   InstructorCoursesPage,
 } from "./features/instructor-courses/InstructorCoursesPages.jsx";
 
+// 강사센터 - 과제 피드백
 import {
   InstructorAssignmentsDetailPage,
   InstructorAssignmentsListPage,
 } from "./features/instructor-assignments/InstructorAssignmentsPages.jsx";
 
+// 강사센터 - Q&A
 import {
   InstructorQnaDetailPage,
   InstructorQnaListPage,
 } from "./features/instructor-qna/InstructorQnaPages.jsx";
 
+// 강사센터 - 정산 관리
 import {
   InstructorSettlementDetailPage,
   InstructorSettlementListPage,
 } from "./features/instructor-settlement/InstructorSettlementPages.jsx";
+
+// 강사센터 - 강사 정보 및 쿠폰
 import { InstructorProfilePage } from "./features/instructor-profile/InstructorProfilePage.jsx";
 import { InstructorCouponPage } from "./features/instructor-coupons/InstructorCouponPage.jsx";
+
 import "./features/instructor-center/instructorCenter.css";
 
-const categories = [
-  "웹 보안",
-  "네트워크",
-  "개발 기초",
-  "로그 분석",
-  "클라우드",
-];
-
-function HomePage() {
+export default function App() {
   return (
     <>
-      <header className="site-header">
-        <div className="container header-inner">
-          <span className="brand" aria-label="새싹에듀">
-            새싹<span>에듀</span>
-          </span>
+      <Routes>
+        {/* 메인 */}
+        <Route path="/" element={<HomePage />} />
 
-          <nav className="main-nav" aria-label="주요 메뉴">
-            <span className="nav-active">강의</span>
-            <span>커뮤니티</span>
-          </nav>
+        {/* 마이페이지 */}
+        <Route path="/mypage" element={<MyPage />} />
+        <Route
+          path="/mypage/verify-password"
+          element={<VerifyPasswordPage />}
+        />
+        <Route
+          path="/mypage/profile"
+          element={<ProfileEditPage />}
+        />
+        <Route
+          path="/mypage/learning"
+          element={<MyLearningPage />}
+        />
+        <Route
+          path="/mypage/learning/:courseId/review"
+          element={<ReviewWritePage />}
+        />
+        <Route path="/mypage/qna" element={<MyQnaPage />} />
+        <Route path="/mypage/cart" element={<MyCartPage />} />
+        <Route path="/mypage/bnf" element={<BenefitsPage />} />
 
-          <div className="header-actions">
-            <span>로그인</span>
-            <span className="button button-primary">시작하기</span>
-          </div>
-        </div>
-      </header>
+        {/* 결제 */}
+        <Route path="/mypage/buy" element={<PaymentPage />} />
+        <Route
+          path="/mypage/buy/complete"
+          element={<PaymentCompletePage />}
+        />
+        <Route
+          path="/mypage/buy/history"
+          element={<PaymentHistoryPage />}
+        />
+        <Route
+          path="/mypage/buy/history/:orderId"
+          element={<PaymentDetailPage />}
+        />
 
-      <main className="container">
-        <section className="home-hero">
-          <p className="eyebrow">LEARN AT YOUR OWN PACE</p>
+        {/* 강사 신청 */}
+        <Route
+          path="/instructor/apply"
+          element={<InstructorApplyPage />}
+        />
 
-          <h1>
-            궁금했던 것을,
-            <br />
-            <span>할 수 있는 것으로.</span>
-          </h1>
+        {/* 강사센터 - 강의 관리 */}
+        <Route
+          path="/instructor/lectures"
+          element={<InstructorCoursesPage />}
+        />
 
-          <p className="hero-description">
-            작은 호기심에서 시작하는 나만의 배움.
-            <br />
-            기초부터 실습까지 새싹에듀와 함께해요.
-          </p>
+        {/* 강사센터 - 과제 피드백 */}
+        <Route
+          path="/instructor/assignments"
+          element={<InstructorAssignmentsListPage />}
+        />
+        <Route
+          path="/instructor/assignments/:assid"
+          element={<InstructorAssignmentsDetailPage />}
+        />
 
-          <ul className="category-list" aria-label="학습 분야">
-            {categories.map((category) => (
-              <li key={category} className="category-item">
-                {category}
-              </li>
-            ))}
-          </ul>
+        {/* 강사센터 - Q&A */}
+        <Route
+          path="/instructor/qna"
+          element={<InstructorQnaListPage />}
+        />
+        <Route
+          path="/instructor/qna/:qnaid"
+          element={<InstructorQnaDetailPage />}
+        />
 
-          <span className="button button-primary hero-action">
-            모든 강의 보기 <span aria-hidden="true">→</span>
-          </span>
-        </section>
+        {/* 강사센터 - 정산 관리 */}
+        <Route
+          path="/instructor/settlement"
+          element={<InstructorSettlementListPage />}
+        />
+        <Route
+          path="/instructor/settlement/:sid"
+          element={<InstructorSettlementDetailPage />}
+        />
 
-        <section className="intro-banner">
-          <div>
-            <p className="eyebrow">ABOUT SAESAK EDU</p>
-            <h2>배움의 시작부터, 내 것으로 만드는 순간까지.</h2>
-            <p>
-              강의를 듣고, 직접 실습하고, 궁금한 점을 나누며 성장해요.
-            </p>
-          </div>
+        {/* 강사센터 - 정보 관리 */}
+        <Route
+          path="/instructor/profile"
+          element={<InstructorProfilePage />}
+        />
 
-          <span className="intro-mark" aria-hidden="true">
-            +
-          </span>
-        </section>
-      </main>
+        {/* 강사센터 - 쿠폰 발행 */}
+        <Route
+          path="/instructor/coupon"
+          element={<InstructorCouponPage />}
+        />
 
-      <footer className="site-footer">
-        <div className="container">새싹에듀 · 오늘도 한 걸음</div>
-      </footer>
+        {/* 등록되지 않은 주소 */}
+        <Route
+          path="*"
+          element={
+            <>
+              <Header />
+              <main className="container">
+                <section className="home-hero">
+                  <h1>페이지를 찾을 수 없습니다.</h1>
+                  <p className="hero-description">
+                    요청한 화면은 아직 준비되지 않았거나 주소가 올바르지 않습니다.
+                  </p>
+                  <a className="button button-primary" href="/">
+                    홈으로
+                  </a>
+                </section>
+              </main>
+            </>
+          }
+        />
+      </Routes>
+
+      {/* 공통 챗봇 */}
+      <Chatbot />
     </>
   );
 }
-
-function App() {
-  return (
-    
-    <Routes>
-  <Route path="/" element={<HomePage />} />
-
-  {/* 강의 관리 */}
-  <Route
-    path="/instructor/lectures"
-    element={<InstructorCoursesPage />}
-  />
-
-  {/* 과제 피드백 목록 */}
-  <Route
-    path="/instructor/assignments"
-    element={<InstructorAssignmentsListPage />}
-  />
-
-  {/* 과제 피드백 상세 */}
-  <Route
-    path="/instructor/assignments/:assid"
-    element={<InstructorAssignmentsDetailPage />}
-  />
-
-  {/* Q&A 목록 */}
-  <Route
-    path="/instructor/qna"
-    element={<InstructorQnaListPage />}
-  />
-
-  {/* Q&A 상세 */}
-  <Route
-    path="/instructor/qna/:qnaid"
-    element={<InstructorQnaDetailPage />}
-  />
-
-  {/* 정산 관리 목록 */}
-  <Route
-    path="/instructor/settlement"
-    element={<InstructorSettlementListPage />}
-  />
-
-  {/* 정산 관리 상세 */}
-  <Route
-    path="/instructor/settlement/:sid"
-    element={<InstructorSettlementDetailPage />}
-  />
-  {/* 강사 정보 관리 */}
-<Route
-  path="/instructor/profile"
-  element={<InstructorProfilePage />}
-/>
-{/* 쿠폰 발행 */}
-<Route
-  path="/instructor/coupon"
-  element={<InstructorCouponPage />}
-/>
-</Routes>
-  );
-}
-
-export default App;

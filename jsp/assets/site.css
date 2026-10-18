@@ -1,0 +1,1643 @@
+/* 최신 PPT 2~29번의 화면 비율을 기준으로 작성한 JSP 전용 스타일입니다. */
+input,
+select,
+textarea {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 9px;
+  padding: 13px 16px;
+  min-height: 46px;
+  max-width: 100%;
+}
+input::placeholder,
+textarea::placeholder {
+  color: #8d9a98;
+}
+input:not([type="checkbox"]),
+textarea {
+  width: 100%;
+}
+label {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
+  margin: 20px 0 8px;
+}
+fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.full {
+  width: 100%;
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f3f5f4;
+  border-radius: 12px;
+  height: 46px;
+  padding: 0 21px;
+  min-width: 0;
+  margin: 0;
+  font-weight: 400;
+}
+.search-box input {
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  min-height: 35px;
+}
+.search-box > span {
+  font-size: 25px;
+  color: #788b91;
+  line-height: 1;
+}
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.error {
+  color: #d64f54;
+  font-size: 11px;
+  margin-top: 8px;
+}
+.invalid {
+  border-color: #d64f54 !important;
+}
+.form-status {
+  font-size: 12px;
+  color: #527632;
+  margin-top: 15px;
+}
+.form-status:empty {
+  display: none;
+}
+.demo-controls {
+  margin-top: 24px;
+  font-size: 10px;
+  color: #85948c;
+}
+.demo-controls summary {
+  cursor: pointer;
+}
+.demo-controls button {
+  background: #f0f4ed;
+  padding: 7px 10px;
+  border-radius: 5px;
+  font-size: 10px;
+  margin-top: 10px;
+}
+.demo-controls p {
+  margin-top: 8px;
+}
+.auth-page {
+  margin-inline: auto;
+  padding-bottom: 80px;
+  width: calc(100% - 40px);
+}
+.auth-page h1 {
+  font-size: 30px;
+}
+.auth-description {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 18px;
+  margin-bottom: 36px;
+}
+.auth-page label:first-child {
+  margin-top: 0;
+}
+.auth-page input {
+  height: 52px;
+}
+.login-page {
+  max-width: 470px;
+  margin-top: 78px;
+}
+.login-page .full {
+  height: 52px;
+  margin-top: 30px;
+  font-size: 16px;
+}
+.login-signup {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  margin-top: 26px;
+  font-size: 12px;
+  color: #8d9a96;
+}
+.login-signup a,
+.signup-login a {
+  color: #356441;
+  font-weight: 700;
+}
+.login-page .screen-note {
+  margin-top: 30px;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.signup-page {
+  max-width: 520px;
+  margin-top: 42px;
+}
+.signup-page h1 {
+  font-size: 28px;
+}
+.signup-page .auth-description {
+  margin-top: 14px;
+  margin-bottom: 30px;
+}
+.signup-page input {
+  height: 46px;
+}
+.signup-page label {
+  font-size: 12px;
+  margin-top: 16px;
+}
+.input-action {
+  display: flex;
+  gap: 10px;
+}
+.input-action input {
+  min-width: 0;
+}
+.input-action .btn {
+  min-width: 112px;
+  flex-shrink: 0;
+  padding-inline: 14px;
+  font-size: 12px;
+}
+.signup-page .full {
+  margin-top: 25px;
+  height: 49px;
+}
+.signup-help {
+  text-align: center;
+  color: #8d9a91;
+  font-size: 10px;
+  margin-top: 14px;
+}
+.signup-login {
+  border-top: 1px solid var(--line);
+  margin-top: 28px;
+  padding-top: 22px;
+  text-align: center;
+  font-size: 11px;
+  color: #8d9a91;
+}
+.signup-login a {
+  margin-left: 15px;
+}
+.field-status {
+  font-size: 11px;
+  color: #688d43;
+  margin: 8px 0;
+}
+.field-status:empty {
+  display: none;
+}
+.resend {
+  font-size: 10px;
+  color: #8d9a91;
+  margin-top: 10px;
+}
+.resend button {
+  background: none;
+  color: #426b37;
+  font-size: 10px;
+  margin-left: 6px;
+}
+.field-status.error {
+  color: #d64f54;
+}
+/* 강의 목록: 6개 분야 버튼, 3열 카드. PPT에 없는 분야는 빈 상태를 표시합니다. */
+.catalog {
+  padding-top: 24px;
+  padding-bottom: 45px;
+}
+.category-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 15px;
+  margin-bottom: 55px;
+}
+.category-tabs button {
+  background: #f4f6f5;
+  padding: 14px 12px;
+  min-height: 49px;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.category-tabs button[aria-pressed="true"] {
+  background: var(--lime);
+  border-radius: 9px;
+}
+.catalog-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 35px;
+}
+.catalog-heading .eyebrow {
+  margin-bottom: 13px;
+}
+.catalog-heading h1 {
+  font-size: 34px;
+}
+.catalog-heading p:last-child {
+  margin-top: 17px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.catalog-heading .search-box {
+  width: 275px;
+  margin-top: 22px;
+}
+.catalog-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 32px 0 22px;
+}
+.catalog-controls > p {
+  font-size: 14px;
+  font-weight: 700;
+}
+.catalog-controls strong {
+  color: #668c37;
+}
+.catalog-controls > div {
+  display: flex;
+  gap: 12px;
+}
+.catalog-controls select {
+  min-width: 115px;
+  font-size: 13px;
+  padding: 10px 16px;
+  height: 46px;
+  background: #fff;
+}
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 27px 28px;
+}
+.course-card {
+  display: block;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
+}
+.course-art {
+  border-radius: 10px;
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 25px 26px;
+  gap: 10px;
+}
+.course-art.sage {
+  background: #e8efda;
+  color: #153b4d;
+  border: 1px solid #e0e7d3;
+}
+.course-art.navy {
+  background: #153b4d;
+  color: #d3e9a2;
+}
+.course-art.lavender {
+  background: #e8e2f2;
+  color: #615579;
+}
+.course-art strong {
+  font-size: 23px;
+  line-height: 1.55;
+  font-weight: 400;
+  letter-spacing: -0.055em;
+}
+.line-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 43px;
+  height: 43px;
+  opacity: 0.8;
+}
+.line-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.course-card > .pill {
+  margin-top: 16px;
+}
+.course-card h3 {
+  font-size: 19px;
+  margin: 12px 0;
+}
+.course-card > p {
+  color: var(--muted);
+  font-size: 12px;
+}
+.course-price {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+  font-size: 18px;
+}
+.course-price > span {
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 400;
+}
+.course-card:hover h3 {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.empty-state {
+  padding: 40px 25px;
+  background: #f1f5ee;
+  text-align: center;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+.empty-state h3 {
+  font-size: 16px;
+  margin: 10px 0;
+}
+.empty-state h2 {
+  font-size: 20px;
+}
+.empty-state p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.empty-state .btn {
+  margin-top: 20px;
+}
+.empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #729943;
+  background: #e8f0d9;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 25px;
+}
+/* 강의 상세: 배너와 공개 탭, 구매 안내 모달. */
+.detail-page {
+  padding-top: 38px;
+  padding-bottom: 40px;
+}
+.detail-banner {
+  background: #123a4c;
+  border-radius: 18px;
+  display: grid;
+  grid-template-columns: 1.65fr 1fr;
+  gap: 50px;
+  padding: 34px;
+  color: white;
+  align-items: center;
+  min-height: 326px;
+}
+.detail-banner .eyebrow {
+  color: #b4d983;
+  font-size: 10px;
+  margin-bottom: 15px;
+}
+.detail-banner h1 {
+  font-size: 38px;
+  line-height: 1.5;
+  letter-spacing: -0.035em;
+}
+.banner-copy {
+  color: #c3d9df;
+  line-height: 1.9;
+  margin-top: 23px;
+  font-size: 14px;
+}
+.banner-tags {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 24px;
+  font-size: 11px;
+  color: #d7e7ed;
+}
+.banner-tags > span:nth-child(2) {
+  background: #254e5f;
+  border-radius: 4px;
+  padding: 4px 12px;
+}
+.banner-tags .pill {
+  font-size: 11px;
+}
+.hero-preview {
+  position: relative;
+  align-self: stretch;
+  max-height: 256px;
+  margin: auto 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e9ede6;
+}
+.hero-preview img {
+  width: 100%;
+  height: 256px;
+  object-fit: cover;
+}
+.hero-preview button {
+  position: absolute;
+  bottom: 14px;
+  left: 16px;
+  right: 16px;
+  background: #fffffff0;
+  border-radius: 9px;
+  padding: 11px 16px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #5f7887;
+}
+.detail-tabs {
+  display: flex;
+  gap: 35px;
+  border-bottom: 1px solid var(--line);
+  height: 74px;
+  align-items: stretch;
+}
+.detail-tabs button {
+  position: relative;
+  background: none;
+  padding: 0;
+  color: #8c9891;
+  font-size: 14px;
+  font-weight: 700;
+}
+.detail-tabs button.active {
+  color: #527632;
+}
+.detail-tabs button.active:after {
+  content: "";
+  position: absolute;
+  height: 2px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #84c849;
+}
+.detail-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 70px;
+  margin-top: 30px;
+  min-height: 415px;
+}
+.detail-columns h2 {
+  font-size: 27px;
+}
+.learning-list {
+  list-style: none;
+  padding: 0;
+  margin: 26px 0 0;
+  color: #647c89;
+  font-size: 15px;
+}
+.learning-list li {
+  position: relative;
+  padding-left: 35px;
+  margin-bottom: 23px;
+}
+.learning-list li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #83af4b;
+  font-size: 21px;
+  top: -3px;
+}
+.purchase-card {
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px #12324403;
+  align-self: start;
+}
+.purchase-card h3 {
+  font-size: 20px;
+  margin: 18px 0;
+}
+.purchase-card h2 {
+  font-size: 30px;
+}
+.purchase-card > p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.purchase-card .full {
+  margin-top: 26px;
+}
+.purchase-card dl {
+  margin: 26px 0 0;
+  padding-top: 19px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--muted);
+}
+.purchase-card dl div {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+.purchase-card dd {
+  font-weight: 700;
+  margin: 0;
+}
+.detail-page > .screen-note {
+  margin-top: 23px;
+}
+.video-preview {
+  background: linear-gradient(110deg, #153b4d, #204b5b);
+  border-radius: 12px;
+  color: #fff;
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.play-button {
+  width: 62px;
+  height: 62px;
+  background: var(--lime);
+  color: var(--navy);
+  border-radius: 50%;
+  font-size: 40px;
+  font-weight: 400;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+.teacher-profile {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 24px 0;
+}
+.teacher-profile p {
+  font-size: 12px;
+  color: var(--muted);
+}
+.body-copy {
+  color: #657d86;
+  line-height: 2;
+}
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: #e8f0d9;
+  border-radius: 50%;
+  color: #608341;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.purchase-dialog {
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  width: 520px;
+  max-width: calc(100% - 32px);
+  padding: 44px;
+  color: var(--ink);
+  box-shadow: 0 25px 70px #12324422;
+}
+.purchase-dialog::backdrop {
+  background: #12324455;
+  backdrop-filter: blur(5px);
+}
+.close-dialog {
+  position: absolute;
+  right: 35px;
+  top: 35px;
+  background: none;
+  font-size: 25px;
+  color: #36556a;
+}
+.purchase-dialog h2 {
+  font-size: 25px;
+  line-height: 1.5;
+  margin: 28px 0 22px;
+}
+.purchase-dialog > p {
+  font-size: 14px;
+  color: #657d89;
+  line-height: 1.9;
+  margin-bottom: 32px;
+}
+.purchase-dialog .purchase-signup {
+  margin-top: 18px;
+  margin-bottom: 25px;
+  font-size: 13px;
+  color: #8b9688;
+}
+.purchase-signup a {
+  font-weight: 700;
+  color: var(--ink);
+  margin-left: 10px;
+}
+.back-detail {
+  border-top: 1px solid var(--line);
+  padding: 23px 0 0;
+  background: none;
+  color: #8c9996;
+  font-size: 12px;
+  width: 100%;
+  text-align: left;
+}
+/* 질문답변/학습 도우미: PPT의 강의 화면 비율을 유지합니다. */
+.classroom {
+  padding: 30px 0 55px;
+}
+.classroom > .eyebrow {
+  margin-bottom: 13px;
+}
+.classroom > h1 {
+  font-size: 28px;
+  margin-bottom: 25px;
+}
+.classroom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 26px;
+}
+.lesson-video {
+  background: linear-gradient(115deg, #153b4d, #204b5b);
+  color: white;
+  border-radius: 15px;
+  overflow: hidden;
+  height: 431px;
+  display: flex;
+  flex-direction: column;
+}
+.video-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.video-center h2 {
+  font-size: 24px;
+  margin-top: 23px;
+}
+.video-center > p {
+  font-size: 14px;
+  color: #bdd6dc;
+  margin-top: 12px;
+}
+.video-status {
+  font-size: 11px !important;
+  color: #bfd4bd !important;
+  text-align: center;
+}
+.video-controls {
+  background: #12334499;
+  padding: 13px 22px 16px;
+  font-size: 12px;
+  color: #c1d5db;
+}
+.progress {
+  height: 4px;
+  background: #52717f;
+  border-radius: 5px;
+  margin-bottom: 12px;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  width: 19%;
+  background: #aff04f;
+}
+.video-controls > div:last-child {
+  display: flex;
+  justify-content: space-between;
+}
+.lesson-actions {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+.lesson-actions .sage {
+  background: #eaf3dc;
+}
+.lesson-outline {
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  overflow: hidden;
+  align-self: start;
+}
+.lesson-outline h2 {
+  font-size: 20px;
+  padding: 24px 22px 7px;
+}
+.lesson-outline > p {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0 22px 26px;
+}
+.chapter {
+  width: 100%;
+  min-height: 71px;
+  display: flex;
+  gap: 15px;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 22px;
+  border-top: 1px solid var(--line);
+  background: white;
+  font-size: 12px;
+  text-align: left;
+}
+.chapter strong {
+  color: #899b9b;
+  white-space: nowrap;
+}
+.chapter.active {
+  background: #ecf4de;
+  min-height: 90px;
+}
+.chapter.active strong {
+  color: #527632;
+}
+.outline-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 17px 22px;
+  font-size: 12px;
+  color: #889a99;
+  border-top: 1px solid var(--line);
+}
+.lesson-intro,
+.qna-section {
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+.lesson-intro h2,
+.qna-section h2 {
+  font-size: 23px;
+}
+.lesson-intro > p {
+  margin-top: 13px;
+  color: var(--muted);
+}
+.qna-table-head {
+  display: flex;
+  justify-content: space-between;
+  background: #f1f6e7;
+  padding: 21px 18px;
+  font-size: 12px;
+  color: #829780;
+  border-radius: 8px;
+  margin-top: 17px;
+}
+.qna-row {
+  border-bottom: 1px solid var(--line);
+}
+.qna-row summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 23px 18px;
+  gap: 20px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 13px;
+}
+.qna-row summary::-webkit-details-marker {
+  display: none;
+}
+.qna-row summary > span {
+  color: #8a9a91;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.qna-row > p {
+  padding: 0 18px 22px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.question-form {
+  margin-top: 30px;
+}
+.question-form h3 {
+  font-size: 20px;
+}
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 30px;
+}
+.chat-launch {
+  position: fixed;
+  bottom: 24px;
+  right: 30px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  z-index: 15;
+  padding: 0;
+}
+.chat-launch > span {
+  display: grid;
+  place-items: center;
+  background: #aff04f;
+  border: 3px solid white;
+  border-radius: 50%;
+  box-shadow: 0 6px 22px #173b4d18;
+  width: 62px;
+  height: 62px;
+  font-size: 29px;
+}
+.chat-launch small {
+  font-size: 11px;
+  color: #67828e;
+}
+.chat-popup {
+  position: fixed;
+  right: 30px;
+  bottom: 130px;
+  width: 330px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px #12324422;
+  background: #fbfdfb;
+  z-index: 20;
+}
+.chat-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 19px 21px;
+  background: #153b4d;
+  color: white;
+}
+.chat-heading h2 {
+  font-size: 19px;
+}
+.chat-heading p {
+  font-size: 11px;
+  color: #bfd4dc;
+  margin-top: 3px;
+}
+.chat-heading button {
+  background: none;
+  color: white;
+  font-size: 28px;
+  line-height: 1;
+  padding: 5px;
+}
+.chat-log {
+  padding: 18px;
+  max-height: 260px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.chat-bubble {
+  border-radius: 12px;
+  padding: 15px 14px;
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  max-width: 94%;
+}
+.chat-bubble.assistant {
+  background: #ecf4e1;
+  color: #51774e;
+  align-self: flex-start;
+}
+.chat-bubble.user {
+  background: #153b4d;
+  color: #fff;
+  align-self: flex-end;
+}
+.chat-popup form {
+  display: flex;
+  align-items: center;
+  margin: 12px 16px 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  gap: 5px;
+  background: white;
+}
+.chat-popup input {
+  border: 0;
+  min-height: 32px;
+  padding: 4px;
+  font-size: 10px;
+  min-width: 0;
+}
+.chat-popup form button {
+  background: #aff04f;
+  border-radius: 10px;
+  min-width: 30px;
+  height: 30px;
+  font-size: 22px;
+}
+.chat-disclaimer {
+  font-size: 9px;
+  color: #819285;
+  text-align: center;
+  padding: 7px 0 10px;
+}
+/* 커뮤니티 목록/상세/작성은 독립된 JSP 주소를 갖습니다. */
+.community-page {
+  padding: 36px 0 50px;
+}
+.community-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 35px;
+}
+.community-heading h1 {
+  font-size: 38px;
+}
+.community-heading > div > p:last-child {
+  margin-top: 17px;
+  color: #607b88;
+  font-size: 15px;
+}
+.community-heading .search-box {
+  width: 145px;
+  margin-top: 25px;
+  font-size: 12px;
+  padding-inline: 20px;
+}
+.community-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 40px;
+}
+.community-tabs {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.community-tabs button {
+  background: none;
+  padding: 7px 14px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.community-tabs button[aria-pressed="true"] {
+  background: #153b4d;
+  color: white;
+  font-weight: 700;
+}
+.community-callout {
+  background: #ecf3e1;
+  border: 1px solid #deead2;
+  border-radius: 12px;
+  padding: 26px 30px;
+  margin-bottom: 20px;
+}
+.community-callout h2 {
+  font-size: 18px;
+}
+.community-callout p {
+  font-size: 14px;
+  color: #63818a;
+  margin-top: 8px;
+}
+.post-item {
+  display: block;
+  padding: 29px 0;
+  border-bottom: 1px solid var(--line);
+}
+.post-item h2 {
+  font-size: 20px;
+  margin-top: 14px;
+}
+.post-item > p {
+  font-size: 14px;
+  color: #617b88;
+  margin-top: 8px;
+}
+.author {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: #929e98;
+  margin-top: 22px;
+}
+.write-card {
+  background: #153b4d;
+  color: white;
+  border-radius: 15px;
+  padding: 30px;
+}
+.write-card h2 {
+  font-size: 26px;
+  line-height: 1.5;
+}
+.write-card p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #bad2da;
+  margin-top: 20px;
+}
+.write-card .full {
+  margin-top: 26px;
+  color: #123244;
+}
+.community-promise {
+  padding: 25px 10px;
+}
+.community-promise h3 {
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+.community-promise p {
+  font-size: 14px;
+  color: #919d96;
+  margin-bottom: 13px;
+}
+.community-columns > aside > .screen-note {
+  margin-top: 23px;
+  font-size: 10px;
+}
+.post-page {
+  width: calc(100% - 48px);
+  max-width: 900px;
+  margin: 42px auto 70px;
+}
+.breadcrumb {
+  color: #81929c;
+  font-size: 16px;
+}
+.post-heading {
+  padding: 34px 0 28px;
+  border-bottom: 1px solid var(--line);
+}
+.post-heading h1 {
+  font-size: 34px;
+  margin: 18px 0;
+}
+.post-body {
+  font-size: 18px;
+  color: #526c79;
+  padding: 35px 0 45px;
+  line-height: 2;
+}
+.post-body p + p {
+  margin-top: 38px;
+}
+.comments {
+  background: #f7f9f2;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 26px 28px;
+}
+.comments h2 {
+  font-size: 21px;
+}
+.comments p {
+  font-size: 14px;
+  color: #677f8b;
+  margin-top: 20px;
+}
+.post-page .screen-note {
+  font-size: 10px;
+}
+.post-page > .eyebrow {
+  margin-bottom: 15px;
+}
+.post-page .section-heading h1 {
+  font-size: 34px;
+}
+.post-page .section-heading > span {
+  font-size: 12px;
+}
+.write-description {
+  font-size: 15px;
+  color: #5e7987;
+  margin: 25px 0 29px;
+}
+#post-form label {
+  font-size: 13px;
+  color: #83948d;
+}
+#post-category {
+  width: 100%;
+  height: 52px;
+  background: #fafcfb;
+}
+.post-title-input {
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 26px;
+  font-weight: 700;
+  padding: 26px 0 !important;
+  margin-top: 20px;
+  height: auto;
+}
+.editor-toolbar {
+  display: flex;
+  gap: 22px;
+  padding: 19px 5px;
+  font-size: 14px;
+  color: #829198;
+}
+.editor-toolbar button {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+.post-page textarea {
+  min-height: 250px;
+  padding: 25px;
+  font-size: 15px;
+  line-height: 2;
+  resize: vertical;
+}
+.post-done {
+  text-align: center;
+  margin: 160px auto 0;
+  width: calc(100% - 32px);
+}
+.done-check {
+  display: inline-grid;
+  place-items: center;
+  background: #eaf3da;
+  color: #7b9d50;
+  border-radius: 50%;
+  width: 55px;
+  height: 55px;
+  font-size: 28px;
+  margin-bottom: 24px;
+}
+.post-done h1 {
+  font-size: 28px;
+}
+.post-done p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 18px 0 26px;
+}
+.post-done > div {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+@media (max-width: 1000px) {
+  .detail-columns {
+    gap: 32px;
+    grid-template-columns: minmax(0, 1fr) 280px;
+  }
+  .detail-banner {
+    gap: 24px;
+    padding: 28px;
+  }
+  .detail-banner h1 {
+    font-size: 31px;
+  }
+  .course-art {
+    padding: 22px 20px;
+  }
+  .course-art strong {
+    font-size: 19px;
+  }
+  .classroom-grid {
+    grid-template-columns: minmax(0, 1fr) 270px;
+  }
+  .lesson-video {
+    height: 350px;
+  }
+  .community-columns {
+    grid-template-columns: minmax(0, 1fr) 250px;
+    gap: 25px;
+  }
+  .write-card {
+    padding: 25px;
+  }
+  .community-heading h1 {
+    font-size: 31px;
+  }
+  .community-tabs {
+    gap: 3px;
+  }
+  .post-page .section-heading h1 {
+    font-size: 29px;
+  }
+}
+@media (max-width: 700px) {
+  .login-page {
+    margin-top: 48px;
+  }
+  .auth-page h1 {
+    font-size: 26px;
+  }
+  .signup-page {
+    margin-top: 34px;
+  }
+  .catalog {
+    padding-top: 20px;
+  }
+  .category-tabs {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 34px;
+  }
+  .category-tabs button {
+    font-size: 12px;
+    min-height: 40px;
+    padding: 9px;
+  }
+  .catalog-heading {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 15px;
+  }
+  .catalog-heading h1 {
+    font-size: 28px;
+  }
+  .catalog-heading .search-box {
+    width: 100%;
+    margin-top: 0;
+  }
+  .catalog-heading p:last-child {
+    font-size: 12px;
+  }
+  .catalog-controls {
+    margin-top: 20px;
+    gap: 12px;
+  }
+  .catalog-controls > p {
+    font-size: 12px;
+  }
+  .catalog-controls > div {
+    gap: 7px;
+  }
+  .catalog-controls select {
+    min-width: 0;
+    width: 99px;
+    font-size: 11px;
+    padding: 8px;
+  }
+  .course-grid {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .course-art {
+    min-height: 154px;
+    padding: 25px;
+  }
+  .course-art strong {
+    font-size: 23px;
+  }
+  .detail-page {
+    padding-top: 24px;
+  }
+  .detail-banner {
+    grid-template-columns: 1fr;
+    padding: 24px;
+  }
+  .detail-banner h1 {
+    font-size: 30px;
+  }
+  .banner-copy {
+    font-size: 13px;
+  }
+  .hero-preview {
+    max-width: 100%;
+    width: 100%;
+    height: 210px;
+  }
+  .hero-preview img {
+    height: 210px;
+  }
+  .detail-tabs {
+    gap: 27px;
+    height: 60px;
+  }
+  .detail-tabs button {
+    font-size: 12px;
+  }
+  .detail-columns {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .detail-columns h2 {
+    font-size: 23px;
+  }
+  .learning-list {
+    font-size: 13px;
+  }
+  .purchase-card {
+    max-width: none;
+  }
+  .purchase-dialog {
+    padding: 30px;
+  }
+  .purchase-dialog h2 {
+    font-size: 24px;
+  }
+  .close-dialog {
+    right: 20px;
+    top: 20px;
+  }
+  .classroom {
+    padding-top: 25px;
+  }
+  .classroom-grid {
+    grid-template-columns: 1fr;
+  }
+  .classroom > h1 {
+    font-size: 25px;
+  }
+  .lesson-video {
+    height: 290px;
+  }
+  .video-center h2 {
+    font-size: 20px;
+  }
+  .play-button {
+    width: 50px;
+    height: 50px;
+    font-size: 31px;
+  }
+  .video-controls {
+    font-size: 9px;
+    padding-inline: 14px;
+  }
+  .lesson-actions {
+    gap: 8px;
+  }
+  .lesson-actions .btn {
+    font-size: 11px;
+    padding: 9px 16px;
+  }
+  .qna-section h2 {
+    font-size: 21px;
+  }
+  .qna-row summary {
+    padding: 18px 10px;
+    gap: 10px;
+    font-size: 12px;
+  }
+  .qna-row summary > span {
+    font-size: 10px;
+  }
+  .lesson-outline {
+    margin-top: 5px;
+  }
+  .chat-popup {
+    right: 12px;
+    bottom: 108px;
+    width: min(330px, calc(100% - 24px));
+    max-height: calc(100dvh - 130px);
+  }
+  .chat-log {
+    max-height: calc(100dvh - 330px);
+    min-height: 80px;
+  }
+  .chat-launch {
+    right: 16px;
+    bottom: 15px;
+  }
+  .chat-launch > span {
+    width: 55px;
+    height: 55px;
+  }
+  .community-page {
+    padding-top: 26px;
+  }
+  .community-heading {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+  .community-heading h1 {
+    font-size: 29px;
+  }
+  .community-heading > div > p:last-child {
+    font-size: 12px;
+  }
+  .community-heading .search-box {
+    width: 100%;
+    margin: 0;
+  }
+  .community-columns {
+    grid-template-columns: 1fr;
+  }
+  .community-tabs {
+    gap: 2px;
+  }
+  .community-tabs button {
+    font-size: 11px;
+    padding: 7px 10px;
+  }
+  .community-callout {
+    padding: 20px;
+  }
+  .community-callout h2 {
+    font-size: 16px;
+  }
+  .community-callout p {
+    font-size: 12px;
+  }
+  .post-item h2 {
+    font-size: 19px;
+  }
+  .post-item > p {
+    font-size: 12px;
+  }
+  .write-card h2 {
+    font-size: 24px;
+  }
+  .community-promise {
+    padding-bottom: 0;
+  }
+  .post-page {
+    margin-top: 30px;
+    width: calc(100% - 32px);
+  }
+  .post-heading h1 {
+    font-size: 26px;
+  }
+  .post-body {
+    font-size: 15px;
+  }
+  .post-page .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .post-page .section-heading h1 {
+    font-size: 27px;
+  }
+  .post-title-input {
+    font-size: 20px;
+  }
+  .post-done {
+    margin-top: 90px;
+  }
+  .post-done h1 {
+    font-size: 23px;
+  }
+  .post-done > div {
+    gap: 10px;
+  }
+  .post-done .btn {
+    font-size: 11px;
+  }
+  .input-action .btn {
+    min-width: 98px;
+    font-size: 11px;
+  }
+}
+
+/* 목록 전체 너비를 기준으로 페이지 이동 버튼을 중앙 정렬합니다. */
+.course-pagination {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 40px auto 0;
+  padding: 28px 0 0;
+  border-top: 1px solid #edf1ee;
+}
+.course-pagination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: #657b83;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .15s, color .15s, border-color .15s;
+}
+.course-pagination button:not(:disabled):hover {
+  background: #f0f5e9;
+  color: #153b4c;
+}
+.course-pagination button[aria-current="page"] {
+  background: #eaf3dc;
+  border-color: #d3e4b9;
+  color: #456b28;
+  font-weight: 700;
+}
+.course-pagination button:first-child,
+.course-pagination button:last-child {
+  flex-basis: 72px;
+  gap: 7px;
+  font-size: 13px;
+}
+.course-pagination button:first-child { margin-right: 12px; }
+.course-pagination button:last-child { margin-left: 12px; }
+.course-pagination button:first-child::before { content: "‹"; font-size: 22px; }
+.course-pagination button:last-child::after { content: "›"; font-size: 22px; }
+.course-pagination button:disabled { color: #b7c2c5; cursor: default; }
+.course-pagination button:focus-visible { outline: 2px solid #537738; outline-offset: 3px; }
+#course-page-status { margin: 14px 0 0; text-align: center; color: #83938e; font-size: 12px; }
+@media (max-width: 480px) {
+  .course-pagination { gap: 4px; margin-top: 28px; padding-top: 20px; }
+  .course-pagination button { flex-basis: 34px; height: 38px; border-radius: 10px; }
+  .course-pagination button:first-child,
+  .course-pagination button:last-child { flex-basis: 56px; margin: 0; }
+}
+
+/* 공개 30초 미리보기: 원본 영상과 별도 화면으로 구분합니다. */
+.hero-preview .preview-entry{position:absolute;left:18px;right:18px;bottom:18px;display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-radius:12px;background:#ffffffed;color:#657b83;text-decoration:none}
+.preview-player{position:relative}.preview-player video{width:100%;height:360px;background:#102f3e;object-fit:contain}
+.preview-lock{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:#153b4c;color:white}
+.preview-lock h2{font-size:24px;color:white}.preview-lock p{color:#c2d2d5}.preview-lock-icon{font-size:36px}.preview-lock-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:12px}
+.preview-player .pill{color:#153b4c}.preview-player .video-center{gap:12px}
+@media(max-width:600px){.preview-lock h2{font-size:20px}.preview-lock-actions .btn{padding:10px 12px;font-size:13px}.preview-player video{height:290px}}
+
+/* 밝은 구매 버튼에서도 글자 대비를 유지합니다. */
+.preview-lock-actions .btn.primary{color:#153b4c}
+
+/* 커뮤니티 목록 페이지 번호 (2026-10-17): 참고 시안의 모양(< 1 2 3 ... >)을 커뮤니티 색(남색·연두)으로 */
+#post-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin: 40px 0 8px;
+}
+#post-pagination[hidden] { display: none; }
+#post-pagination button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #8a949c;
+  font: inherit;
+  font-size: 17px;
+  line-height: 40px;
+  cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+#post-pagination button:hover:not(:disabled):not([aria-current="page"]) {
+  background: #eef5e4;
+  color: #1b3a4b;
+}
+#post-pagination button[aria-current="page"] {
+  background: #1b3a4b;
+  color: #fff;
+  font-weight: 600;
+  cursor: default;
+}
+#post-pagination button:focus-visible {
+  outline: 3px solid #b4ef4f;
+  outline-offset: 2px;
+}
+#post-pagination .page-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1b3a4b;
+}
+#post-pagination .page-arrow svg { width: 20px; height: 20px; }
+#post-pagination .page-arrow:disabled { color: #c9cfd4; cursor: default; }

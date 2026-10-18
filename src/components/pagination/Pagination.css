@@ -1,0 +1,44 @@
+/* 마이페이지 목록 페이지 번호 (2026-10-17): 커뮤니티 목록과 같은 모양 */
+.mypage-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin: 24px 0 8px;
+}
+.mypage-pagination button {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #8a949c;
+  font: inherit;
+  font-size: 15px;
+  line-height: 36px;
+  cursor: pointer;
+  transition: background-color .15s, color .15s;
+}
+.mypage-pagination button:hover:not(:disabled):not([aria-current="page"]) {
+  background: #eef5e4;
+  color: #1b3a4b;
+}
+.mypage-pagination button[aria-current="page"] {
+  background: #1b3a4b;
+  color: #fff;
+  font-weight: 600;
+  cursor: default;
+}
+.mypage-pagination button:focus-visible {
+  outline: 3px solid #b4ef4f;
+  outline-offset: 2px;
+}
+.mypage-pagination .page-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1b3a4b;
+}
+.mypage-pagination .page-arrow svg { width: 20px; height: 20px; }
+.mypage-pagination .page-arrow:disabled { color: #c9cfd4; cursor: default; }

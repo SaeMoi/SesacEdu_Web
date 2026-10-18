@@ -24,4 +24,10 @@ dist-ssr
 *.sw?
 
 # Local environment variables
+.env
 .env.local
+
+# JSP common header build output
+dist-header/
+
+dist-chatbot/

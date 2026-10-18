@@ -1,0 +1,39 @@
+diff --git a/src/features/my-learning/myLearningApi.js b/src/features/my-learning/myLearningApi.js
+index 69dfa13..28cde7d 100644
+--- a/src/features/my-learning/myLearningApi.js
++++ b/src/features/my-learning/myLearningApi.js
+@@ -1,9 +1,15 @@
++// 최신 로그인 명세: 응답 Authorization 전체 값을 그대로 전달합니다.
++// 기존 순수 JWT 입력도 호환하되 Bearer 접두사를 두 번 붙이지 않습니다.
++function authorizationHeader(value) {
++  return /^Bearer\s+/i.test(value) ? value : `Bearer ${value}`;
++}
++
+ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(
+   /\/+$/,
+   "",
+ );
+ 
+-export const MY_COURSES_API_PATH = "/mypage/courses";
++export const MY_COURSES_API_PATH = "/mypage/lectures";
+ 
+ export function getLearningAssetUrl(path) {
+   if (typeof path !== "string" || !path.trim()) return "";
+@@ -48,7 +54,7 @@ export async function getMyCourses({
+     `${API_BASE_URL}${MY_COURSES_API_PATH}?${params.toString()}`,
+     {
+       method: "GET",
+-      headers: { Authorization: `Bearer ${accessToken}` },
++      headers: { Authorization: authorizationHeader(accessToken) },
+       signal,
+     },
+   );
+@@ -91,7 +97,7 @@ export async function getMyCourses({
+ export class ReviewApiNotConfiguredError extends Error {
+   constructor() {
+     super(
+-      "리뷰 등록 API 경로와 요청·응답 명세가 확인되지 않아 아직 등록할 수 없습니다.",
++      "리뷰 등록 경로는 POST /mypage/lectures/{lectureid}/review입니다. 요청·응답 상세 명세 확인 후 연결합니다.",
+     );
+     this.name = "ReviewApiNotConfiguredError";
+   }

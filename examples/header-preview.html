@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>새싹에듀 공통 헤더 확인</title>
+  <style>
+    body { margin: 0; background: #f4f6f5; font-family: sans-serif; color: #123244; }
+    main { max-width: 900px; margin: 36px auto; padding: 24px; }
+    button { padding: 12px; margin: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="header-root"></div>
+  <main>
+    <h1>공통 헤더 상태 확인</h1>
+    <p>아래 버튼은 화면 확인용입니다. 실제 로그인이나 권한을 부여하지 않습니다.</p>
+    <button id="guest">비로그인</button>
+    <button id="loading">확인 중</button>
+    <button id="student">학습자 예시</button>
+    <button id="admin">관리자 예시</button>
+  </main>
+  <!-- Vite 개발 서버에서 사용하는 테스트 페이지입니다. 운영에 배포하지 않습니다. -->
+  <script type="module">
+    import { mountHeader } from "/src/entries/header.jsx";
+    const header = mountHeader(document.getElementById("header-root"));
+    document.getElementById("guest").onclick = () => header.update({ member: null, authLoading: false });
+    document.getElementById("loading").onclick = () => header.update({ authLoading: true });
+    document.getElementById("student").onclick = () => header.update({ member: { role: "STUDENT" }, authLoading: false });
+    document.getElementById("admin").onclick = () => header.update({ member: { role: "ADMIN" }, authLoading: false });
+  </script>
+</body>
+</html>
