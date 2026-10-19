@@ -130,10 +130,60 @@ API 호출을 보내지 않습니다. 인증 통합 시 기존 Access Token을 `
 API URL은 제공된 명세에 없어 임의로 지정하지 않았으며, 연결 전에는 신청 상태를
 `NONE`으로 처리하거나 신청 요청을 보내지 않습니다.
 
+## 강사센터 강의 관리
+
+- 강의 관리(목록·등록/수정·자료 업로드 화면 전환): `/instructor/lectures`
+
+백엔드 API는 프론트엔드 React Router URL과 구분하여 `VITE_API_BASE_URL`을
+기준으로 다음 경로를 호출합니다.
+
+- `GET /instructor/lectures`
+- `POST /instructor/lectures`
+- `GET /instructor/lectures/{lid}`
+- `PUT /instructor/lectures/{lid}`
+- `PUT /instructor/lectures/{lid}/files`
+- `DELETE /instructor/lectures/{lid}/files`
+
+현재 checkout에는 인증 Access Token 공급 코드가 없으므로 통합 시
+`InstructorCoursesAuthProvider`에 기존 로그인 토큰을 전달해야 합니다.
+자료 업로드는 `PUT`을 사용합니다. 백엔드가 공유한 엔드포인트 목록 기준입니다.
+삭제 경로는 별도 API 함수로 준비했지만, 삭제 대상 범위나 요청 본문이 명세되지 않아
+UI에는 연결하지 않습니다. 화면 단계와 수정 모드는 React Router state로 전환하고,
+백엔드 요청 경로는 위 API 주소와 별도로 유지합니다. 수업 목록 조회 계약도 확인이
+필요합니다.
+
 ## 담당 범위
 
 - A: 메인, 로그인, 회원가입, 강의 목록·상세, 학습 화면, 질문답변, 커뮤니티, 챗봇
 - B: 마이페이지, 장바구니, 강사 관리
+
+## 강사센터 과제 피드백
+
+- 목록 화면: `/instructor/assignments`
+- 상세 화면: `/instructor/assignments/:assid`
+- API 기본 경로: `/instructor/assignments`
+- API 요청은 `VITE_API_BASE_URL`을 기본 URL로 사용하고 `Authorization: Bearer {accessToken}` 헤더를 보냅니다.
+- 이 브랜치의 `src/main.jsx`에는 로그인/JWT 공급자나 `InstructorAssignmentsAuthProvider`가 연결되어 있지 않습니다. 따라서 현재는 토큰이 필요한 API 요청을 보낼 수 없으며, 토큰 저장 방식은 이 기능에서 추정하거나 별도 저장하지 않습니다.
+- 목록 응답 예시에는 페이지 메타데이터가 없으므로 페이지네이션은 응답에 `totalPages`가 포함된 경우에만 표시합니다.
+- 제공된 목록 URL(`/instructor/assignments`)과 본문 예시 URL(`/api/instructor/lectures/{lid}/assignments`)은 계약 확인이 필요합니다. 구현은 우선 지정된 목록 URL을 사용합니다.
+
+## 강사센터 정산
+
+- 목록 URL: `/instructor/settlement`
+- 상세 URL: `/instructor/settlement/:sid`
+- API: `GET /instructor/settlement?page={page}`, `GET /instructor/settlement/{sid}?page={page}`
+- 요청은 `VITE_API_BASE_URL`과 `Authorization: Bearer {accessToken}`을 사용합니다. 현재 브랜치에는 로그인 토큰 공급자가 연결되어 있지 않습니다.
+- 정산 응답에 페이지 메타데이터가 없으면 실제 다음 페이지를 조회해 데이터 존재 여부를 확인하며, 페이지 수를 임의로 만들지 않습니다.
+
+## 강사센터 쿠폰 발행
+
+- 목록/추가 화면 URL: `/instructor/coupon` (화면 전환은 URL을 바꾸지 않는 내부 상태 사용)
+- 쿠폰 목록/발행 API: `GET /instructor/coupon?page={page}`, `POST /instructor/coupon`
+- 강의 선택은 기존 강사 강의 목록 계약 `GET /instructor/lectures?status=&page=1`의 `content`를 사용합니다.
+- 쿠폰 API는 `VITE_API_BASE_URL` 및 `Authorization: Bearer {accessToken}`을 사용합니다. 현재 브랜치에는 로그인 토큰 공급자가 연결되어 있지 않습니다.
+- 쿠폰 페이지네이션 응답 메타데이터가 없으면 다음 페이지를 요청해 비어 있지 않은 페이지인지 확인하며, 임의의 총 페이지 수나 페이지 크기는 만들지 않습니다.
+- 쿠폰 목록 경로(`/instructor/coupon`)와 요청 예시(`/instructors/coupon`)가 명세에서 다릅니다. 구현은 지정된 `/instructor/coupon`을 사용합니다.
+- 목록 조회 실패 코드(400)와 발행 실패 코드(401)의 의미 및 페이지네이션 필드는 백엔드 확인이 필요합니다.
 
 ## 협업 방식
 

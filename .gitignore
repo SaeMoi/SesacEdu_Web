@@ -23,7 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
-# JSP 공통 헤더 빌드 결과
+# Local environment variables
+.env
+.env.local
+
+# JSP common header build output
 dist-header/
 
 dist-chatbot/

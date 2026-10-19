@@ -1,3 +1,4 @@
+
 import "./App.css";
 import { Route, Routes } from "react-router";
 
@@ -20,10 +21,7 @@ import MyQnaPage from "./features/my-qna/MyQnaPage.jsx";
 import MyCartPage from "./features/my-cart/MyCartPage.jsx";
 import BenefitsPage from "./features/my-benefits/BenefitsPage.jsx";
 
-// 강사 신청 화면
-import InstructorApplyPage from "./features/instructor-apply/InstructorApplyPage.jsx";
-
-// 결제 관련 화면 4개
+// 결제 관련 화면
 import {
   PaymentPage,
   PaymentCompletePage,
@@ -31,14 +29,47 @@ import {
   PaymentDetailPage,
 } from "./features/my-payment/PaymentPages.jsx";
 
+// 강사 신청
+import InstructorApplyPage from "./features/instructor-apply/InstructorApplyPage.jsx";
+
+// 강사센터 - 강의 관리
+import {
+  InstructorCoursesPage,
+} from "./features/instructor-courses/InstructorCoursesPages.jsx";
+
+// 강사센터 - 과제 피드백
+import {
+  InstructorAssignmentsDetailPage,
+  InstructorAssignmentsListPage,
+} from "./features/instructor-assignments/InstructorAssignmentsPages.jsx";
+
+// 강사센터 - Q&A
+import {
+  InstructorQnaDetailPage,
+  InstructorQnaListPage,
+} from "./features/instructor-qna/InstructorQnaPages.jsx";
+
+// 강사센터 - 정산 관리
+import {
+  InstructorSettlementDetailPage,
+  InstructorSettlementListPage,
+} from "./features/instructor-settlement/InstructorSettlementPages.jsx";
+
+// 강사센터 - 강사 정보 및 쿠폰
+import { InstructorProfilePage } from "./features/instructor-profile/InstructorProfilePage.jsx";
+import { InstructorCouponPage } from "./features/instructor-coupons/InstructorCouponPage.jsx";
+
+import "./features/instructor-center/instructorCenter.css";
+
 export default function App() {
   return (
     <>
       <Routes>
-        {/* 기존 화면의 주소를 유지합니다. */}
+        {/* 메인 */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/mypage" element={<MyPage />} />
 
+        {/* 마이페이지 */}
+        <Route path="/mypage" element={<MyPage />} />
         <Route
           path="/mypage/verify-password"
           element={<VerifyPasswordPage />}
@@ -47,7 +78,6 @@ export default function App() {
           path="/mypage/profile"
           element={<ProfileEditPage />}
         />
-
         <Route
           path="/mypage/learning"
           element={<MyLearningPage />}
@@ -56,12 +86,11 @@ export default function App() {
           path="/mypage/learning/:courseId/review"
           element={<ReviewWritePage />}
         />
-
         <Route path="/mypage/qna" element={<MyQnaPage />} />
         <Route path="/mypage/cart" element={<MyCartPage />} />
         <Route path="/mypage/bnf" element={<BenefitsPage />} />
 
-        {/* B의 결제 관련 주소를 그대로 연결합니다. */}
+        {/* 결제 */}
         <Route path="/mypage/buy" element={<PaymentPage />} />
         <Route
           path="/mypage/buy/complete"
@@ -75,12 +104,62 @@ export default function App() {
           path="/mypage/buy/history/:orderId"
           element={<PaymentDetailPage />}
         />
-        {/* B의 강사 신청 화면을 연결합니다. */}
+
+        {/* 강사 신청 */}
         <Route
           path="/instructor/apply"
           element={<InstructorApplyPage />}
         />
-        {/* 등록되지 않은 React 주소에 안내 화면을 표시합니다. */}
+
+        {/* 강사센터 - 강의 관리 */}
+        <Route
+          path="/instructor/lectures"
+          element={<InstructorCoursesPage />}
+        />
+
+        {/* 강사센터 - 과제 피드백 */}
+        <Route
+          path="/instructor/assignments"
+          element={<InstructorAssignmentsListPage />}
+        />
+        <Route
+          path="/instructor/assignments/:assid"
+          element={<InstructorAssignmentsDetailPage />}
+        />
+
+        {/* 강사센터 - Q&A */}
+        <Route
+          path="/instructor/qna"
+          element={<InstructorQnaListPage />}
+        />
+        <Route
+          path="/instructor/qna/:qnaid"
+          element={<InstructorQnaDetailPage />}
+        />
+
+        {/* 강사센터 - 정산 관리 */}
+        <Route
+          path="/instructor/settlement"
+          element={<InstructorSettlementListPage />}
+        />
+        <Route
+          path="/instructor/settlement/:sid"
+          element={<InstructorSettlementDetailPage />}
+        />
+
+        {/* 강사센터 - 정보 관리 */}
+        <Route
+          path="/instructor/profile"
+          element={<InstructorProfilePage />}
+        />
+
+        {/* 강사센터 - 쿠폰 발행 */}
+        <Route
+          path="/instructor/coupon"
+          element={<InstructorCouponPage />}
+        />
+
+        {/* 등록되지 않은 주소 */}
         <Route
           path="*"
           element={
@@ -102,7 +181,7 @@ export default function App() {
         />
       </Routes>
 
-      {/* 모든 React 화면에서 공통으로 표시합니다. */}
+      {/* 공통 챗봇 */}
       <Chatbot />
     </>
   );
