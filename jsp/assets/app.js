@@ -1133,10 +1133,16 @@ if (loginForm) {
 
       // 비밀번호는 저장하지 않고 입력란에서도 지웁니다.
       passwordInput.value = "";
-      status.textContent = "로그인되었습니다. 메인으로 이동합니다.";
 
-      // 로그인 화면을 메인 화면으로 대체합니다.
-      window.location.replace((header?.dataset.basePath || "") + "/");
+if (member.role === "INSTRUCTOR") {
+  // 강사는 강사센터로 이동
+  status.textContent = "로그인되었습니다. 강사센터로 이동합니다.";
+  window.location.replace("/instructor/lectures");
+} else {
+  // 일반 사용자는 기존 메인으로 이동
+  status.textContent = "로그인되었습니다. 메인으로 이동합니다.";
+  window.location.replace((header?.dataset.basePath || "") + "/");
+}
     } catch (error) {
       status.textContent = "";
       errorBox.textContent =

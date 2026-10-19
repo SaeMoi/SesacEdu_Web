@@ -1296,3 +1296,98 @@ html {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* 강사센터 사이드바 - 마이페이지 기준 최종 통일 */
+@media (min-width: 641px) {
+  .instructor-center-shell .instructor-center-workspace {
+    grid-template-columns: 177px minmax(0, 1fr);
+    gap: 64px;
+    padding-top: 38px;
+  }
+
+  .instructor-center-shell .instructor-center-sidebar {
+    font-size: 13px;
+  }
+
+  .instructor-center-shell .instructor-center-sidebar
+  > .instructor-center-sidebar-eyebrow {
+    margin: 0;
+    padding: 0;
+    color: #527448;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    letter-spacing: 2px;
+  }
+
+  .instructor-center-shell .instructor-center-sidebar
+  > .instructor-center-sidebar-title {
+    margin: 8px 0 0;
+    padding: 0;
+    color: #234659;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 28px;
+  }
+
+  /* 기존 nth-of-type 그룹 간격까지 통일 */
+  .instructor-center-shell .instructor-center-sidebar
+  > .instructor-center-menu-group,
+  .instructor-center-shell .instructor-center-sidebar
+  > .instructor-center-menu-group:first-of-type,
+  .instructor-center-shell .instructor-center-sidebar
+  > .instructor-center-menu-group:nth-of-type(2),
+  .instructor-center-shell .instructor-center-sidebar
+  > .instructor-center-menu-group:nth-of-type(4),
+  .instructor-center-shell .instructor-center-sidebar
+  > .instructor-center-menu-group:nth-of-type(5) {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 3px;
+    margin: 22px 0 0;
+  }
+
+  .instructor-center-shell .instructor-center-sidebar
+  .instructor-center-menu-group > .instructor-center-menu-heading {
+    min-height: 0;
+    margin: 0 0 4px;
+    padding: 0;
+    color: #91a0a2;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: normal;
+  }
+
+  .instructor-center-shell .instructor-center-sidebar
+  .instructor-center-menu-group > a,
+  .instructor-center-shell .instructor-center-sidebar
+  .instructor-center-menu-group > span {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 7px 12px;
+    border-radius: var(--radius-small);
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: normal;
+    text-decoration: none;
+  }
+
+  .instructor-center-shell .instructor-center-sidebar
+  .instructor-center-menu-group > .is-active {
+    background: var(--color-sage);
+    color: #426f29;
+    font-weight: 600;
+  }
+
+  .instructor-center-shell .instructor-center-sidebar
+  > .instructor-courses-customer,
+  .instructor-center-shell .instructor-center-sidebar
+  > .instructor-center-menu-group:last-of-type + div {
+    margin-top: 22px;
+    gap: 3px;
+  }
