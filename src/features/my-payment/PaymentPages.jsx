@@ -22,6 +22,35 @@ function formatWon(value) {
   return Number.isFinite(value) ? `${moneyFormat.format(value)}원` : "—";
 }
 
+// 서버의 ISO 시각(2026-10-19T10:23:46+09:00)을 "2026. 10. 19. 오전 10:23" 형태로 보여 줍니다.
+const dateTimeFormat = new Intl.DateTimeFormat("ko-KR", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "Asia/Seoul",
+});
+
+function formatDateTime(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value) : dateTimeFormat.format(date);
+}
+
+// 가상 PG 거절 사유(402 PAYMENT_DECLINED의 result.reason)를 안내 문구로 바꿉니다.
+const DECLINE_REASONS = {
+  INVALID_CARD: "카드 번호를 확인해주세요.",
+  EXPIRED_CARD: "유효기간이 지난 카드입니다.",
+  INVALID_ACCOUNT: "은행 코드를 확인해주세요.",
+  LIMIT_EXCEEDED: "결제 한도를 초과했습니다.",
+  INSUFFICIENT_BALANCE: "잔액이 부족합니다.",
+};
+
+function declineMessage(error) {
+  return DECLINE_REASONS[error.result?.reason] ?? error.message;
+}
+
+// orders.pay 값(CARD | TRANSFER, 0원 주문은 null)을 화면 문구로 바꿉니다.
+const PAY_LABELS = { CARD: "카드", TRANSFER: "계좌이체" };
+
 function safeAmount(...values) {
   return values.find((value) => Number.isInteger(value) && value >= 0) ?? null;
 }
@@ -176,14 +205,49 @@ export function PaymentPage() {
   const { accessToken } = usePaymentAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const passedCourseIds = location.state?.courseIds;
-  const courseIds = useMemo(
-    () =>
-      Array.isArray(passedCourseIds)
-        ? [...new Set(passedCourseIds.filter((id) => Number.isInteger(id) && id > 0))]
-        : [],
-    [passedCourseIds],
-  );
+const passedCourseIds = location.state?.courseIds;
+// 강의 상세의 「수강권 구매」에서 온 바로 구매 (/mypage/buy?courseIds=12&direct=true): 장바구니를 쓰지 않습니다.
+const direct =
+  location.state?.direct === true ||
+  new URLSearchParams(location.search).get("direct") === "true";
+
+const courseIds = useMemo(() => {
+  // React 내부에서 이동한 경우 기존 방식도 유지합니다.
+  if (Array.isArray(passedCourseIds)) {
+    return [
+      ...new Set(
+        passedCourseIds.filter(
+          (id) => Number.isSafeInteger(id) && id > 0,
+        ),
+      ),
+    ];
+  }
+
+  // JSP에서 이동한 경우 주소의 courseIds를 읽습니다.
+  const raw = new URLSearchParams(location.search).get("courseIds");
+
+  if (!raw) return [];
+
+  const parts = raw.split(",");
+
+  if (
+    parts.length > 50 ||
+    parts.some((part) => !/^[1-9]\d*$/.test(part))
+  ) {
+    return [];
+  }
+
+  const ids = parts.map(Number);
+
+  if (ids.some((id) => !Number.isSafeInteger(id))) {
+    return [];
+  }
+
+  return [...new Set(ids)];
+}, [passedCourseIds, location.search]);
+
+
+
   const courseKey = courseIds.join(",");
   const [initialRecord, setInitialRecord] = useState(null);
   const [retryLoad, setRetryLoad] = useState(0);
@@ -229,7 +293,7 @@ export function PaymentPage() {
   useEffect(() => {
     if (courseIds.length === 0) return undefined;
     const controller = new AbortController();
-    getPaymentInitial(accessToken, controller.signal)
+    getPaymentInitial(accessToken, controller.signal, { direct, courseIds })
       .then((result) => {
         if (controller.signal.aborted) return;
         setInitialRecord({
@@ -249,7 +313,9 @@ export function PaymentPage() {
         });
       });
     return () => controller.abort();
-  }, [accessToken, courseIds.length, initialRequestKey]);
+    // courseIds는 courseKey(initialRequestKey)로 바뀜을 감지합니다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken, courseIds.length, initialRequestKey, direct]);
 
   const selectedItems = useMemo(() => {
     const allItems = Array.isArray(initial?.items) ? initial.items : [];
@@ -270,7 +336,7 @@ export function PaymentPage() {
     (coupon) => String(coupon.couponId) === couponId,
   );
   const couponDiscountEstimate = couponId
-    ? safeAmount(selectedCoupon?.discountValue) ?? 0
+    ? safeAmount(selectedCoupon?.expectedDiscount, selectedCoupon?.discountValue) ?? 0
     : 0;
   const pointLimit = Math.min(
     pointBalance ?? 0,
@@ -322,6 +388,7 @@ export function PaymentPage() {
             selectedItems.map((item) => item.courseId),
             Number(couponId),
             controller.signal,
+            direct,
           );
         }
         const result = await previewPoints(
@@ -330,6 +397,7 @@ export function PaymentPage() {
           couponId ? Number(couponId) : undefined,
           numericPoints,
           controller.signal,
+          direct,
         );
         if (!controller.signal.aborted && sequence === previewSequence.current) {
           setPreview({ key: previewKey, result });
@@ -361,6 +429,7 @@ export function PaymentPage() {
     accessToken,
     couponId,
     courseKey,
+    direct,
     loadState,
     numericPoints,
     pointInputValid,
@@ -454,6 +523,19 @@ export function PaymentPage() {
     };
   }
 
+  // 결제 완료 화면으로 이동합니다. 주문 정보는 location.state로 넘기고,
+  // 새로고침 등으로 state가 없어져도 다시 조회할 수 있게 주소에 orderId를 남깁니다.
+  function goToComplete(orderResult, paymentResult = null) {
+    const state = paymentCompleteState(orderResult, paymentResult);
+    const orderId = state.order.orderId;
+    navigate(
+      orderId
+        ? `/mypage/buy/complete?orderId=${encodeURIComponent(orderId)}`
+        : "/mypage/buy/complete",
+      { state },
+    );
+  }
+
   async function payExistingOrder(orderId) {
     const validationError = validatePayment();
     if (validationError) {
@@ -470,10 +552,7 @@ export function PaymentPage() {
         ...paymentDetails(),
       });
       if (body.code === "PAYMENT_COMPLETED") {
-        navigate(
-          "/mypage/buy/complete",
-          paymentCompleteState(retryPayment?.orderResult, body.result),
-        );
+        goToComplete(retryPayment?.orderResult, body.result);
         setFailure(null);
         return;
       }
@@ -495,7 +574,7 @@ export function PaymentPage() {
       );
     } catch (error) {
       if (error.code === "PAYMENT_DECLINED") {
-        setFailure({ code: error.code, message: error.message, canRetry: true });
+        setFailure({ code: error.code, message: declineMessage(error), canRetry: true });
       } else if (
         error.code === "PG_UNAVAILABLE" ||
         error.code === "NETWORK_ERROR" ||
@@ -532,13 +611,11 @@ export function PaymentPage() {
         couponId: couponId ? Number(couponId) : null,
         usePoint: numericPoints,
         payMethod: paymentMethod,
+        ...(direct ? { direct: true } : {}),
       });
       const orderResult = orderBody.result ?? {};
       if (orderBody.code === "ORDER_COMPLETED") {
-        navigate(
-          "/mypage/buy/complete",
-          paymentCompleteState(orderResult),
-        );
+        goToComplete(orderResult);
         return;
       }
       if (orderBody.code !== "ORDER_CREATED" || !orderResult.orderId) {
@@ -554,10 +631,7 @@ export function PaymentPage() {
         ...paymentDetails(),
       });
       if (paymentBody.code === "PAYMENT_COMPLETED") {
-        navigate(
-          "/mypage/buy/complete",
-          paymentCompleteState(orderResult, paymentBody.result),
-        );
+        goToComplete(orderResult, paymentBody.result);
         return;
       }
       if (paymentBody.code === "PAYMENT_DECLINED") {
@@ -598,7 +672,7 @@ export function PaymentPage() {
           canRetry: false,
         });
       } else if (error.code === "PAYMENT_DECLINED") {
-        setFailure({ code: error.code, message: error.message, canRetry: true });
+        setFailure({ code: error.code, message: declineMessage(error), canRetry: true });
       } else if (error.code === "PG_UNAVAILABLE") {
         setFailure({
           code: error.code,
@@ -620,7 +694,7 @@ export function PaymentPage() {
         description="할인과 포인트를 적용하고 결제 정보를 확인하세요."
         title="결제"
       />
-      {!location.state?.courseIds && (
+      {courseIds.length === 0 && (
         <div className="payment-notice" role="alert">
           {loadError}
           <button onClick={() => navigate(-1)} type="button">
@@ -628,7 +702,7 @@ export function PaymentPage() {
           </button>
         </div>
       )}
-      {location.state?.courseIds && loadState === "error" && (
+      {courseIds.length > 0 && loadState === "error" && (
         <div className="payment-notice" role="alert">
           <span>{loadError}</span>
           <button
@@ -695,7 +769,10 @@ export function PaymentPage() {
               <option value="">쿠폰 미사용</option>
               {coupons.map((coupon) => {
                 const id = String(coupon.couponId);
-                const unavailable = unavailableCoupons.includes(id);
+                // 서버가 이 주문에 쓸 수 없다고 표시한 쿠폰(applicable false)도 막습니다.
+                const unavailable =
+                  coupon.applicable === false ||
+                  unavailableCoupons.includes(id);
                 return (
                   <option disabled={unavailable} key={id} value={id}>
                     {coupon.name ?? "쿠폰"} ·{" "}
@@ -953,15 +1030,58 @@ export function PaymentPage() {
 }
 
 export function PaymentCompletePage() {
+  const { accessToken } = usePaymentAuth();
   const location = useLocation();
-  const order = location.state?.order;
+  const stateOrder = location.state?.order;
+  const queryOrderId = new URLSearchParams(location.search).get("orderId");
+  const [fetched, setFetched] = useState(null);
+
+  // state 없이 열린 경우(새로고침, 주소 직접 입력) 결제 상세 API로 주문을 다시 읽습니다.
+  useEffect(() => {
+    if (stateOrder?.orderId || !queryOrderId) return undefined;
+    const controller = new AbortController();
+    getPaymentDetail(accessToken, queryOrderId, controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        const detail = result.order ?? result;
+        setFetched({
+          key: queryOrderId,
+          order: {
+            orderId: detail.orderId,
+            orderName: detail.orderName,
+            amount: detail.finalAmount,
+            courseNames: Array.isArray(detail.items)
+              ? detail.items.map(getDisplayName)
+              : [],
+            status: detail.status,
+          },
+        });
+      })
+      .catch((error) => {
+        if (error.name === "AbortError" || controller.signal.aborted) return;
+        setFetched({ key: queryOrderId, order: null });
+      });
+    return () => controller.abort();
+  }, [accessToken, queryOrderId, stateOrder?.orderId]);
+
+  const fetchedOrder = fetched?.key === queryOrderId ? fetched.order : null;
+  // 결제 대기·취소 상태 주문은 완료 화면에 보여 주지 않습니다.
+  const order =
+    stateOrder ??
+    (fetchedOrder && fetchedOrder.status === "PAID" ? fetchedOrder : null);
+  const loading =
+    !stateOrder && Boolean(queryOrderId) && fetched?.key !== queryOrderId;
   return (
     <PaymentLayout active="history">
       <PaymentPageHeading
         description="결제 결과와 주문 정보를 확인하세요."
         title="결제 완료"
       />
-      {order?.orderId ? (
+      {loading ? (
+        <p className="payment-state" role="status">
+          결제 결과를 확인하는 중입니다.
+        </p>
+      ) : order?.orderId ? (
         <>
           <section className="payment-complete-card">
             <h2>결제가 완료되었습니다</h2>
@@ -1256,7 +1376,10 @@ export function PaymentDetailPage() {
         if (controller.signal.aborted) return;
         setDetailRecord({
           key: requestKey,
-          result: result.order ?? result,
+          result: {
+            ...(result.order ?? result),
+            payment: result.payment ?? null,
+          },
           status: "success",
           error: "",
         });
@@ -1329,15 +1452,13 @@ export function PaymentDetailPage() {
               </div>
               <div>
                 <dt>주문일</dt>
-                <dd>{detail.createdAt ?? detail.orderedAt ?? "—"}</dd>
+                <dd>{formatDateTime(detail.orderedAt ?? detail.createdAt)}</dd>
               </div>
               <div>
                 <dt>결제 수단</dt>
                 <dd>
-                  {detail.payMethodLabel ??
-                    detail.payMethod ??
-                    payment?.method ??
-                    "—"}
+                  {PAY_LABELS[detail.pay ?? payment?.method] ??
+                    (detail.finalAmount === 0 ? "무료 (결제 없음)" : "—")}
                 </dd>
               </div>
               <div>
@@ -1395,15 +1516,15 @@ export function PaymentDetailPage() {
                 </div>
                 <div>
                   <dt>승인 일시</dt>
-                  <dd>{payment.approvedAt ?? "—"}</dd>
+                  <dd>{formatDateTime(payment.approvedAt)}</dd>
                 </div>
                 <div>
-                  <dt>카드</dt>
+                  <dt>{payment.method === "TRANSFER" ? "계좌" : "카드"}</dt>
                   <dd>
                     {payment.cardBrand
                       ? `${payment.cardBrand} · **** ${payment.cardLast4 ?? "****"}`
-                      : payment.bankName
-                        ? `${payment.bankName} 계좌이체${
+                      : payment.bankCode
+                        ? `은행 ${payment.bankCode} 계좌이체${
                             payment.accountLast4
                               ? ` · **** ${payment.accountLast4}`
                               : ""
