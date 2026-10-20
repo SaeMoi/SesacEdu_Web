@@ -1,5 +1,5 @@
 <%@ page pageEncoding="UTF-8" %>
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/assignments.css">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/assignments.css?v=assignment-actions-2">
 <section id="assignment-area" aria-label="과제 확인">
 <p class="screen-note">화면 미리보기 · 파일은 서버에 전송되지 않으며 새로고침하면 초기화됩니다.</p>
 <article class="assignment-card assignment-guide">
@@ -35,4 +35,4 @@
 <button type="button" class="small-links" id="feedback-toggle">완료된 피드백 예시 보기</button>
 </article>
 </section>
-<script type="module" src="${pageContext.request.contextPath}/assets/assignments.js?v=file-upload-2"></script>
+<script type="module" src="${pageContext.request.contextPath}/assets/assignments.js?v=assignment-actions-2"></script>

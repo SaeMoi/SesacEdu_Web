@@ -38,3 +38,12 @@
 #assignment-area .assignment-bottom .assignment-submission-state {
   border: 0; padding: 0; margin: 0;
 }
+
+/* 강사 피드백은 내 제출 카드 안에 접어 두고 '피드백 확인'으로 펼칩니다. */
+#assignment-area .assignment-feedback-inline {
+  background: #f3f7eb; border-radius: 12px; padding: 20px; margin-top: 16px;
+}
+#assignment-area .assignment-feedback-inline h3 { margin: 0 0 10px; }
+#assignment-area .assignment-feedback-inline p { margin: 6px 0 0; }
+#assignment-area .assignment-feedback-inline .assignment-score { font-weight: 700; }
+#assignment-area .assignment-feedback-inline .assignment-feedback-date { font-size: 13px; color: var(--color-muted); }
