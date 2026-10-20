@@ -32,9 +32,6 @@ if (assignmentArea) {
   const submissionCard = document.createElement("article");
   submissionCard.className = "assignment-card assignment-live-submission";
   submissionCard.hidden = true;
-  const feedbackCard = document.createElement("article");
-  feedbackCard.className = "assignment-card assignment-feedback";
-  feedbackCard.hidden = true;
 
   card.append(
     title,
@@ -80,7 +77,7 @@ if (assignmentArea) {
   submitMessage.setAttribute("role", "status");
 
   submitForm.append(fileLabel, fileInput, label, noteInput, submitButton, submitMessage);
-  assignmentArea.append(submitForm, submissionCard, feedbackCard);
+  assignmentArea.append(submitForm, submissionCard);
   const submitHeading = document.createElement("h2");
   submitHeading.textContent = "과제 제출";
   submitForm.prepend(submitHeading);
@@ -101,14 +98,22 @@ if (assignmentArea) {
   actions.className = "form-actions";
   actions.hidden = true;
 
-  // 상세·다운로드 결과는 내 제출 카드 안에 보여 줍니다.
+  // 피드백 확인·다운로드 결과는 내 제출 카드 안에 보여 줍니다.
   const submissionMessage = document.createElement("p");
   submissionMessage.setAttribute("role", "status");
 
-  const detailButton = document.createElement("button");
-  detailButton.type = "button";
-  detailButton.className = "btn secondary";
-  detailButton.textContent = "상세·피드백 확인";
+  // 강사 피드백은 처음에 접어 두고, 버튼을 누르면 이 제출물 바로 아래에 펼칩니다.
+  const feedbackPanel = document.createElement("section");
+  feedbackPanel.id = "assignment-feedback-panel";
+  feedbackPanel.className = "assignment-feedback-inline";
+  feedbackPanel.hidden = true;
+
+  const feedbackButton = document.createElement("button");
+  feedbackButton.type = "button";
+  feedbackButton.className = "btn secondary";
+  feedbackButton.textContent = "피드백 확인";
+  feedbackButton.setAttribute("aria-controls", feedbackPanel.id);
+  feedbackButton.setAttribute("aria-expanded", "false");
 
   const editButton = document.createElement("button");
   editButton.type = "button";
@@ -120,7 +125,7 @@ if (assignmentArea) {
   deleteButton.className = "btn secondary";
   deleteButton.textContent = "삭제";
 
-  actions.append(detailButton, editButton, deleteButton);
+  actions.append(feedbackButton, editButton, deleteButton);
   submissionCard.append(actions);
 
   const cancelEdit = document.createElement("button");
@@ -147,6 +152,7 @@ if (assignmentArea) {
     cancelEdit.hidden = false;
     submitForm.hidden = false;
     actions.hidden = true;
+    closeFeedback();
     noteInput.focus();
   });
 
@@ -161,9 +167,46 @@ if (assignmentArea) {
     submitMessage.textContent = "";
   });
 
-  // GET /assignments/{aid} — 제출물 한 건을 다시 읽어 제출 내용과 피드백을 최신으로 보여 줍니다.
-  detailButton.addEventListener("click", async () => {
+  function closeFeedback() {
+    feedbackPanel.hidden = true;
+    feedbackButton.textContent = "피드백 확인";
+    feedbackButton.setAttribute("aria-expanded", "false");
+  }
+
+  // 점수·피드백·피드백 일시를 접힌 패널에 채웁니다.
+  function fillFeedback(submission) {
+    const isScored = submission.score !== null &&
+      submission.score !== undefined;
+    const heading = make("h3", "강사 피드백");
+
+    if (!submission.feedback?.trim() && !isScored) {
+      feedbackPanel.replaceChildren(
+        heading,
+        make("p", "아직 강사 피드백이 없습니다. 피드백이 등록되면 여기에서 확인할 수 있어요."),
+      );
+      return;
+    }
+
+    feedbackPanel.replaceChildren(heading);
+    if (isScored) feedbackPanel.append(make("p", `점수: ${submission.score}점`, "assignment-score"));
+    if (submission.feedback?.trim()) {
+      feedbackPanel.append(make("p", submission.feedback, "assignment-memo"));
+    }
+    if (submission.feedbackAt) {
+      feedbackPanel.append(make("p",
+        `피드백 일시: ${submission.feedbackAt.replace("T", " ")}`, "assignment-feedback-date"));
+    }
+  }
+
+  // GET /assignments/{aid} — 누를 때마다 서버에서 제출물을 다시 읽어 최신 피드백을 펼칩니다.
+  // 페이지를 연 뒤에 강사가 남긴 피드백도 새로고침 없이 볼 수 있습니다.
+  feedbackButton.addEventListener("click", async () => {
     if (submitting || !currentSubmission || !learningMatch) return;
+
+    if (!feedbackPanel.hidden) {
+      closeFeedback();
+      return;
+    }
 
     const session = getStoredSession();
 
@@ -172,8 +215,8 @@ if (assignmentArea) {
       return;
     }
 
-    detailButton.disabled = true;
-    submissionMessage.textContent = "제출 내용과 피드백을 확인하고 있습니다.";
+    feedbackButton.disabled = true;
+    submissionMessage.textContent = "강사 피드백을 확인하고 있습니다.";
 
     try {
       const response = await authFetch(
@@ -207,15 +250,20 @@ if (assignmentArea) {
         throw new Error("과제 상세 응답 형식이 올바르지 않습니다.");
       }
 
+      // 상태 배지도 최신 값으로 다시 그린 뒤 피드백을 펼칩니다.
       showSubmission(data);
-      submissionMessage.textContent = "최신 제출 내용과 피드백을 불러왔습니다.";
+      fillFeedback(data);
+      feedbackPanel.hidden = false;
+      feedbackButton.textContent = "피드백 접기";
+      feedbackButton.setAttribute("aria-expanded", "true");
+      submissionMessage.textContent = "";
     } catch (error) {
       submissionMessage.textContent =
         error instanceof TypeError
           ? "과제 서버에 연결하지 못했습니다."
           : error.message;
     } finally {
-      detailButton.disabled = false;
+      feedbackButton.disabled = false;
     }
   });
 
@@ -447,29 +495,34 @@ if (assignmentArea) {
       submitButton.disabled = false;
     }
   });
-  // 제출물 한 건(과제 안내의 submission 또는 상세 API 응답)으로 내 제출·피드백 카드를 그립니다.
+
+  // 제출물 한 건(과제 안내의 submission 또는 상세 API 응답)으로 내 제출 카드를 그립니다.
+  // 카드에는 피드백 상태(배지)만 보이고, 피드백 내용은 '피드백 확인'을 눌러야 펼쳐집니다.
   function showSubmission(submission) {
     currentSubmission = submission;
 
     // 0점도 채점된 점수이므로 값의 존재 여부로 확인합니다.
     const isScored = submission.score !== null &&
       submission.score !== undefined;
-    // 채점된 제출물은 수정·삭제 버튼을 숨기고, 상세·피드백 확인은 그대로 둡니다.
+    // 채점된 제출물은 수정·삭제 버튼을 숨기고, 피드백 확인은 그대로 둡니다.
     editButton.hidden = isScored;
     deleteButton.hidden = isScored;
     actions.hidden = false;
 
+    const feedbackState = isScored
+      ? "채점 완료"
+      : submission.feedback?.trim() ? "피드백 도착" : "피드백 대기";
     const headingRow = make("div", "", "section-heading");
     headingRow.append(
       make("h2", "내가 제출한 과제"),
-      make("span", "제출 완료", "assignment-badge"),
+      make("span", feedbackState, "assignment-badge"),
     );
     const submittedAt = make("p", submission.submittedAt
       ? `제출 일시: ${submission.submittedAt.replace("T", " ")}` : "");
     submissionCard.replaceChildren(
       headingRow, submittedAt, make("h3", assignmentTitle),
       make("p", submission.note || "작성된 내용이 없습니다.", "assignment-memo"),
-      actions, submissionMessage,
+      actions, feedbackPanel, submissionMessage,
     );
     if (submission.filename) {
       const attachment = make("div", "", "assignment-download");
@@ -479,27 +532,7 @@ if (assignmentArea) {
       attachment.append(make("strong", submission.filename), fileButton);
       actions.before(attachment);
     }
-    const feedbackHeading = make("div", "", "section-heading");
-    feedbackHeading.append(
-      make("h2", "강사 피드백"),
-      make("span", isScored ? "채점 완료" : "피드백 대기", "assignment-badge"),
-    );
-    const feedback = make("div", "", submission.feedback?.trim()
-      ? "assignment-memo" : "feedback-wait");
-    if (submission.feedback?.trim()) {
-      feedback.append(make("p", submission.feedback));
-    } else {
-      feedback.append(
-        make("h3", "강사님의 피드백을 기다리고 있어요."),
-        make("p", "피드백이 등록되면 이곳에서 확인할 수 있어요."),
-      );
-    }
-    if (isScored) feedback.append(make("p", `점수: ${submission.score}점`));
-    if (submission.feedbackAt) feedback.append(make("p",
-      `피드백 일시: ${submission.feedbackAt.replace("T", " ")}`));
-    feedbackCard.replaceChildren(feedbackHeading, feedback);
     submissionCard.hidden = false;
-    feedbackCard.hidden = false;
   }
 
   async function loadAssignment() {
@@ -526,7 +559,7 @@ if (assignmentArea) {
     fileType.textContent = "";
     submissionState.textContent = "";
     submissionCard.hidden = true;
-    feedbackCard.hidden = true;
+    closeFeedback();
 
 
     if (!session?.authorization) {
