@@ -2,12 +2,12 @@ import { useContext, useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router";
 import { MyLearningAuthContext } from "./myLearningAuthContext.js";
 import {
-  getCourseById,
   getLearningErrorMessage,
+  deleteReview,
   getLectureReviews,
-  getMyCourses,
-  ReviewApiNotConfiguredError,
+  getReviewCourse,
   submitReview,
+  updateReview,
 } from "./myLearningApi.js";
 import {
   LearningPageHeader,
@@ -43,6 +43,12 @@ function ReviewWritePage() {
   const [reviews, setReviews] = useState(null);
   const [reviewsState, setReviewsState] = useState("loading");
   const [reviewsError, setReviewsError] = useState("");
+  // 등록·수정·삭제 뒤 리뷰 목록과 내 리뷰를 다시 읽기 위한 값
+  const [reviewsReload, setReviewsReload] = useState(0);
+  // 서버가 알려 준 내 리뷰 (GET /mypage/{id}/review 의 myReview). 있으면 새로 쓰지 않고 수정·삭제합니다.
+  const myReview = reviews?.myReview ?? null;
+  const hasMyReview = Boolean(myReview);
+  const [filledFromMine, setFilledFromMine] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -62,7 +68,38 @@ function ReviewWritePage() {
         setReviewsState("error");
       });
     return () => controller.abort();
-  }, [accessToken, courseId, reviewPage]);
+  }, [accessToken, courseId, reviewPage, reviewsReload]);
+
+  // 이미 쓴 리뷰가 있으면 입력칸을 그 내용으로 채워 바로 고칠 수 있게 합니다.
+  useEffect(() => {
+    if (!myReview || filledFromMine) return;
+    setRating(Number(myReview.star) || 0);
+    setContent(myReview.review ?? "");
+    setFilledFromMine(true);
+  }, [myReview, filledFromMine]);
+
+  function reloadReviews() {
+    setReviewsState("loading");
+    setReviewsReload((current) => current + 1);
+  }
+
+  async function handleDelete() {
+    if (isSubmitting || !hasMyReview) return;
+    if (!window.confirm("작성한 리뷰를 삭제할까요?")) return;
+    setNotice("");
+    setIsSubmitting(true);
+    try {
+      await deleteReview({ courseId, accessToken });
+      setRating(0);
+      setContent("");
+      setNotice("리뷰를 삭제했습니다. 다시 작성할 수 있습니다.");
+      reloadReviews();
+    } catch (error) {
+      setNotice(error.message || "리뷰를 삭제하지 못했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   function changeReviewPage(nextPage) {
     const total = reviews?.page?.totalPages ?? 0;
@@ -75,23 +112,13 @@ function ReviewWritePage() {
     if (course && String(course.courseId) === String(courseId)) return undefined;
     const controller = new AbortController();
 
-    getMyCourses({
+    getReviewCourse({
+      courseId,
       accessToken,
-      status: "ALL",
-      sort: "RECENT_ENROLL",
-      page: 0,
-      size: 50,
       signal: controller.signal,
     })
-      .then((result) => {
-        const found = getCourseById(result, courseId);
-        if (!found) {
-          setCourseError(
-            "현재 목록에서 리뷰 대상 강좌를 찾을 수 없습니다. 강좌 조회 API 연동이 필요합니다.",
-          );
-          setCourseState("error");
-          return;
-        }
+      .then((found) => {
+        if (controller.signal.aborted) return;
         setCourse(found);
         setCourseState("success");
       })
@@ -121,23 +148,29 @@ function ReviewWritePage() {
       setFormError("리뷰는 1,000자 이내로 작성해주세요.");
       return;
     }
-    if (course?.reviewWritten === true) {
-      setFormError("이미 리뷰를 작성한 강좌입니다.");
-      return;
-    }
-
     setFormError("");
     setIsSubmitting(true);
     try {
-      await submitReview();
-    } catch (error) {
-      if (error instanceof ReviewApiNotConfiguredError) {
-        setNotice(
-          "리뷰 등록 API의 최종 경로와 요청·응답 명세 확인 후 연결할 수 있습니다. 아직 리뷰는 저장되지 않았습니다.",
-        );
+      if (hasMyReview) {
+        await updateReview({ courseId, accessToken, rating, content });
+        setNotice("리뷰를 수정했습니다.");
       } else {
-        setNotice("리뷰 등록을 처리하지 못했습니다.");
+        await submitReview({ courseId, accessToken, rating, content });
+        setNotice("수강평이 등록되었습니다. 강의 상세의 수강평 탭에서 확인할 수 있습니다.");
       }
+      reloadReviews();
+    } catch (error) {
+      // 다른 화면에서 이미 쓴 경우(409)에는 내 리뷰를 다시 읽어 수정 화면으로 바꿉니다.
+      if (error.status === 409) {
+        setFilledFromMine(true);
+        reloadReviews();
+      }
+
+      setNotice(
+        error instanceof TypeError
+          ? "등록 결과를 확인하지 못했습니다. 강의 상세에서 등록 여부를 확인해 주세요."
+          : error.message || "리뷰 등록을 처리하지 못했습니다.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -190,9 +223,9 @@ function ReviewWritePage() {
       {courseState === "success" &&
         String(course?.courseId) === String(courseId) && (
         <>
-          {course?.reviewWritten === true && (
+          {hasMyReview && (
             <p className="learning-action-notice" role="status">
-              이 강좌는 이미 리뷰를 작성했습니다. 중복 등록은 진행할 수 없습니다.
+              이 강좌에는 이미 작성한 리뷰가 있습니다. 강좌당 리뷰는 하나라서 아래에서 수정하거나 삭제할 수 있습니다.
             </p>
           )}
           <section className="review-course-summary" aria-label="리뷰 대상 강좌">
@@ -275,12 +308,26 @@ function ReviewWritePage() {
               <Link className="review-cancel-button" to="/mypage/learning">
                 취소
               </Link>
+              {hasMyReview && (
+                <button
+                  className="review-cancel-button"
+                  disabled={isSubmitting}
+                  onClick={handleDelete}
+                  type="button"
+                >
+                  삭제
+                </button>
+              )}
               <button
                 className="review-submit-button"
-                disabled={isSubmitting || course?.reviewWritten === true}
+                disabled={isSubmitting || reviewsState === "loading"}
                 type="submit"
               >
-                {isSubmitting ? "등록 중..." : "리뷰 등록"}
+                {isSubmitting
+                  ? "처리 중..."
+                  : hasMyReview
+                    ? "리뷰 수정"
+                    : "리뷰 등록"}
               </button>
             </div>
           </form>

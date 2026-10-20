@@ -1,6 +1,5 @@
-
 import "./App.css";
-import { Route, Routes } from "react-router";
+import { Navigate, Route, Routes } from "react-router";
 
 // 메인·마이페이지·공통 요소
 import HomePage from "./pages/HomePage.jsx";
@@ -109,6 +108,12 @@ export default function App() {
         <Route
           path="/instructor/apply"
           element={<InstructorApplyPage />}
+        />
+
+        {/* 강사센터 진입 주소: 강의 관리로 이동 */}
+        <Route
+          path="/instructor"
+          element={<Navigate to="/instructor/lectures" replace />}
         />
 
         {/* 강사센터 - 강의 관리 */}

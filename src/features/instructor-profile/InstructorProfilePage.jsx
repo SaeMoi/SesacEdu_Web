@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
 import { InstructorCenterLayout as SharedInstructorCenterLayout } from "../instructor-center/InstructorCenterLayout.jsx";
+import { InstructorCenterTabs } from "../instructor-center/InstructorCenterTabs.jsx";
 import {
   getInstructorProfile,
   updateInstructorProfile,
@@ -33,12 +33,7 @@ function InstructorProfileHeading() {
         <h1>강사 정보 관리</h1>
         <p>공개 프로필과 정산 계좌 정보를 관리하세요.</p>
       </header>
-      <nav className="instructor-profile-tabs" aria-label="강사센터 분류">
-        <span aria-current="page" className="is-active">운영 현황</span>
-        <Link to="/instructor/lectures">강의</Link>
-        <span aria-disabled="true">학습 관리</span>
-        <span aria-disabled="true">정산</span>
-      </nav>
+      <InstructorCenterTabs className="instructor-profile-tabs" />
     </>
   );
 }

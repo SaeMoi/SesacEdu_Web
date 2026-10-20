@@ -54,20 +54,20 @@ git switch --track origin/feat/login
 3. 현재 과제 기능만 새 기능 커밋이 있고, 나머지는 향후 작업을 위한 출발 브랜치입니다. 변경이 없는 브랜치의 PR은 만들지 않습니다.
 4. dev에서 통합 확인한 뒤 main으로 반영합니다. main/dev 강제 푸시는 사용하지 않습니다.
 
-공유 파일: App.jsx, vite.config.js, WEB-INF/web.xml, classroom.jspf, assets/app.js, assets/site.css.
-이 파일은 여러 기능이 사용하는 만큼 변경 사항을 PR에 명시하고 서로 검토합니다.
-새 과제 CSS/JS는 별도 파일로 분리했습니다. 다른 기능도 수정 범위가 커지면 같은 방식으로 분리합니다.
+        공유 파일: App.jsx, vite.config.js, WEB-INF/web.xml, classroom.jspf, assets/app.js, assets/site.css.
+        이 파일은 여러 기능이 사용하는 만큼 변경 사항을 PR에 명시하고 서로 검토합니다.
+        새 과제 CSS/JS는 별도 파일로 분리했습니다. 다른 기능도 수정 범위가 커지면 같은 방식으로 분리합니다.
 
-## 이전 이름으로 작업 중인 팀원
+        ## 이전 이름으로 작업 중인 팀원
 
-커밋하지 않은 변경은 먼저 저장합니다. 예를 들어 로그인 브랜치를 이미 받았다면:
+        커밋하지 않은 변경은 먼저 저장합니다. 예를 들어 로그인 브랜치를 이미 받았다면:
 
-```bash
-git fetch origin --prune
-git branch -m feature/a-login feat/login
-git branch --set-upstream-to=origin/feat/login feat/login
-```
+        ```bash
+        git fetch origin --prune
+        git branch -m feature/a-login feat/login
+        git branch --set-upstream-to=origin/feat/login feat/login
+        ```
 
-다른 브랜치도 같은 방식으로 변경합니다. B의 기존 `feat/` 브랜치는 변경할 필요 없습니다.
+        다른 브랜치도 같은 방식으로 변경합니다. B의 기존 `feat/` 브랜치는 변경할 필요 없습니다.
 
-공통 React 챗봇 구현 시 feat/chatbot은 기존 과제/상세 수정까지 기준으로 반영했습니다. 최신 전체 화면은 feat/chatbot에 있고, B는 shared-chatbot.md 안내대로 챗봇 관련 새 파일만 선택해서 가져올 수 있습니다.
+        공통 React 챗봇 구현 시 feat/chatbot은 기존 과제/상세 수정까지 기준으로 반영했습니다. 최신 전체 화면은 feat/chatbot에 있고, B는 shared-chatbot.md 안내대로 챗봇 관련 새 파일만 선택해서 가져올 수 있습니다.

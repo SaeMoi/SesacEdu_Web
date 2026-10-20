@@ -301,6 +301,10 @@
   background: var(--color-navy);
   color: white;
   font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .learning-secondary-actions {
@@ -322,6 +326,7 @@
   color: var(--color-text);
   font-size: 10px;
   white-space: nowrap;
+  text-decoration: none;
 }
 
 .learning-action-button.assignment {

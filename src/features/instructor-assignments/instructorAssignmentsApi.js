@@ -122,6 +122,19 @@ export async function deleteInstructorAssignmentFeedback(accessToken, assid) {
   });
 }
 
+// 제출 파일 자체를 받습니다. 서버가 Authorization 을 확인하므로 토큰을 같이 보냅니다.
+export async function fetchInstructorAssignmentFile(accessToken, url) {
+  const response = await fetch(/^https?:/.test(url) ? url : `${API_BASE_URL}${url}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) {
+    throw new Error(
+      response.status === 404 ? "제출 파일이 없습니다." : "첨부파일을 다운로드하지 못했습니다.",
+    );
+  }
+  return response.blob();
+}
+
 export async function getInstructorAssignmentDownload(accessToken, assid) {
   const body = await request(
     `${API_PATH}/${encodeURIComponent(assid)}/download`,

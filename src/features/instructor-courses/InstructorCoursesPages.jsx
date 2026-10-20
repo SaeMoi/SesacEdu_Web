@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import {
   createLectureFilesFormData,
+  deleteInstructorLectureFiles,
+  saveInstructorLectureAssignment,
   getInstructorCoursesErrorMessage,
   getInstructorLecture,
   getInstructorLectures,
@@ -253,6 +255,15 @@ function LectureListPage() {
   );
 }
 
+// 서버(LectureOptions)와 같은 목록·순서입니다. 난이도는 값 "입문", 화면 "입문 과정"입니다.
+const LECTURE_CATEGORIES = ["웹 보안", "네트워크", "개발 기초", "로그 분석", "클라우드"];
+const LECTURE_LEVELS = [
+  ["입문", "입문 과정"],
+  ["초급", "초급 과정"],
+  ["중급", "중급 과정"],
+  ["고급", "고급 과정"],
+];
+
 const blankLecture = {
   name: "",
   category: "",
@@ -286,8 +297,12 @@ export function LectureEditorPage() {
         if (controller.signal.aborted) return;
         setValues({
           name: lecture.name ?? "",
-          category: lecture.category ?? "",
-          level: lecture.level ?? "",
+          category: LECTURE_CATEGORIES.includes(lecture.category)
+            ? lecture.category
+            : "",
+          level: LECTURE_LEVELS.some(([value]) => value === lecture.level)
+            ? lecture.level
+            : "",
           headline: lecture.headline ?? "",
           summary: lecture.summary ?? "",
           price:
@@ -328,10 +343,6 @@ export function LectureEditorPage() {
       Number(values.price) < 0
     ) {
       setSaveError("강의 제목, 카테고리, 난이도, 한 줄 소개, 가격을 확인해주세요.");
-      return;
-    }
-    if (!isEditing && !values.thumbnail) {
-      setSaveError("강의 썸네일 파일을 선택해주세요.");
       return;
     }
 
@@ -399,20 +410,32 @@ export function LectureEditorPage() {
           <div className="instructor-course-form-field">
             <label htmlFor="lecture-category">카테고리 / 난이도</label>
             <div className="instructor-course-two-columns">
-              <input
+              <select
                 id="lecture-category"
                 onChange={(event) =>
                   updateField("category", event.target.value)
                 }
-                placeholder="카테고리"
                 value={values.category}
-              />
-              <input
+              >
+                <option value="">카테고리 선택</option>
+                {LECTURE_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              <select
                 aria-label="난이도"
                 onChange={(event) => updateField("level", event.target.value)}
-                placeholder="난이도"
                 value={values.level}
-              />
+              >
+                <option value="">난이도 선택</option>
+                {LECTURE_LEVELS.map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="instructor-course-form-field">
@@ -449,7 +472,7 @@ export function LectureEditorPage() {
             </div>
             <div className="instructor-course-form-field">
               <label htmlFor="lecture-thumbnail">
-                썸네일
+                썸네일 (선택, 없으면 기본 이미지)
               </label>
               <div className="instructor-thumbnail-control">
                 <input
@@ -535,6 +558,90 @@ export function LectureFilesPage() {
   const [uploadSuccess, setUploadSuccess] = useState("");
   const uploadLock = useRef(false);
   const { accessToken } = useInstructorCoursesAuth();
+  // 이미 올라가 있는 영상·자료 (강의 상세의 video_filename / material_filename)
+  const [uploaded, setUploaded] = useState({ video: null, material: null });
+  const [uploadedState, setUploadedState] = useState("idle");
+  const [uploadedVersion, setUploadedVersion] = useState(0);
+  const [deletingSlot, setDeletingSlot] = useState("");
+  // 강의 과제 설정 (lectures.assignment_*)
+  const [assignment, setAssignment] = useState({ title: "", content: "", fileType: "" });
+  const [assignmentSaving, setAssignmentSaving] = useState(false);
+  const [assignmentMessage, setAssignmentMessage] = useState("");
+
+  useEffect(() => {
+    if (!lid) return undefined;
+    const controller = new AbortController();
+
+    async function loadUploaded() {
+      setUploadedState("loading");
+      try {
+        const lecture = await getInstructorLecture(accessToken, lid, controller.signal);
+        if (controller.signal.aborted) return;
+        setUploaded({
+          video: lecture.video_filename || null,
+          material: lecture.material_filename || null,
+        });
+        setAssignment({
+          title: lecture.assignmentTitle ?? "",
+          content: lecture.assignmentContent ?? "",
+          fileType: lecture.assignmentFileType ?? "",
+        });
+        setUploadedState("ready");
+      } catch (error) {
+        if (error.name === "AbortError" || controller.signal.aborted) return;
+        setUploadedState("error");
+        setUploadError(getInstructorCoursesErrorMessage(error));
+      }
+    }
+
+    loadUploaded();
+    return () => controller.abort();
+  }, [accessToken, lid, uploadedVersion]);
+
+  const uploadedRows = [
+    uploaded.video && { type: "video", label: "수업 영상", name: uploaded.video },
+    uploaded.material && {
+      type: "material",
+      label: "학습 자료",
+      name: uploaded.material,
+    },
+  ].filter(Boolean);
+
+  async function handleSaveAssignment(event) {
+    event.preventDefault();
+    if (!lid || assignmentSaving) return;
+    setAssignmentSaving(true);
+    setAssignmentMessage("");
+    try {
+      await saveInstructorLectureAssignment(accessToken, lid, assignment);
+      setAssignmentMessage(
+        assignment.title.trim()
+          ? "과제를 저장했습니다. 수강생 학습 화면에 표시됩니다."
+          : "과제를 비웠습니다. 수강생에게는 '등록된 과제가 없습니다'로 보입니다.",
+      );
+    } catch (error) {
+      setAssignmentMessage(getInstructorCoursesErrorMessage(error));
+    } finally {
+      setAssignmentSaving(false);
+    }
+  }
+
+  async function handleDeleteUploaded(type, name) {
+    if (!lid || deletingSlot) return;
+    if (!window.confirm(`'${name}' 파일을 삭제할까요?`)) return;
+    setDeletingSlot(type);
+    setUploadError("");
+    setUploadSuccess("");
+    try {
+      await deleteInstructorLectureFiles(accessToken, lid, type);
+      setUploadSuccess("파일을 삭제했습니다.");
+      setUploadedVersion((value) => value + 1);
+    } catch (error) {
+      setUploadError(getInstructorCoursesErrorMessage(error));
+    } finally {
+      setDeletingSlot("");
+    }
+  }
 
 useEffect(() => {
   const controller = new AbortController();
@@ -641,6 +748,7 @@ useEffect(() => {
     await uploadLectureFiles(accessToken, lid, files);
     setUploadSuccess("강의 자료를 업로드했습니다.");
       setFiles({ video: null, material: null });
+      setUploadedVersion((value) => value + 1);
     } catch (error) {
       setUploadError(getInstructorCoursesErrorMessage(error));
     } finally {
@@ -681,6 +789,10 @@ useEffect(() => {
       setLid(selectedId ? Number(selectedId) : null);
       setLectureName(selectedLecture?.name ?? "");
       setFiles({ video: null, material: null });
+      setUploaded({ video: null, material: null });
+      setUploadedState("idle");
+      setAssignment({ title: "", content: "", fileType: "" });
+      setAssignmentMessage("");
       setUploadError("");
       setUploadSuccess("");
       setNotice("");
@@ -737,6 +849,98 @@ useEffect(() => {
           </label>
         </div>
       </section>
+      <section className="instructor-selected-files">
+        <h2>업로드된 파일</h2>
+        {!lid ? (
+          <p className="instructor-files-empty">강의를 선택하면 업로드된 파일이 표시됩니다.</p>
+        ) : uploadedState === "loading" ? (
+          <p className="instructor-files-empty" role="status">업로드된 파일을 불러오는 중입니다.</p>
+        ) : uploadedRows.length > 0 ? (
+          <div className="instructor-files-table-scroll">
+            <table className="instructor-files-table">
+              <thead>
+                <tr>
+                  <th scope="col">파일명</th>
+                  <th scope="col">유형</th>
+                  <th scope="col">관리</th>
+                </tr>
+              </thead>
+              <tbody>
+                {uploadedRows.map(({ type, label, name }) => (
+                  <tr key={type}>
+                    <td>{name}</td>
+                    <td>{label}</td>
+                    <td>
+                      <button
+                        className="instructor-table-action"
+                        disabled={Boolean(deletingSlot) || isUploading}
+                        onClick={() => handleDeleteUploaded(type, name)}
+                        type="button"
+                      >
+                        {deletingSlot === type ? "삭제 중..." : "삭제"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="instructor-files-empty">아직 업로드된 파일이 없습니다.</p>
+        )}
+        <p className="instructor-upload-note">
+          영상과 자료는 각각 1개씩 둘 수 있습니다. 새 파일을 올리면 기존 파일을 바꿉니다.
+        </p>
+      </section>
+      {lid && uploadedState === "ready" && (
+        <form className="instructor-selected-files" onSubmit={handleSaveAssignment}>
+          <h2>과제 설정</h2>
+          <div className="instructor-course-form-field">
+            <label htmlFor="lecture-assignment-title">과제 제목 (비우면 과제 없음)</label>
+            <input
+              id="lecture-assignment-title"
+              maxLength={200}
+              onChange={(event) =>
+                setAssignment((current) => ({ ...current, title: event.target.value }))
+              }
+              placeholder="예: XSS 재현 보고서"
+              value={assignment.title}
+            />
+          </div>
+          <div className="instructor-course-form-field">
+            <label htmlFor="lecture-assignment-content">과제 안내</label>
+            <textarea
+              id="lecture-assignment-content"
+              onChange={(event) =>
+                setAssignment((current) => ({ ...current, content: event.target.value }))
+              }
+              placeholder="과제 내용과 제출 요구사항을 적어주세요."
+              rows={4}
+              value={assignment.content}
+            />
+          </div>
+          <div className="instructor-course-form-field">
+            <label htmlFor="lecture-assignment-type">제출 파일 형식 안내</label>
+            <input
+              id="lecture-assignment-type"
+              maxLength={100}
+              onChange={(event) =>
+                setAssignment((current) => ({ ...current, fileType: event.target.value }))
+              }
+              placeholder="예: PDF 또는 ZIP, 10MB 이하"
+              value={assignment.fileType}
+            />
+          </div>
+          {assignmentMessage && (
+            <p className="instructor-course-success" role="status">{assignmentMessage}</p>
+          )}
+          <div className="instructor-editor-actions">
+            <button className="instructor-course-primary" disabled={assignmentSaving} type="submit">
+              {assignmentSaving ? "저장 중..." : "과제 저장"}
+            </button>
+          </div>
+        </form>
+      )}
       <section className="instructor-selected-files">
         <h2>선택한 파일</h2>
         {selectedFileRows.length > 0 ? (

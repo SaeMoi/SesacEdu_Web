@@ -168,6 +168,7 @@
 }
 
 .instructor-coupons-tabs a,
+.instructor-coupons-tabs a,
 .instructor-coupons-tabs span {
   display: grid;
   min-height: 39px;

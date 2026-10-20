@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router";
 import { InstructorCenterLayout as SharedInstructorCenterLayout } from "../instructor-center/InstructorCenterLayout.jsx";
+import { InstructorCenterTabs } from "../instructor-center/InstructorCenterTabs.jsx";
 import {
   createInstructorCoupon,
   getInstructorCoupons,
@@ -32,14 +32,7 @@ function CouponsHeading({ title, description }) {
         <h1>{title}</h1>
         <p>{description}</p>
       </header>
-      <nav className="instructor-coupons-tabs" aria-label="강사센터 분류">
-        <span aria-disabled="true">운영 현황</span>
-        <Link aria-current="page" className="is-active" to="/instructor/coupon">
-          강의
-        </Link>
-        <span aria-disabled="true">학습 관리</span>
-        <span aria-disabled="true">정산</span>
-      </nav>
+      <InstructorCenterTabs className="instructor-coupons-tabs" />
     </>
   );
 }
@@ -187,7 +180,7 @@ function CouponList({ accessToken, notice, onAdd }) {
                   <td>{formatWon(coupon.discount)}</td>
                   <td>{formatDue(coupon.due)}</td>
                   <td>{coupon.issued ?? "-"} / {coupon.quantity ?? "-"}</td>
-                  <td>{coupon.cname || "-"}</td>
+                  <td>{coupon.code || "-"}</td>
                 </tr>
               ))}
             </tbody>

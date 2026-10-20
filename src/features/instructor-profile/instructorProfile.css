@@ -168,6 +168,7 @@
 }
 
 .instructor-profile-tabs a,
+.instructor-profile-tabs a,
 .instructor-profile-tabs span {
   display: grid;
   min-height: 36px;

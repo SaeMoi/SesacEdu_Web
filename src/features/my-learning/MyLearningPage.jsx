@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { MyLearningAuthContext } from "./myLearningAuthContext.js";
 import {
+  downloadMaterial,
   getLearningAssetUrl,
   getLearningErrorMessage,
   getMyCourses,
@@ -21,6 +22,12 @@ const statusFilters = [
   ["COMPLETED", "완료", "completed"],
 ];
 
+// 강의 학습 화면(JSP, /lectures/{id}/learn)으로 이동합니다. panel 값이 있으면 그 메뉴(과제·강의자료·질문)를 열어 둡니다.
+function learnUrl(courseId, panel) {
+  const base = `/lectures/${encodeURIComponent(courseId)}/learn`;
+  return panel ? `${base}?panel=${panel}` : base;
+}
+
 const categoryStyles = {
   WEB_SECURITY: "web-security",
   LINUX_BASICS: "linux-basics",
@@ -36,6 +43,7 @@ function MyLearningPage() {
   const [loadState, setLoadState] = useState("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [actionNotice, setActionNotice] = useState("");
+  const [downloadingId, setDownloadingId] = useState(null);
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
@@ -74,8 +82,22 @@ function MyLearningPage() {
       ? pageInfo.number
       : pageNumber;
 
-  function showUnavailable(feature) {
-    setActionNotice(`${feature} 기능의 기존 화면/API가 확인되지 않았습니다.`);
+  async function handleDownload(courseId) {
+    if (downloadingId != null) return;
+    setDownloadingId(courseId);
+    setActionNotice("강의자료를 내려받고 있습니다.");
+    try {
+      const filename = await downloadMaterial({ courseId, accessToken });
+      setActionNotice(`${filename} 다운로드를 요청했습니다.`);
+    } catch (error) {
+      setActionNotice(
+        error instanceof TypeError
+          ? "강의자료를 내려받지 못했습니다. 연결 상태를 확인해 주세요."
+          : error.message || "강의자료를 내려받지 못했습니다.",
+      );
+    } finally {
+      setDownloadingId(null);
+    }
   }
 
   function changeStatus(nextStatus) {
@@ -168,60 +190,37 @@ function MyLearningPage() {
         </div>
         <div className="learning-course-actions">
           <div className="learning-primary-action">
-            <button
-              className="learning-resume-button"
-              onClick={() => showUnavailable("이어서 학습")}
-              type="button"
-            >
+            <a className="learning-resume-button" href={learnUrl(courseId)}>
               이어서 학습
-            </button>
+            </a>
           </div>
           <div className="learning-secondary-actions">
-            <button
+            <a
               className="learning-action-button assignment"
-              onClick={() => showUnavailable("과제")}
-              type="button"
+              href={learnUrl(courseId, "assignment")}
             >
               과제
-            </button>
-            {course?.reviewWritten === false && courseId != null ? (
-              <Link
-                className="learning-action-button"
-                to={`/mypage/learning/${encodeURIComponent(courseId)}/review`}
-                state={{ course }}
-              >
-                리뷰
-              </Link>
-            ) : (
-              <button
-                className="learning-action-button"
-                disabled={course?.reviewWritten === true}
-                onClick={() =>
-                  showUnavailable(
-                    course?.reviewWritten === true
-                      ? "리뷰 수정/조회"
-                      : "리뷰 작성",
-                  )
-                }
-                type="button"
-              >
-                {course?.reviewWritten === true ? "작성 완료" : "리뷰"}
-              </button>
-            )}
-            <button
+            </a>
+            <Link
               className="learning-action-button"
-              onClick={() => showUnavailable("Q&A")}
-              type="button"
+              to={`/mypage/learning/${encodeURIComponent(courseId)}/review`}
+              state={{ course }}
+            >
+              {course?.reviewWritten === true ? "리뷰 수정" : "리뷰"}
+            </Link>
+            <a
+              className="learning-action-button"
+              href={learnUrl(courseId, "qna")}
             >
               Q&A
-            </button>
+            </a>
             <button
               className="learning-action-button"
-              disabled={course?.hasMaterials === false}
-              onClick={() => showUnavailable("자료 다운로드")}
+              disabled={course?.hasMaterials === false || downloadingId === courseId}
+              onClick={() => handleDownload(courseId)}
               type="button"
             >
-              자료다운
+              {downloadingId === courseId ? "받는 중" : "자료다운"}
             </button>
           </div>
         </div>

@@ -7,7 +7,7 @@
 <title>
 <%= pageTitle %> · 새싹에듀</title>
 <link rel="stylesheet" href="${pageContext.request.contextPath}/design/common.css">
-<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/site.css?v=forum-pagination-1">
+<link rel="stylesheet" href="${pageContext.request.contextPath}/assets/site.css?v=feedback-20261018">
 <link rel="stylesheet" href="${pageContext.request.contextPath}/ui/chatbot.css">
 </head>
 <body>

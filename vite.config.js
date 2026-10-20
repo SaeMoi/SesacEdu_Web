@@ -18,6 +18,8 @@ export default defineConfig({
           proxy.on("proxyReq", (proxyReq) => proxyReq.removeHeader("origin"));
         },
       },
+      // 강의 썸네일(업로드 파일·서버 기본 이미지)은 백엔드가 /images/lecture/ 로 제공합니다.
+      "/images/lecture/": "http://127.0.0.1:8080",
       "^/(login|signup|courses|community|chatbot|assignments)(/|\\?|$)":
         "http://127.0.0.1:8088",
 

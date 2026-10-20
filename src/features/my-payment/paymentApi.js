@@ -78,8 +78,10 @@ async function request(path, { accessToken, ...options } = {}) {
   return body;
 }
 
+// 바로 구매(direct)면 장바구니가 아니라 courseIds의 강의를 결제 대상으로 씁니다.
 function queryForCheckout(courseIds, values = {}) {
   const params = new URLSearchParams({ courseIds: courseIds.join(",") });
+  if (values.direct) params.set("direct", "true");
   if (values.couponId !== undefined && values.couponId !== null) {
     params.set("couponId", String(values.couponId));
   }
@@ -89,8 +91,11 @@ function queryForCheckout(courseIds, values = {}) {
   return params.toString();
 }
 
-export async function getPaymentInitial(accessToken, signal) {
-  const body = await request("/mypage/buy", {
+export async function getPaymentInitial(accessToken, signal, options = {}) {
+  const path = options.direct
+    ? `/mypage/buy?${queryForCheckout(options.courseIds ?? [], { direct: true })}`
+    : "/mypage/buy";
+  const body = await request(path, {
     method: "GET",
     accessToken,
     signal,
@@ -110,9 +115,10 @@ export async function previewCoupon(
   courseIds,
   couponId,
   signal,
+  direct = false,
 ) {
   const body = await request(
-    `/mypage/buy/cpn?${queryForCheckout(courseIds, { couponId })}`,
+    `/mypage/buy/cpn?${queryForCheckout(courseIds, { couponId, direct })}`,
     { method: "GET", accessToken, signal },
   );
   if (body?.code !== "COUPON_APPLIED") {
@@ -132,11 +138,13 @@ export async function previewPoints(
   couponId,
   usePoint,
   signal,
+  direct = false,
 ) {
   const body = await request(
     `/mypage/buy/pnt?${queryForCheckout(courseIds, {
       ...(couponId ? { couponId } : {}),
       usePoint,
+      direct,
     })}`,
     { method: "GET", accessToken, signal },
   );

@@ -176,8 +176,23 @@ export async function uploadLectureFiles(accessToken, lid, files) {
   });
 }
 
-export async function deleteInstructorLectureFiles(accessToken, lid) {
-  return request(INSTRUCTOR_LECTURE_FILES_API_PATH(lid), {
+// 강의 과제 설정. title 을 비우면 과제를 없앱니다.
+export async function saveInstructorLectureAssignment(accessToken, lid, values) {
+  return request(`${LECTURES_API_PATH}/${encodeURIComponent(lid)}/assignment`, {
+    method: "PUT",
+    accessToken,
+    body: JSON.stringify({
+      title: values.title.trim(),
+      content: values.content,
+      fileType: values.fileType.trim(),
+    }),
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+// slot: "video" 또는 "material"
+export async function deleteInstructorLectureFiles(accessToken, lid, slot) {
+  return request(`${INSTRUCTOR_LECTURE_FILES_API_PATH(lid)}/${encodeURIComponent(slot)}`, {
     method: "DELETE",
     accessToken,
   });

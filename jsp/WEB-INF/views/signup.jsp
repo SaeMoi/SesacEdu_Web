@@ -47,10 +47,5 @@
 </form>
 <div class="signup-login">이미 계정이 있으신가요? <a href="${pageContext.request.contextPath}/login">로그인</a>
 </div>
-<details class="demo-controls">
-<summary>화면 상태 확인</summary>
-<p>메일은 발송하지 않습니다. 미리보기 인증번호는 123456입니다.</p>
-<button type="button" id="duplicate-email">이메일 중복 상태</button>
-</details>
 </main>
 <%@ include file="../fragments/footer.jspf" %>

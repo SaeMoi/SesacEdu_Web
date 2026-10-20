@@ -21,14 +21,15 @@
 <input class="post-title-input" id="post-title" required maxlength="200" placeholder="제목을 입력해 주세요">
 <div class="editor-toolbar" aria-label="본문 서식">
 <span>본문</span>
-<button type="button" data-format="bold" aria-label="굵게">B</button>
-<button type="button" data-format="italic" aria-label="기울임">I</button>
-<button type="button" data-format="list">목록</button>
+<button type="button" data-format="bold" aria-label="굵게" aria-pressed="false"><b>B</b></button>
+<button type="button" data-format="italic" aria-label="기울임" aria-pressed="false"><i>I</i></button>
+<button type="button" data-format="list" aria-pressed="false">목록</button>
 <button type="button" data-format="link">링크</button>
 </div>
-<label class="sr-only" for="post-body">본문</label>
-<textarea id="post-body" required maxlength="10000" rows="9" placeholder="함께 학습할 주제와 진행 방법을 적어주세요.&#10;&#10;예시: 인증과 접근 권한을 학습하고 내용을 함께 정리해요.">
-</textarea>
+<%-- 버튼을 누르면 서식이 바로 보이는 편집 영역입니다. 등록 시 HTML을 보내고 서버가 허용 태그만 남깁니다. --%>
+<span class="sr-only" id="post-body-label">본문</span>
+<div class="post-editor" id="post-body" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="post-body-label"
+ data-placeholder="함께 학습할 주제와 진행 방법을 적어주세요. 예시: 인증과 접근 권한을 학습하고 내용을 함께 정리해요."></div>
 <p class="field-status" id="post-write-status" role="status" aria-live="polite"></p>
 <div class="form-actions">
 <a class="btn secondary" href="${pageContext.request.contextPath}/community">취소</a>
@@ -36,6 +37,6 @@
 </div>
 </fieldset>
 </form>
-<p class="screen-note">로그인한 회원만 글을 등록할 수 있어요. 굵게(**글자**), 기울임(*글자*), 목록(- 항목), 링크([글자](https://...)) 표시를 쓸 수 있어요.</p>
+<p class="screen-note">로그인한 회원만 글을 등록할 수 있어요. 글자를 선택한 뒤 굵게·기울임·목록·링크 버튼을 누르면 바로 적용돼요.</p>
 </main>
 <%@ include file="../fragments/footer.jspf" %>

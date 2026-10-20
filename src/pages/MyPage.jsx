@@ -1,7 +1,7 @@
 // 공통 사이드바와 탭으로 페이지 이동을 연결합니다.
 import { MyPageSidebar, MyPageTabs } from "../components/navigation/MyPageNavigation.jsx";
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { getProfile, ProfileApiError } from "../api/profile.js";
 import { useAccessToken } from "../auth/useAccessToken.js";
 import { resolveApiAssetUrl } from "../auth/session.js";
@@ -64,7 +64,8 @@ function ProfileContent() {
   const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState("loading");
   const [errorMessage, setErrorMessage] = useState("");
-  const [editNotice, setEditNotice] = useState(false);
+  // 프로필 수정은 먼저 현재 비밀번호 확인(POST /mypage/verify-password) 화면으로 보냅니다.
+  const navigate = useNavigate();
 
   const loadProfile = async (signal) => {
     try {
@@ -164,18 +165,17 @@ function ProfileContent() {
             </div>
             <button
               className="button button-primary edit-profile-button"
-              onClick={() => setEditNotice((visible) => !visible)}
+              onClick={() =>
+                navigate("/mypage/verify-password", {
+                  state: { notice: "프로필 수정 전 현재 비밀번호를 확인해주세요." },
+                })
+              }
               type="button"
             >
               프로필 수정
             </button>
           </section>
 
-          {editNotice && (
-            <p className="edit-notice" role="status">
-              프로필 수정은 현재 비밀번호 확인 API 연동 후 이용할 수 있습니다.
-            </p>
-          )}
 
           <section className="basic-info" aria-labelledby="basic-info-title">
             <h2 id="basic-info-title">기본 정보</h2>

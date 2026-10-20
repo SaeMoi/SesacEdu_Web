@@ -412,3 +412,22 @@
     flex-direction: column;
   }
 }
+
+/* 질문 상세 펼침 (GET /lectures/{id}/qna/{qid}) */
+.qna-table tr.is-open td { border-bottom: 0; }
+.qna-detail-row td {
+  padding: 4px 16px 20px;
+  background: var(--color-surface, #f7f9f2);
+}
+.qna-detail-body h3 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 14px 0 6px;
+  font-size: 13px;
+}
+.qna-detail-date { font-weight: 400; color: #7a8a92; font-size: 12px; }
+.qna-detail-text { margin: 0; line-height: 1.7; white-space: pre-wrap; word-break: break-word; font-size: 13px; }
+.qna-detail-lecture { margin: 10px 0 0; font-size: 12px; color: #7a8a92; }
+.qna-detail-link { display: inline-block; margin-top: 14px; font-size: 12px; text-decoration: underline; }
+.qna-detail-message { margin: 12px 0; font-size: 13px; }

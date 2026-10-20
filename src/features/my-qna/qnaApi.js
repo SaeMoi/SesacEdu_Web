@@ -112,3 +112,39 @@ export function getQnaErrorMessage(error) {
   if (error.code === "INVALID_RESPONSE") return error.message;
   return error.message || "질문 목록을 불러오지 못했습니다. 다시 시도해주세요.";
 }
+
+// 질문 상세 (GET /lectures/{lectureId}/qna/{qnaId}). 내가 쓴 질문이라 비밀글도 볼 수 있습니다.
+export async function getQnaDetail({ accessToken, lectureId, qnaId, signal }) {
+  if (!/^[1-9]\d*$/.test(String(lectureId)) || !/^[1-9]\d*$/.test(String(qnaId))) {
+    throw new QnaApiError("INVALID_INPUT", "질문 번호가 올바르지 않습니다.");
+  }
+  if (!accessToken) {
+    throw new QnaApiError("AUTH_INTEGRATION_REQUIRED", "로그인 후 질문을 볼 수 있습니다.");
+  }
+  const response = await authFetch(
+    `${API_BASE_URL}/lectures/${lectureId}/qna/${qnaId}`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+      cache: "no-store",
+      signal,
+    },
+  );
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const messages = {
+      401: "로그인이 만료되었습니다. 다시 로그인해 주세요.",
+      403: "이 질문을 볼 수 있는 권한이 없습니다.",
+      404: "질문을 찾을 수 없습니다.",
+    };
+    throw new QnaApiError(
+      body?.code ?? `HTTP_${response.status}`,
+      messages[response.status] ?? body?.message ?? "질문을 불러오지 못했습니다.",
+      response.status,
+    );
+  }
+  if (!body || typeof body.question !== "string") {
+    throw new QnaApiError("INVALID_RESPONSE", "질문 상세 응답 형식이 올바르지 않습니다.", response.status);
+  }
+  return body;
+}

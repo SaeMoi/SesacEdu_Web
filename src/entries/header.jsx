@@ -3,13 +3,13 @@ import Header from "../components/navigation/Header";
 
 import { startSessionKeeper } from "../auth/session.js";
 
-export { saveSession } from "../auth/session.js";
-// JSP 화면(커뮤니티 등)에서 로그인 토큰으로 API를 호출할 때 사용합니다.
+// JSP 화면(커뮤니티·강의 등)에서 로그인 토큰으로 API를 호출할 때 사용합니다.
 export {
   API_BASE_URL,
   authFetch,
   getSession,
   getStoredSession,
+  saveSession,
 } from "../auth/session.js";
 
 // JSP 화면에서도 토큰 만료 직후 자동 재발급을 실행합니다.

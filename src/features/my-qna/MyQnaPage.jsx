@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useQnaAuth } from "./qnaAuthContext.js";
-import { getMyQna, getQnaErrorMessage } from "./qnaApi.js";
+import { getMyQna, getQnaDetail, getQnaErrorMessage } from "./qnaApi.js";
 import { MyQnaLayout, QnaPageHeader } from "./MyQnaLayout.jsx";
 import Pagination from "../../components/pagination/Pagination.jsx";
 import "./myQna.css";
@@ -27,6 +27,9 @@ function MyQnaPage() {
   const [loadState, setLoadState] = useState("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [detailNotice, setDetailNotice] = useState("");
+  // 펼친 질문 { qnaId, state: loading|success|error, data, error }
+  const [openDetail, setOpenDetail] = useState(null);
+  const detailRequest = useRef(null);
   const [retry, setRetry] = useState(0);
   const requestSequence = useRef(0);
 
@@ -83,6 +86,7 @@ function MyQnaPage() {
     setLoadState("loading");
     setErrorMessage("");
     setDetailNotice("");
+    setOpenDetail(null);
   }
 
   function changePage(nextPage) {
@@ -93,6 +97,73 @@ function MyQnaPage() {
     setLoadState("loading");
     setErrorMessage("");
     setDetailNotice("");
+    setOpenDetail(null);
+  }
+
+  async function toggleDetail(question) {
+    const qnaId = question?.qnaId;
+    detailRequest.current?.abort();
+    if (openDetail?.qnaId === qnaId) {
+      setOpenDetail(null);
+      return;
+    }
+    const controller = new AbortController();
+    detailRequest.current = controller;
+    setOpenDetail({ qnaId, state: "loading", data: null, error: "" });
+    try {
+      const data = await getQnaDetail({
+        accessToken,
+        lectureId: question?.lectureId,
+        qnaId,
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted) return;
+      setOpenDetail({ qnaId, state: "success", data, error: "" });
+    } catch (error) {
+      if (error.name === "AbortError") return;
+      setOpenDetail({ qnaId, state: "error", data: null, error: error.message });
+    }
+  }
+
+  function renderDetail(question) {
+    const detail = openDetail;
+    const answeredAt = detail?.data?.answeredAt
+      ? new Date(detail.data.answeredAt).toLocaleDateString("ko-KR")
+      : "";
+    return (
+      <tr className="qna-detail-row">
+        <td colSpan={4} id={`qna-detail-${question.qnaId}`}>
+          {detail.state === "loading" && (
+            <p className="qna-detail-message" role="status">질문을 불러오는 중입니다.</p>
+          )}
+          {detail.state === "error" && (
+            <p className="qna-detail-message qna-state-error" role="alert">{detail.error}</p>
+          )}
+          {detail.state === "success" && (
+            <div className="qna-detail-body">
+              {question?.lectureTitle && (
+                <p className="qna-detail-lecture">{question.lectureTitle}</p>
+              )}
+              <h3>질문</h3>
+              <p className="qna-detail-text">{detail.data.question}</p>
+              <h3>
+                강사 답변
+                {answeredAt && <span className="qna-detail-date">{answeredAt}</span>}
+              </h3>
+              <p className="qna-detail-text">
+                {detail.data.answer ?? "아직 답변이 등록되지 않았습니다."}
+              </p>
+              <a
+                className="qna-detail-link"
+                href={`/lectures/${encodeURIComponent(question.lectureId)}/learn?panel=qna`}
+              >
+                강의 질문·답변에서 보기
+              </a>
+            </div>
+          )}
+        </td>
+      </tr>
+    );
   }
 
   function renderQuestion(question) {
@@ -113,16 +184,15 @@ function MyQnaPage() {
         : "담당 강사 미정";
 
     return (
-      <tr key={qnaId}>
+      <Fragment key={qnaId}>
+      <tr className={openDetail?.qnaId === qnaId ? "is-open" : ""}>
         <td className="qna-question-cell">
           <button
+            aria-controls={`qna-detail-${qnaId}`}
+            aria-expanded={openDetail?.qnaId === qnaId}
             aria-label={`질문 상세 보기, 질문 번호 ${qnaId}`}
             className="qna-title-button"
-            onClick={() =>
-              setDetailNotice(
-                `질문 번호 ${qnaId} 상세 조회 화면/API가 준비되지 않았습니다.`,
-              )
-            }
+            onClick={() => toggleDetail(question)}
             type="button"
           >
             <span className="qna-title">
@@ -152,6 +222,8 @@ function MyQnaPage() {
           </time>
         </td>
       </tr>
+      {openDetail?.qnaId === qnaId && renderDetail(question)}
+      </Fragment>
     );
   }
 

@@ -156,8 +156,150 @@ export class ReviewApiNotConfiguredError extends Error {
   }
 }
 
-export async function submitReview() {
-  throw new ReviewApiNotConfiguredError();
+// REVIEW_API_CONNECTED
+async function requestReviewApi(path, accessToken, options = {}) {
+  if (!accessToken) {
+    throw new MyLearningApiError(
+      "UNAUTHORIZED",
+      "로그인 후 이용해 주세요.",
+      401,
+    );
+  }
+
+  const response = await authFetch(
+    `${API_BASE_URL || "/backend"}${path}`,
+    {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+        ...options.headers,
+      },
+      cache: "no-store",
+    },
+  );
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new MyLearningApiError(
+      body?.code || `HTTP_${response.status}`,
+      body?.message || `요청 실패: HTTP ${response.status}`,
+      response.status,
+    );
+  }
+
+  return response;
+}
+
+// 목록 첫 페이지에 없는 강의도 강의 번호로 직접 확인합니다.
+export async function getReviewCourse({ courseId, accessToken, signal }) {
+  if (!/^[1-9]\d*$/.test(String(courseId))) {
+    throw new Error("강의 번호가 올바르지 않습니다.");
+  }
+
+  const response = await requestReviewApi(
+    `/lectures/${courseId}`,
+    accessToken,
+    { signal },
+  );
+  const data = await response.json();
+
+  if (
+    String(data.lectureId) !== String(courseId) ||
+    typeof data.name !== "string"
+  ) {
+    throw new Error("강의 정보 응답 형식이 올바르지 않습니다.");
+  }
+
+  if (data.viewerState !== "enrolled") {
+    throw new Error("수강 중인 강의에만 수강평을 작성할 수 있습니다.");
+  }
+
+  return {
+    courseId: data.lectureId,
+    title: data.name,
+    category: { name: data.category || "" },
+  };
+}
+
+export async function submitReview({
+  courseId,
+  accessToken,
+  rating,
+  content,
+}) {
+  if (!/^[1-9]\d*$/.test(String(courseId))) {
+    throw new Error("강의 번호가 올바르지 않습니다.");
+  }
+
+  const response = await requestReviewApi(
+    `/lectures/${courseId}/reviews`,
+    accessToken,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        star: rating,
+        review: content.trim(),
+      }),
+    },
+  );
+
+  // 이 API는 등록 성공 시 본문 없이 201을 반환합니다.
+  if (response.status !== 201) {
+    throw new Error("리뷰 등록 결과를 확인하지 못했습니다.");
+  }
+}
+
+// 강의자료 다운로드: GET /lectures/{lid}/material 로 파일 이름을 확인한 뒤
+// GET /lectures/{lid}/material/download 로 파일을 받아 저장합니다.
+export async function downloadMaterial({ courseId, accessToken }) {
+  if (!/^[1-9]\d*$/.test(String(courseId))) {
+    throw new Error("강의 번호가 올바르지 않습니다.");
+  }
+  let filename = "강의자료";
+  try {
+    const info = await requestReviewApi(`/lectures/${courseId}/material`, accessToken);
+    const data = await info.json().catch(() => null);
+    if (typeof data?.filename === "string" && data.filename) filename = data.filename;
+  } catch (error) {
+    if (error.status === 404) throw new Error("등록된 강의자료가 없습니다.");
+    if (error.status === 403) throw new Error("이 강의의 자료를 이용할 수 있는 수강 권한이 없습니다.");
+    throw error;
+  }
+  const response = await requestReviewApi(`/lectures/${courseId}/material/download`, accessToken);
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+  return filename;
+}
+
+// 내 리뷰 수정 (PUT /lectures/{lid}/reviews). 강의당 내 리뷰는 한 건이라 리뷰 번호가 없습니다.
+export async function updateReview({ courseId, accessToken, rating, content }) {
+  if (!/^[1-9]\d*$/.test(String(courseId))) {
+    throw new Error("강의 번호가 올바르지 않습니다.");
+  }
+  await requestReviewApi(`/lectures/${courseId}/reviews`, accessToken, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ star: rating, review: content.trim() }),
+  });
+}
+
+// 내 리뷰 삭제 (DELETE /lectures/{lid}/reviews). 지운 뒤에는 다시 쓸 수 있습니다.
+export async function deleteReview({ courseId, accessToken }) {
+  if (!/^[1-9]\d*$/.test(String(courseId))) {
+    throw new Error("강의 번호가 올바르지 않습니다.");
+  }
+  await requestReviewApi(`/lectures/${courseId}/reviews`, accessToken, {
+    method: "DELETE",
+  });
 }
 
 export function getCourseById(result, courseId) {

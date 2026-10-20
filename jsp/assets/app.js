@@ -6,79 +6,243 @@ import {
   mountHeader,
   saveSession,
 } from "../ui/header.js";
+
 // JSP 본문을 유지한 채 공통 헤더만 React로 연결합니다.
 const header = document.getElementById("shared-header");
 if (header) mountHeader(header);
+// 설계안에 사용한 방패·문서·책 아이콘. 서버 문자열을 HTML로 넣지 않습니다.
+function courseLineIcon(index) {
+  const paths = [
+    "M24 3 43 11v12c0 11-19 21-19 21S5 34 5 23V11Z M14 23l7 7 13-15",
+    "M11 3h17l11 11v30H11Z M28 3v12h11 M16 24h16 M16 33h16",
+    "M24 9c-6-6-12-4-20-4v33c8 0 14-2 20 5 6-7 12-5 20-5V5c-8 0-14-2-20 4Z M24 9v34",
+  ];
+  const icon = document.createElement("span");
+  icon.className = "line-icon";
+  icon.setAttribute("aria-hidden", "true");
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 48 48");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2.2");
+  const path = document.createElementNS(svg.namespaceURI, "path");
+  path.setAttribute("d", paths[index % paths.length]);
+  svg.append(path);
+  icon.append(svg);
+  return icon;
+}
 const byId = (id) => document.getElementById(id);
 const all = (selector) => [...document.querySelectorAll(selector)];
 const on = (id, event, callback) => byId(id)?.addEventListener(event, callback);
-// 시연 화면에는 계정/게시글 저장 서버가 없습니다. 입력값을 전송하거나 보관하지 않습니다.
-[ "signup-form", "question-form"].forEach((id) => {
-  const form = byId(id);
-  form?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (!form.reportValidity()) return;
-    form.querySelector(".form-status").textContent =
-      id === "login-form"
-        ? "화면 미리보기입니다. 인증 서버 연결 전이라 실제 로그인은 진행되지 않습니다."
-        : id === "signup-form"
-          ? "입력 확인 완료. 실제 계정은 생성되지 않습니다."
-          : "입력 확인 완료. 질문은 서버에 저장되지 않습니다.";
-  });
-});
-
-
-
+// 회원가입: 이메일 발송 → 인증 확인 → 계정 생성
 if (byId("signup-form")) {
   const form = byId("signup-form");
-  let verified = false;
+  const status = form.querySelector(".form-status");
+  const email = byId("email");
+  let verificationToken = "";
+  let verifiedEmail = "";
+  let busy = false;
+
+  const emailValue = () => email.value.trim().toLowerCase();
+
+  const message = (element, text, error = false) => {
+    element.textContent = text;
+    element.classList.toggle("error", error);
+  };
+
   const update = () => {
     const mismatch =
       byId("pwcheck").value !== "" &&
       byId("pwcheck").value !== byId("pw").value;
+
     byId("pwcheck").setCustomValidity(
       mismatch ? "비밀번호가 일치하지 않습니다." : "",
     );
     byId("password-error").hidden = !mismatch;
-    byId("signup-submit").disabled = !verified || !form.checkValidity();
+
+    byId("signup-submit").disabled =
+      busy ||
+      !verificationToken ||
+      verifiedEmail !== emailValue() ||
+      !form.checkValidity();
+
+    for (const id of ["check-email", "resend-code", "verify-code"]) {
+      byId(id).disabled = busy;
+    }
+    email.readOnly = busy;
   };
-  const request = () => {
-    if (!byId("email").reportValidity()) return;
-    verified = false;
-    byId("verification").hidden = false;
-    byId("email-status").className = "field-status";
-    byId("email-status").textContent =
-      "인증 화면 미리보기입니다. 실제 메일은 발송하지 않았어요.";
-    byId("code-status").textContent = "예시 인증번호: 123456";
-    update();
+
+  const resetVerification = () => {
+    verificationToken = "";
+    verifiedEmail = "";
   };
-  on("check-email", "click", request);
-  on("resend-code", "click", request);
-  on("verify-code", "click", () => {
-    verified = byId("code").value === "123456";
-    byId("code-status").textContent = verified
-      ? "인증 완료 상태 미리보기입니다."
-      : "인증번호가 올바르지 않습니다. 다시 확인해 주세요.";
-    byId("code-status").className = verified
-      ? "field-status"
-      : "field-status error";
-    update();
-  });
-  on("email", "input", () => {
-    verified = false;
+
+  const post = async (url, payload, expectedCode) => {
+    let response;
+    try {
+      response = await fetch(`/backend${url}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      throw new Error("서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+    }
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok || data?.code !== expectedCode) {
+      const errors = data?.result?.errors;
+      const details = Array.isArray(errors)
+        ? errors.map((item) => item.reason).filter(Boolean).join(" ")
+        : "";
+      const retryAfter = Number(data?.result?.retryAfter);
+      const retryMessage = retryAfter > 0
+        ? ` ${retryAfter}초 후 다시 시도해 주세요.`
+        : "";
+
+      const error = new Error(
+        (details || data?.message || `요청에 실패했습니다. (${response.status})`) +
+        retryMessage,
+      );
+      error.code = data?.code;
+      throw error;
+    }
+    return data.result;
+  };
+
+  const requestCode = async () => {
+    email.value = emailValue();
+    if (busy || !email.reportValidity()) return;
+
+    busy = true;
+    resetVerification();
     byId("verification").hidden = true;
-    byId("email-status").textContent = "";
+    byId("code").value = "";
+    message(status, "");
+    message(byId("code-status"), "");
+    message(byId("email-status"), "인증번호를 발송하고 있습니다.");
+    update();
+
+    try {
+      await post("/email-auth", { email: emailValue() }, "EMAIL_SENT");
+      byId("verification").hidden = false;
+      message(
+        byId("email-status"),
+        "인증번호를 발송했습니다. 이메일을 확인해 주세요.",
+      );
+      message(byId("code-status"), "인증번호는 5분 동안 유효합니다.");
+      byId("code").focus();
+    } catch (error) {
+      message(byId("email-status"), error.message, true);
+    } finally {
+      busy = false;
+      update();
+    }
+  };
+
+  on("check-email", "click", requestCode);
+  on("resend-code", "click", requestCode);
+
+  on("verify-code", "click", async () => {
+    if (busy) return;
+    const code = byId("code").value.trim();
+    if (!/^[0-9]{6}$/.test(code)) {
+      message(byId("code-status"), "인증번호 6자리를 입력해 주세요.", true);
+      return;
+    }
+
+    busy = true;
+    resetVerification();
+    message(byId("code-status"), "인증번호를 확인하고 있습니다.");
+    update();
+
+    try {
+      const result = await post(
+        "/email-auth/verify",
+        { email: emailValue(), code },
+        "EMAIL_VERIFIED",
+      );
+      if (!result?.verificationToken) {
+        throw new Error("인증 응답을 확인할 수 없습니다. 다시 인증해 주세요.");
+      }
+      verificationToken = result.verificationToken;
+      verifiedEmail = emailValue();
+      message(byId("code-status"), "이메일 인증이 완료되었습니다.");
+    } catch (error) {
+      message(byId("code-status"), error.message, true);
+    } finally {
+      busy = false;
+      update();
+    }
+  });
+
+  on("email", "input", () => {
+    resetVerification();
+    byId("verification").hidden = true;
+    byId("code").value = "";
+    message(byId("email-status"), "");
+    message(byId("code-status"), "");
+    message(status, "");
     update();
   });
-  on("duplicate-email", "click", () => {
-    verified = false;
-    byId("email-status").className = "field-status error";
-    byId("email-status").textContent =
-      "이미 사용 중인 이메일입니다. (중복 상태 미리보기)";
-    update();
-  });
+
   form.addEventListener("input", update);
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (busy) return;
+    update();
+    if (!form.reportValidity()) return;
+
+    if (!verificationToken || verifiedEmail !== emailValue()) {
+      message(status, "이메일 인증을 먼저 완료해 주세요.", true);
+      return;
+    }
+
+    const payload = {
+      email: emailValue(),
+      verificationToken,
+      pw: byId("pw").value,
+      pwcheck: byId("pwcheck").value,
+      name: byId("name").value.trim(),
+      nickname: byId("nickname").value.trim(),
+      phone: byId("phone").value.trim().replace(/[-\s]/g, ""),
+      b_date: byId("birthday").value.trim().replace(/\./g, "-"),
+      address: byId("address").value.trim(),
+    };
+
+    busy = true;
+    update();
+    message(status, "회원가입을 처리하고 있습니다.");
+
+    try {
+      await post("/signup", payload, "SIGNUP_SUCCESS");
+      resetVerification();
+      byId("pw").value = "";
+      byId("pwcheck").value = "";
+      message(status, "회원가입이 완료되었습니다. 로그인 화면으로 이동합니다.");
+      window.location.assign(
+        document.querySelector(".signup-login a").href,
+      );
+    } catch (error) {
+      if (error.code === "INVALID_VERIFICATION") {
+        resetVerification();
+        message(
+          byId("code-status"),
+          "인증이 만료되었습니다. 인증번호를 다시 요청해 주세요.",
+          true,
+        );
+      }
+      message(status, error.message, true);
+    } finally {
+      busy = false;
+      update();
+    }
+  });
+
+  update();
 }
+
 // 카테고리·검색·정렬은 JSP에서 출력한 예시 카드에 적용합니다.
 // 현재는 예시 데이터를 브라우저에서 필터링한 뒤 페이지당 6개씩 표시합니다.
 // API 연결 시 검색/정렬/페이지 조건을 서버에 보내고 전체 결과 수를 받습니다.
@@ -141,6 +305,8 @@ if (byId("course-search")) {
       lecture.headline || lecture.name,
     ));
 
+    art.append(courseLineIcon(index));
+
     if (lecture.picture) {
       try {
         const imageUrl = new URL(lecture.picture, location.origin);
@@ -170,14 +336,18 @@ if (byId("course-search")) {
       `${Number(lecture.price).toLocaleString("ko-KR")}원`,
     ));
 
+    const arrow = makeElement("span", "", "→");
+    arrow.setAttribute("aria-hidden", "true");
+    price.append(arrow);
+
     card.append(
       art,
-      makeElement("span", "pill", lecture.level || "난이도 미정"),
+      makeElement("span", "pill", lecture.level ? `${lecture.level} 과정` : "난이도 미정"),
       makeElement("h3", "", lecture.name),
       makeElement(
         "p",
         "",
-        `${lecture.category || ""} · ${lecture.instructor || "강사 미정"}`,
+        lecture.instructor || "강사 미정",
       ),
       price,
     );
@@ -262,11 +432,16 @@ if (byId("course-search")) {
     status.textContent = "강의 목록을 불러오는 중입니다.";
     retry.hidden = true;
 
-    try {
-      const response = await fetch(`/backend/lectures?${query}`, {
-        signal: controller.signal,
-        headers: { Accept: "application/json" },
-      });
+      try {
+      const response = await fetch(
+        `/backend/lectures?${query.toString()}`,
+        {
+          headers: { Accept: "application/json" },
+          signal: controller.signal,
+        },
+      );
+
+
 
       if (!response.ok) {
         throw new Error(`서버 응답 오류: HTTP ${response.status}`);
@@ -371,11 +546,19 @@ if (document.querySelector("[data-lecture-detail]")) {
       return;
     }
 
-    try {
-      const response = await fetch(
+      try {
+      const session = getStoredSession();
+      const headers = { Accept: "application/json" };
+
+      if (session?.authorization) {
+        headers.Authorization = session.authorization;
+      }
+
+      const response = await authFetch(
         `/backend/lectures/${encodeURIComponent(lectureId)}`,
         {
-          headers: { Accept: "application/json" },
+          headers,
+          cache: "no-store",
         },
       );
 
@@ -394,23 +577,43 @@ if (document.querySelector("[data-lecture-detail]")) {
         !data ||
         String(data.lectureId) !== lectureId ||
         typeof data.name !== "string" ||
-        typeof data.price !== "number"
+        !["guest", "member", "enrolled"].includes(data.viewerState) ||
+        (
+          data.viewerState !== "enrolled" &&
+          typeof data.price !== "number"
+        )
       ) {
         throw new Error("강의 상세 응답 형식이 올바르지 않습니다.");
       }
+
+
       // 상세 API에서 받은 강사 정보입니다. 없으면 빈 객체를 사용합니다.
       const teacher = data.instructor || {};
-      // 선택한 강의의 학습 화면으로 이동하도록 연결합니다.
-      // 이 링크 자체가 로그인·수강 권한을 확인하는 것은 아닙니다.
-      const classroomLink = document.querySelector(
-        "[data-preview-classroom-link]",
-      );
 
-      if (classroomLink) {
-        const contextPath = classroomLink.dataset.contextPath || "";
-        classroomLink.href =
-          `${contextPath}/lectures/${encodeURIComponent(lectureId)}/learn`;
-        classroomLink.hidden = false;
+      // 수강 중인 사용자에게 기존 리뷰 작성 화면을 연결합니다.
+      const reviewPanel = document.querySelector('[data-panel="reviews"]');
+      if (reviewPanel) {
+        let writeReviewLink = document.getElementById("course-review-write");
+        if (!writeReviewLink) {
+          writeReviewLink = document.createElement("a");
+          writeReviewLink.id = "course-review-write";
+          writeReviewLink.className = "btn secondary";
+          writeReviewLink.textContent = "수강평 작성";
+        }
+
+        let reviewHeading = reviewPanel.querySelector(".course-review-heading");
+        if (!reviewHeading) {
+          const title = reviewPanel.querySelector("h2");
+          reviewHeading = document.createElement("div");
+          reviewHeading.className = "course-review-heading";
+          title.before(reviewHeading);
+          reviewHeading.append(title);
+        }
+        reviewHeading.append(writeReviewLink);
+
+        writeReviewLink.href =
+          `/mypage/learning/${encodeURIComponent(lectureId)}/review`;
+        writeReviewLink.hidden = data.viewerState !== "enrolled";
       }
 
       // 상단 배너
@@ -419,7 +622,34 @@ if (document.querySelector("[data-lecture-detail]")) {
         "detail-category-level",
         [data.category, data.level].filter(Boolean).join(" / "),
       );
-      setText("detail-name", data.name);
+      setText("detail-name", data.headline?.trim() || data.name);
+      const cover = byId("detail-picture");
+      const defaultCover = cover.dataset.fallback;
+      cover.onerror = () => {
+        cover.onerror = null;
+        cover.src = defaultCover;
+      };
+      cover.src = defaultCover;
+      if (data.picture) {
+        try {
+          const url = new URL(data.picture, location.origin);
+          if (["http:", "https:"].includes(url.protocol)) cover.src = url.href;
+        } catch { /* 이미지 주소가 없으면 설계안의 기본 이미지를 유지합니다. */ }
+      }
+      byId("preview-title").textContent = `${data.name} · 강의 소개`;
+      const preview = byId("detail-preview-video");
+      preview.pause();
+      preview.removeAttribute("src");
+      preview.load();
+      preview.hidden = true;
+      byId("preview-placeholder").hidden = false;
+      byId("preview-message").textContent = "";
+      byId("play-detail-preview").disabled = !data.preview;
+      byId("play-detail-preview").hidden = !data.preview;
+      preview.dataset.available = String(Boolean(data.preview));
+      if (!data.preview) {
+        byId("preview-message").textContent = "등록된 미리보기 영상이 없습니다.";
+      }
       setText("detail-summary", data.summary || data.headline || "");
       setText("detail-level", data.level);
       setText("detail-instructor-name", teacher.iname || "강사 정보 없음");
@@ -452,8 +682,38 @@ if (document.querySelector("[data-lecture-detail]")) {
       setText("teacher-bio", teacher.bio || "등록된 강사 소개가 없습니다.");
       setText("teacher-career", teacher.career);
 
-      setText("teacher-catchphrase", teacher.catchphrase);
-      byId("teacher-catchphrase").hidden = !teacher.catchphrase;
+      setText("teacher-heading", teacher.catchphrase || "강사 소개");
+      const others = byId("teacher-other-courses");
+      others.replaceChildren();
+      const otherLectures = Array.isArray(data.otherLectures) ? data.otherLectures : [];
+      byId("teacher-other-empty").hidden = otherLectures.length > 0;
+      byId("teacher-other-description").textContent = `${teacherName}의 다른 강의도 만나보세요.`;
+      for (const [index, other] of otherLectures.entries()) {
+        if (!Number.isSafeInteger(other.lid) || other.lid <= 0) continue;
+        const card = document.createElement("a");
+        card.className = "course-card";
+        card.href = `/courses/detail?id=${other.lid}`;
+        const art = document.createElement("div");
+        art.className = `course-art ${["navy", "lavender", "sage"][index % 3]}`;
+        const artTitle = document.createElement("strong");
+        artTitle.textContent = other.name;
+        art.append(artTitle, courseLineIcon(index + 1));
+        const title = document.createElement("h3");
+        title.textContent = other.name;
+        const instructor = document.createElement("p");
+        instructor.textContent = teacherName;
+        const price = document.createElement("div");
+        price.className = "course-price";
+        const amount = document.createElement("strong");
+        amount.textContent = typeof other.price === "number"
+          ? `${other.price.toLocaleString("ko-KR")}원` : "가격 확인";
+        const arrow = document.createElement("span");
+        arrow.textContent = "→";
+        arrow.setAttribute("aria-hidden", "true");
+        price.append(amount, arrow);
+        card.append(art, title, instructor, price);
+        others.append(card);
+      }
 
       // 평점이 null이면 '0점'으로 오해하지 않도록 구분합니다.
       const reviewCount = data.reviewCount ?? 0;
@@ -471,7 +731,9 @@ if (document.querySelector("[data-lecture-detail]")) {
       setText("purchase-name", data.name);
       setText(
         "purchase-price",
-        `${data.price.toLocaleString("ko-KR")}원`,
+        data.viewerState === "enrolled"
+          ? "구매 완료"
+          : `${data.price.toLocaleString("ko-KR")}원`,
       );
       setText("purchase-difficulty", data.level);
       setText("purchase-category", data.category);
@@ -485,23 +747,26 @@ if (document.querySelector("[data-lecture-detail]")) {
 
       // 현재는 인증 토큰을 보내지 않으므로 공개 상세 조회입니다.
       // 구매 버튼은 안내 모달만 열며 실제 결제는 실행하지 않습니다.
-      if (data.viewerState === "guest" && data.action === "purchase") {
-        purchase.hidden = false;
-        setText(
-          "purchase-status",
-          "수강하려면 로그인이 필요합니다. 로그인·결제 연결은 준비 중입니다.",
-        );
-      } else if (data.viewerState === "enrolled") {
-        setText(
-          "purchase-status",
-          "수강 중인 강의입니다. 학습 화면 연결은 준비 중입니다.",
-        );
-      } else {
-        setText(
-          "purchase-status",
-          "구매·수강 기능 연결은 준비 중입니다.",
-        );
-      }
+      purchase.hidden = false;
+
+    const addToCart = byId("add-to-cart");
+    if (addToCart) addToCart.hidden = data.viewerState === "enrolled";
+
+    if (data.viewerState === "enrolled") {
+      purchase.textContent = "학습하기 →";
+      setText(
+        "purchase-status",
+        "구매한 강의입니다. 학습을 시작하거나 이어서 진행하세요.",
+      );
+    } else {
+      purchase.textContent = "수강권 구매 →";
+      setText(
+        "purchase-status",
+        data.viewerState === "guest"
+          ? "로그인 후 구매할 수 있습니다."
+          : "결제 화면에서 할인과 결제 금액을 확인하세요.",
+      );
+    }
 
       status.textContent = "";
       content.hidden = false;
@@ -539,13 +804,187 @@ all("[data-preview-video]").forEach((b) =>
     });
   }),
 );
+on("play-detail-preview", "click", async () => {
+  const video = byId("detail-preview-video");
+  const lectureId = new URLSearchParams(location.search).get("id");
+  if (video.dataset.available !== "true" || !/^[1-9]\d*$/.test(lectureId || "")) return;
+  byId("preview-message").textContent = "";
+  if (!video.getAttribute("src")) video.src = `/backend/lectures/${lectureId}/preview`;
+  video.hidden = false;
+  byId("preview-placeholder").hidden = true;
+  try {
+    await video.play();
+  } catch {
+    byId("preview-placeholder").hidden = false;
+    video.hidden = true;
+    byId("preview-message").textContent = "미리보기 영상을 재생하지 못했습니다. 다시 시도해 주세요.";
+  }
+});
+on("detail-preview-video", "error", () => {
+  byId("detail-preview-video").hidden = true;
+  byId("preview-placeholder").hidden = false;
+  byId("preview-message").textContent = "미리보기 영상을 불러오지 못했습니다.";
+});
 all("[data-video-note]").forEach((b) =>
   b.addEventListener("click", () => {
     b.parentElement.querySelector(".video-status").textContent =
       "영상 파일 연결 전입니다. 실제 재생은 지원하지 않습니다.";
   }),
 );
-on("open-purchase", "click", () => byId("purchase-dialog").showModal());
+on("open-purchase", "click", async () => {
+  const button = byId("open-purchase");
+  const status = byId("purchase-status");
+  const lectureId = new URLSearchParams(location.search).get("id");
+  const basePath = header?.dataset.basePath || "";
+
+  if (button.disabled) return;
+
+  if (
+    !lectureId ||
+    !/^[1-9]\d*$/.test(lectureId) ||
+    !Number.isSafeInteger(Number(lectureId))
+  ) {
+    status.textContent = "강의 주소가 올바르지 않습니다.";
+    return;
+  }
+
+  const goLogin = () => {
+    location.assign(
+      `${basePath}/login?course=${encodeURIComponent(lectureId)}`,
+    );
+  };
+
+  const goLearn = () => {
+    location.assign(
+      `${basePath}/lectures/${encodeURIComponent(lectureId)}/learn`,
+    );
+  };
+
+  // 요청할 때마다 최신 토큰을 읽습니다.
+  async function request(path, options = {}) {
+    const session = getStoredSession();
+    const headers = new Headers(options.headers);
+
+    headers.set("Accept", "application/json");
+
+    if (session?.authorization) {
+      headers.set("Authorization", session.authorization);
+    }
+
+    return authFetch(`/backend${path}`, {
+      ...options,
+      headers,
+      cache: "no-store",
+    });
+  }
+
+  if (!getStoredSession()?.authorization) {
+    goLogin();
+    return;
+  }
+
+  button.disabled = true;
+  status.textContent = "수강 상태를 확인하고 있습니다.";
+
+  try {
+    // 클릭 시점의 실제 수강 권한을 서버에서 다시 확인합니다.
+    const detailResponse = await request(`/lectures/${lectureId}`);
+
+    if (detailResponse.status === 401) {
+      goLogin();
+      return;
+    }
+
+    if (!detailResponse.ok) {
+      throw new Error("강의의 수강 상태를 확인하지 못했습니다.");
+    }
+
+    const detail = await detailResponse.json();
+
+    if (detail.viewerState === "guest") {
+      goLogin();
+      return;
+    }
+
+    if (detail.viewerState === "enrolled") {
+      goLearn();
+      return;
+    }
+
+    if (detail.viewerState !== "member") {
+      throw new Error("수강 상태 응답이 올바르지 않습니다.");
+    }
+
+    // 바로 구매: 장바구니에 담지 않고 이 강의만 결제 화면으로 넘깁니다 (direct=true).
+    location.assign(
+      `${basePath}/mypage/buy?courseIds=${encodeURIComponent(lectureId)}&direct=true`,
+    );
+  } catch (error) {
+    status.textContent = error.message || "이동 중 오류가 발생했습니다.";
+  } finally {
+    button.disabled = false;
+  }
+});
+// 장바구니 담기: POST /mypage/cart/add. 결제 화면으로 이동하지 않고 담기만 합니다.
+on("add-to-cart", "click", async () => {
+  const button = byId("add-to-cart");
+  const status = byId("purchase-status");
+  const lectureId = new URLSearchParams(location.search).get("id");
+  const basePath = header?.dataset.basePath || "";
+  if (button.disabled) return;
+  if (!/^[1-9]\d*$/.test(lectureId || "")) {
+    status.textContent = "강의 주소가 올바르지 않습니다.";
+    return;
+  }
+  const session = getStoredSession();
+  if (!session?.authorization) {
+    location.assign(`${basePath}/login?course=${encodeURIComponent(lectureId)}`);
+    return;
+  }
+  button.disabled = true;
+  status.textContent = "장바구니에 담는 중입니다.";
+  try {
+    const response = await authFetch("/backend/mypage/cart/add", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: session.authorization,
+      },
+      body: JSON.stringify({ courseId: Number(lectureId) }),
+      cache: "no-store",
+    });
+    if (response.status === 401) {
+      location.assign(`${basePath}/login?course=${encodeURIComponent(lectureId)}`);
+      return;
+    }
+    const data = await response.json().catch(() => null);
+    const messages = {
+      ALREADY_IN_CART: "이미 장바구니에 담긴 강의입니다.",
+      ALREADY_ENROLLED: "이미 수강 중인 강의입니다.",
+      CART_FULL: "장바구니가 가득 찼습니다. 일부 강의를 삭제한 뒤 담아 주세요.",
+    };
+    if (!response.ok && !messages[data?.code]) {
+      throw new Error(data?.message || "장바구니에 담지 못했습니다.");
+    }
+    status.replaceChildren(
+      document.createTextNode(
+        response.ok ? "장바구니에 담았습니다. " : `${messages[data.code]} `,
+      ),
+    );
+    if (data?.code !== "ALREADY_ENROLLED") {
+      const link = document.createElement("a");
+      link.href = `${basePath}/mypage/cart`;
+      link.textContent = "장바구니 보기";
+      status.append(link);
+    }
+  } catch (error) {
+    status.textContent =
+      error instanceof TypeError ? "서버에 연결하지 못했습니다." : error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
 all("[data-close-dialog]").forEach((b) =>
   b.addEventListener("click", () => byId("purchase-dialog").close()),
 );
@@ -660,8 +1099,23 @@ if (byId("post-list")) {
     const link = forumEl("a", "post-item");
     link.dataset.post = "";
     link.href = review
-      ? `${forumBase}/courses/detail?id=${encodeURIComponent(post.lectureId)}`
+      ? `${forumBase}/courses/reviews?id=${encodeURIComponent(post.lectureId)}` +
+        `&user=${encodeURIComponent(post.reviewRef?.userId ?? "")}`
       : `${forumBase}/community/detail?id=${encodeURIComponent(post.postId)}`;
+    if (review) {
+      // 수강평은 강의 상세로 이동하지 않고, 그 강의의 수강평만 보여 주는 작은 창을 엽니다.
+      link.addEventListener("click", (event) => {
+        if (event.ctrlKey || event.metaKey || event.shiftKey) return;
+        event.preventDefault();
+        const popup = window.open(
+          link.href,
+          "course-reviews",
+          "width=520,height=720,resizable=yes,scrollbars=yes",
+        );
+        if (popup) popup.focus();
+        else location.assign(link.href); // 팝업이 막힌 경우 같은 창에서 엽니다.
+      });
+    }
     const code = post.category?.code || "";
     const meta = [
       post.authorNickname || "알 수 없음",
@@ -969,28 +1423,8 @@ if (document.querySelector("[data-post-detail]")) {
 }
 
 // 글 작성 화면 (/community/write)
-// 본문 입력의 간단한 표시(**굵게**, *기울임*, - 목록, [링크](주소))를 HTML로 바꿔 보냅니다.
-// 서버가 허용 서식만 다시 걸러 저장합니다.
 const forumEscape = (text) =>
   text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const forumInline = (text) =>
-  forumEscape(text)
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>');
-const forumToHtml = (text) =>
-  text
-    .replace(/\r\n/g, "\n")
-    .trim()
-    .split(/\n{2,}/)
-    .map((block) => {
-      const lines = block.split("\n");
-      if (lines.every((line) => /^\s*-\s+/.test(line))) {
-        return `<ul>${lines.map((line) => `<li>${forumInline(line.replace(/^\s*-\s+/, ""))}</li>`).join("")}</ul>`;
-      }
-      return `<p>${lines.map(forumInline).join("<br>")}</p>`;
-    })
-    .join("");
 
 if (byId("post-form")) {
   const form = byId("post-form");
@@ -1006,6 +1440,16 @@ if (byId("post-form")) {
       status.textContent = "글을 등록하려면 먼저 로그인해 주세요.";
       return;
     }
+    const bodyText = byId("post-body").textContent.trim();
+    if (!bodyText) {
+      status.textContent = "본문을 입력해 주세요.";
+      byId("post-body").focus();
+      return;
+    }
+    if (bodyText.length > 10000) {
+      status.textContent = "본문은 10,000자 이하로 입력해 주세요.";
+      return;
+    }
     sending = true;
     const button = form.querySelector('[type="submit"]');
     button.disabled = true;
@@ -1017,7 +1461,7 @@ if (byId("post-form")) {
         body: JSON.stringify({
           category: byId("post-category").value,
           title: byId("post-title").value.trim(),
-          content: forumToHtml(byId("post-body").value),
+          content: editorHtml(),
         }),
       });
       if (response.status !== 201) {
@@ -1033,26 +1477,70 @@ if (byId("post-form")) {
     }
   });
 }
-all("[data-format]").forEach((b) =>
-  b.addEventListener("click", () => {
-    const input = byId("post-body");
-    const value =
-      input.value.slice(input.selectionStart, input.selectionEnd) || "내용";
-    const marks = {
-      bold: "**" + value + "**",
-      italic: "*" + value + "*",
-      list: "\n- " + value,
-      link: "[" + value + "](https://example.com)",
-    };
-    input.setRangeText(
-      marks[b.dataset.format],
-      input.selectionStart,
-      input.selectionEnd,
-      "end",
-    );
-    input.focus();
-  }),
-);
+// 글 작성 본문: 버튼을 누르면 선택한 글자에 서식이 바로 보이도록 편집 영역(contenteditable)을 씁니다.
+// 등록할 때는 편집 영역의 HTML을 보내고, 서버(jsoup)가 허용 태그만 남깁니다.
+function editorHtml() {
+  const editor = byId("post-body");
+  // 빈 줄만 남은 경우를 정리합니다.
+  return editor.innerHTML.replace(/(<p><br><\/p>)+$/i, "").trim();
+}
+if (byId("post-body")?.isContentEditable) {
+  const editor = byId("post-body");
+  // 줄바꿈을 <div> 대신 <p>로 만들어 서버 허용 태그와 맞춥니다.
+  try {
+    document.execCommand("defaultParagraphSeparator", false, "p");
+  } catch {
+    // 지원하지 않는 브라우저는 기본 동작을 씁니다.
+  }
+  const commands = {
+    bold: "bold",
+    italic: "italic",
+    list: "insertUnorderedList",
+  };
+  const syncToolbar = () => {
+    all("[data-format]").forEach((button) => {
+      const command = commands[button.dataset.format];
+      if (!command) return;
+      let active = false;
+      try {
+        active = document.queryCommandState(command);
+      } catch {
+        active = false;
+      }
+      button.setAttribute("aria-pressed", String(active));
+    });
+  };
+  all("[data-format]").forEach((button) => {
+    // 버튼을 눌러도 편집 영역의 선택이 풀리지 않게 합니다.
+    button.addEventListener("mousedown", (event) => event.preventDefault());
+    button.addEventListener("click", () => {
+      editor.focus();
+      const format = button.dataset.format;
+      if (format === "link") {
+        const url = window.prompt("연결할 주소를 입력해 주세요.", "https://");
+        if (!url || !/^https?:\/\/\S+$/i.test(url.trim())) return;
+        const selection = window.getSelection();
+        if (selection && selection.isCollapsed) {
+          document.execCommand("insertHTML", false,
+            `<a href="${forumEscape(url.trim())}">${forumEscape(url.trim())}</a>`);
+        } else {
+          document.execCommand("createLink", false, url.trim());
+        }
+      } else {
+        document.execCommand(commands[format]);
+      }
+      syncToolbar();
+    });
+  });
+  // 다른 곳에서 복사한 서식은 버리고 글자만 붙여 넣습니다.
+  editor.addEventListener("paste", (event) => {
+    event.preventDefault();
+    const text = event.clipboardData?.getData("text/plain") ?? "";
+    document.execCommand("insertText", false, text);
+  });
+  editor.addEventListener("keyup", syncToolbar);
+  editor.addEventListener("mouseup", syncToolbar);
+}
 // 전송 차단 이벤트가 등록된 후에만 폼을 활성화합니다.
 all("fieldset[data-enable]").forEach((f) => {
   f.disabled = false;
@@ -1133,16 +1621,25 @@ if (loginForm) {
 
       // 비밀번호는 저장하지 않고 입력란에서도 지웁니다.
       passwordInput.value = "";
+      const courseId = new URLSearchParams(location.search).get("course");
+      const basePath = header?.dataset.basePath || "";
 
-if (member.role === "INSTRUCTOR") {
-  // 강사는 강사센터로 이동
-  status.textContent = "로그인되었습니다. 강사센터로 이동합니다.";
-  window.location.replace("/instructor/lectures");
-} else {
-  // 일반 사용자는 기존 메인으로 이동
-  status.textContent = "로그인되었습니다. 메인으로 이동합니다.";
-  window.location.replace((header?.dataset.basePath || "") + "/");
-}
+      if (courseId && /^[1-9]\d*$/.test(courseId)) {
+        status.textContent = "로그인되었습니다. 선택한 강의로 이동합니다.";
+        window.location.replace(
+          `${basePath}/courses/detail?id=${encodeURIComponent(courseId)}`,
+        );
+      } else if (member.role === "INSTRUCTOR") {
+        // 강사는 강사센터로 이동
+        status.textContent = "로그인되었습니다. 강사센터로 이동합니다.";
+        window.location.replace(`${basePath}/instructor/lectures`);
+      } else {
+        status.textContent = "로그인되었습니다. 메인으로 이동합니다.";
+        window.location.replace(`${basePath}/`);
+      }
+
+      // 로그인 화면을 메인 화면으로 대체합니다.
+
     } catch (error) {
       status.textContent = "";
       errorBox.textContent =
@@ -1156,4 +1653,1707 @@ if (member.role === "INSTRUCTOR") {
       submitButton.disabled = false;
     }
   });
+}
+
+// 강의 학습 주소에서만 실행합니다.
+const learningPathMatch = window.location.pathname.match(
+  /\/lectures\/([1-9][0-9]*)\/learn$/,
+);
+
+const classroom = document.querySelector(".classroom");
+
+if (learningPathMatch && classroom) {
+    // 실제 영상이 준비될 때까지 예시 재생 UI를 숨깁니다.
+  const videoArea = classroom.querySelector(".lesson-video");
+
+  if (videoArea) {
+    videoArea.querySelector(".play-button")?.remove();
+    videoArea.querySelector(".video-controls")?.remove();
+
+    const videoDescription = videoArea.querySelector(".video-center > p");
+    if (videoDescription) {
+      videoDescription.textContent = "등록된 강의 영상이 없습니다.";
+    }
+
+    const videoStatus = videoArea.querySelector(".video-status");
+    if (videoStatus) videoStatus.textContent = "";
+  }
+
+  const defaultNote = classroom.querySelector(
+    "#lesson-default .screen-note",
+  );
+  if (defaultNote) {
+    defaultNote.textContent = "영상이 등록되면 학습할 수 있습니다.";
+  }
+  const lectureId = learningPathMatch[1];
+  const status = document.getElementById("lesson-status");
+  const title = classroom.querySelector("h1");
+  const videoTitle = classroom.querySelector(".video-center h2");
+
+  // AUTHENTICATED_LESSON_VIDEO
+  async function prepareLessonVideo(data) {
+    if (!videoArea) return;
+
+    const center = videoArea.querySelector(".video-center");
+    const description = center?.querySelector("p");
+    if (!center || !description) return;
+
+    const oldStatus = center.querySelector(".video-status");
+    if (oldStatus) oldStatus.textContent = "";
+
+    const player = document.createElement("video");
+    player.controls = true;
+    player.playsInline = true;
+    player.preload = "metadata";
+    player.hidden = true;
+    player.setAttribute("aria-label", `${data.name} 강의 영상`);
+    videoArea.prepend(player);
+
+    const loadButton = document.createElement("button");
+    loadButton.type = "button";
+    loadButton.className = "btn primary lesson-load-video";
+    loadButton.textContent = "영상 불러오기";
+    loadButton.hidden = true;
+    center.append(loadButton);
+
+    let objectUrl = null;
+    let busy = false;
+    const controller = new AbortController();
+    const endpoint = `/backend/lectures/${lectureId}/learn/video`;
+
+    function showMessage(text) {
+      description.textContent = text;
+    }
+
+    async function requestVideo(extraHeaders = {}) {
+      const session = getStoredSession();
+      if (!session?.authorization) {
+        throw new Error("로그인 후 영상을 확인해 주세요.");
+      }
+
+      return authFetch(endpoint, {
+        headers: {
+          Authorization: session.authorization,
+          ...extraHeaders,
+        },
+        signal: controller.signal,
+        cache: "no-store",
+      });
+    }
+
+    async function checkResponse(response) {
+      if (response.ok) return;
+
+      const body = await response.json().catch(() => null);
+
+      if (response.status === 401) {
+        throw new Error("인증할 수 없습니다. 다시 로그인해 주세요.");
+      }
+      if (response.status === 403) {
+        throw new Error("이 영상을 재생할 수강 권한이 없습니다.");
+      }
+      if (
+        response.status === 404 &&
+        body?.code === "VIDEO_NOT_FOUND"
+      ) {
+        throw new Error("등록된 강의 영상이 없습니다.");
+      }
+
+      throw new Error(
+        body?.message || `영상 요청 실패: HTTP ${response.status}`,
+      );
+    }
+
+
+    // LESSON_POSITION_SAVE
+    const positionMessage = document.createElement("p");
+    positionMessage.className = "screen-note";
+    positionMessage.setAttribute("role", "status");
+    videoArea.after(positionMessage);
+
+    const playbackMemberId = getStoredSession()?.member?.memberId;
+    let trackingPosition = false;
+    let savingPosition = false;
+    let pendingPosition = null;
+    let lastSavedPosition = Number.isFinite(data.position)
+      ? data.position
+      : null;
+    let lastPositionRequestAt = 0;
+    let positionSaveStopped = false;
+
+    function capturePosition() {
+      if (
+        !trackingPosition ||
+        player.error ||
+        player.readyState < 1 ||
+        !Number.isFinite(player.currentTime) ||
+        !Number.isFinite(player.duration) ||
+        player.duration <= 0
+      ) return null;
+
+      return Math.max(
+        0,
+        Math.floor(Math.min(player.currentTime, player.duration)),
+      );
+    }
+
+    let positionSavePromise = null;
+
+    function flushPosition() {
+      if (positionSavePromise) return positionSavePromise;
+
+      positionSavePromise = runPositionSave().finally(() => {
+        positionSavePromise = null;
+      });
+
+      return positionSavePromise;
+    }
+
+    async function runPositionSave() {
+      if (savingPosition || positionSaveStopped) return;
+
+      savingPosition = true;
+
+      try {
+        // 요청을 순서대로 보내 이전 위치가 최신 위치를 덮지 않게 합니다.
+        while (pendingPosition !== null) {
+          const position = pendingPosition;
+          pendingPosition = null;
+
+          if (position === lastSavedPosition) continue;
+
+          const session = getStoredSession();
+
+          if (
+            !session?.authorization ||
+            playbackMemberId == null ||
+            String(session.member?.memberId) !== String(playbackMemberId)
+          ) {
+            positionSaveStopped = true;
+            pendingPosition = null;
+            positionMessage.textContent =
+              "로그인 상태가 변경되어 재생 위치 저장을 중단했습니다.";
+            return;
+          }
+
+          lastPositionRequestAt = Date.now();
+
+          try {
+            const response = await authFetch(
+              `/backend/lectures/${lectureId}/learn/position`,
+              {
+                method: "PUT",
+                headers: {
+                  Authorization: session.authorization,
+                  "Content-Type": "application/json",
+                  Accept: "application/json",
+                },
+                body: JSON.stringify({ position }),
+                keepalive: true,
+              },
+            );
+
+            if (response.status !== 204) {
+              const body = await response.json().catch(() => null);
+
+              if (response.status === 401 || response.status === 403) {
+                positionSaveStopped = true;
+              }
+
+              throw new Error(
+                body?.message ||
+                  `재생 위치 저장 실패: HTTP ${response.status}`,
+              );
+            }
+
+            lastSavedPosition = position;
+            data.position = position;
+            positionMessage.textContent =
+              `이어보기 위치 저장됨 · ${formatChapterTime(position)}`;
+          } catch (error) {
+            pendingPosition = null;
+            positionMessage.textContent =
+              error instanceof TypeError
+                ? "재생 위치 저장 결과를 확인하지 못했습니다. 연결 상태를 확인해 주세요."
+                : error.message;
+            break;
+          }
+        }
+      } finally {
+        savingPosition = false;
+      }
+    }
+
+    function saveCurrentPosition() {
+      if (positionSaveStopped) return;
+
+      const position = capturePosition();
+      if (position === null) return;
+
+      pendingPosition = position;
+      void flushPosition();
+    }
+
+    // 영상 로딩·이어보기 복원 과정에서 0초가 잘못 저장되지 않게 합니다.
+    player.addEventListener("loadedmetadata", () => {
+      trackingPosition = false;
+    });
+
+    player.addEventListener("play", () => {
+      trackingPosition = true;
+    });
+
+    player.addEventListener("emptied", () => {
+      trackingPosition = false;
+    });
+
+    player.addEventListener("timeupdate", () => {
+      if (
+        !player.paused &&
+        !player.seeking &&
+        Date.now() - lastPositionRequestAt >= 15000
+      ) {
+        saveCurrentPosition();
+      }
+    });
+
+    player.addEventListener("pause", saveCurrentPosition);
+    // LESSON_COMPLETION
+    const completionMessage = document.createElement("p");
+    completionMessage.className = "screen-note";
+    completionMessage.setAttribute("role", "status");
+
+    const completionRetry = document.createElement("button");
+    completionRetry.type = "button";
+    completionRetry.className = "btn secondary";
+    completionRetry.textContent = "수료 처리 다시 시도";
+    completionRetry.hidden = true;
+
+    positionMessage.after(completionMessage, completionRetry);
+
+    let completing = false;
+
+    if (data.done) {
+      completionMessage.textContent = "이미 수료한 강의입니다.";
+    }
+
+    async function completeLesson() {
+      if (completing || data.done || !player.ended) return;
+
+      completing = true;
+      completionRetry.hidden = true;
+      completionMessage.textContent = "마지막 재생 위치를 저장하고 있습니다.";
+
+      try {
+        const position = capturePosition();
+
+        if (position === null || positionSaveStopped) {
+          throw new Error("재생 위치를 저장할 수 없습니다. 로그인 상태를 확인해 주세요.");
+        }
+
+        pendingPosition = position;
+        await flushPosition();
+
+        if (positionSaveStopped || lastSavedPosition !== position) {
+          throw new Error("마지막 재생 위치 저장에 실패했습니다. 다시 시도해 주세요.");
+        }
+
+        const session = getStoredSession();
+
+        if (
+          !session?.authorization ||
+          playbackMemberId == null ||
+          String(session.member?.memberId) !== String(playbackMemberId)
+        ) {
+          throw new Error("로그인 상태가 변경되었습니다. 새로고침 후 확인해 주세요.");
+        }
+
+        completionMessage.textContent = "수료 처리 중입니다.";
+
+        const response = await authFetch(
+          `/backend/lectures/${lectureId}/complete`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: session.authorization,
+              Accept: "application/json",
+            },
+          },
+        );
+
+        const body = await response.json().catch(() => null);
+        const alreadyCompleted =
+          response.status === 409 && body?.code === "ALREADY_COMPLETED";
+
+        if (!response.ok && !alreadyCompleted) {
+          throw new Error(
+            body?.message || `수료 처리 실패: HTTP ${response.status}`,
+          );
+        }
+
+        data.done = true;
+        completionMessage.textContent = "강의를 수료했습니다.";
+      } catch (error) {
+        completionMessage.textContent =
+          error instanceof TypeError
+            ? "수료 처리 결과를 확인하지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요."
+            : error.message;
+        completionRetry.hidden = false;
+      } finally {
+        completing = false;
+      }
+    }
+
+    player.addEventListener("ended", completeLesson);
+    completionRetry.addEventListener("click", completeLesson);
+
+    player.addEventListener("play", () => {
+      completionRetry.hidden = true;
+    });
+
+
+    // 일시정지한 상태에서 목차로 이동한 경우에도 위치를 저장합니다.
+    player.addEventListener("seeked", () => {
+      if (player.paused) saveCurrentPosition();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) saveCurrentPosition();
+    });
+
+    // 기존 영상 정리 이벤트보다 먼저 마지막 위치를 캡처합니다.
+    window.addEventListener("pagehide", saveCurrentPosition);
+
+    player.addEventListener("loadedmetadata", () => {
+      player.hidden = false;
+      center.hidden = true;
+
+      const savedPosition = Number(data.position);
+      if (
+        Number.isFinite(savedPosition) &&
+        savedPosition > 0 &&
+        savedPosition < player.duration
+      ) {
+        player.currentTime = savedPosition;
+      }
+
+      updateChapterButtons();
+
+      if (defaultNote) {
+        defaultNote.textContent =
+          "재생 버튼을 눌러 시작하세요. 목차를 선택하면 해당 위치로 이동합니다.";
+      }
+    });
+
+    player.addEventListener("error", () => {
+      player.hidden = true;
+      center.hidden = false;
+      loadButton.hidden = false;
+      loadButton.textContent = "다시 불러오기";
+      showMessage(
+        "영상을 재생하지 못했습니다. 파일 형식이나 손상 여부를 확인해 주세요.",
+      );
+      updateChapterButtons();
+    });
+
+    loadButton.addEventListener("click", async () => {
+      if (busy) return;
+      busy = true;
+      loadButton.disabled = true;
+      showMessage("영상 파일을 불러오는 중입니다. 파일 크기에 따라 시간이 걸릴 수 있습니다.");
+
+      try {
+        const response = await requestVideo();
+        await checkResponse(response);
+
+        const blob = await response.blob();
+        if (blob.size === 0) {
+          throw new Error("영상 파일이 비어 있습니다.");
+        }
+
+        player.pause();
+        player.removeAttribute("src");
+        player.load();
+
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        objectUrl = URL.createObjectURL(blob);
+
+        player.src = objectUrl;
+        player.load();
+        showMessage("영상 형식을 확인하고 있습니다.");
+      } catch (error) {
+        if (error.name === "AbortError") return;
+
+        showMessage(
+          error instanceof TypeError
+            ? "영상 서버에 연결하지 못했습니다."
+            : error.message,
+        );
+        loadButton.textContent = "다시 불러오기";
+      } finally {
+        busy = false;
+        loadButton.disabled = false;
+      }
+    });
+
+    window.addEventListener("pagehide", (event) => {
+      player.pause();
+      if (event.persisted) return;
+
+      controller.abort();
+      player.removeAttribute("src");
+      player.load();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    });
+
+    if (!data.videoUrl) {
+      showMessage("등록된 강의 영상이 없습니다.");
+      return;
+    }
+
+    showMessage("영상 파일을 확인하고 있습니다.");
+
+    try {
+      // 전체 다운로드 전에 작은 구간을 요청해 파일 존재를 확인합니다.
+      const response = await requestVideo({ Range: "bytes=0-0" });
+      await checkResponse(response);
+      if (response.body) await response.body.cancel();
+
+      showMessage("영상이 등록되어 있습니다. 불러오기 후 재생할 수 있습니다.");
+      loadButton.hidden = false;
+
+      if (defaultNote) {
+        defaultNote.textContent =
+          "영상을 불러오면 목차를 선택해 재생 위치를 이동할 수 있습니다.";
+      }
+    } catch (error) {
+      if (error.name === "AbortError") return;
+
+      showMessage(
+        error instanceof TypeError
+          ? "영상 서버에 연결하지 못했습니다."
+          : error.message,
+      );
+
+      if (defaultNote) {
+        defaultNote.textContent =
+          "영상 파일이 준비된 뒤 새로고침하면 다시 확인합니다.";
+      }
+    }
+  }
+
+
+  // REAL_LECTURE_CHAPTERS
+  const outline = classroom.querySelector(".lesson-outline");
+
+  // CHAPTER_PLAYER_LINK
+  function getLessonPlayer() {
+    return classroom.querySelector(".lesson-video video");
+  }
+
+  function canSeekLesson() {
+    const player = getLessonPlayer();
+    return Boolean(
+      player &&
+      !player.error &&
+      player.readyState >= 1 &&
+      Number.isFinite(player.duration) &&
+      player.duration > 0
+    );
+  }
+
+  function updateChapterButtons() {
+    if (!outline) return;
+
+    const ready = canSeekLesson();
+
+    outline.querySelectorAll(".lecture-chapter-seek").forEach(button => {
+      const seconds = Number(button.dataset.startSec);
+      const player = getLessonPlayer();
+
+      button.disabled =
+        !ready || seconds >= player.duration;
+
+      button.title = !ready
+        ? "영상이 준비되면 해당 위치로 이동할 수 있습니다."
+        : button.disabled
+          ? "이 목차의 시작 시간이 영상 길이를 벗어납니다."
+          : "이 위치로 이동";
+    });
+  }
+
+  // 영상이 나중에 추가되어도 준비 이벤트를 감지합니다.
+  for (const eventName of [
+    "loadedmetadata",
+    "durationchange",
+    "emptied",
+    "error",
+  ]) {
+    classroom.addEventListener(eventName, (event) => {
+      if (event.target.matches?.(".lesson-video video")) {
+        updateChapterButtons();
+      }
+    }, true);
+  }
+
+
+  function showOutlineMessage(text) {
+    if (!outline) return;
+    const heading = document.createElement("h2");
+    heading.textContent = "강의 목차";
+    const message = document.createElement("p");
+    message.textContent = text;
+    outline.replaceChildren(heading, message);
+  }
+
+  function formatChapterTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainder = seconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+  }
+
+  function renderChapters(data) {
+    if (!outline) return;
+
+    if (
+      !Array.isArray(data.chapters) ||
+      data.chapters.some(chapter =>
+        !Number.isInteger(chapter.startSec) ||
+        chapter.startSec < 0 ||
+        typeof chapter.title !== "string"
+      )
+    ) {
+      showOutlineMessage("목차 정보의 응답 형식을 확인할 수 없습니다.");
+      return;
+    }
+
+    showOutlineMessage(
+      data.chapters.length
+        ? "하나의 영상, 주제별로 살펴보세요."
+        : "등록된 목차가 없습니다.",
+    );
+
+    const chapters = [...data.chapters].sort(
+      (a, b) => a.startSec - b.startSec,
+    );
+
+    const list = document.createElement("ol");
+    list.className = "lecture-real-chapters";
+
+    for (const chapter of chapters) {
+      const row = document.createElement("li");
+
+      const time = document.createElement("span");
+      time.className = "lecture-chapter-time";
+      time.textContent = formatChapterTime(chapter.startSec);
+
+      const title = document.createElement("span");
+      title.textContent = chapter.title;
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "lecture-chapter-seek";
+      button.dataset.startSec = String(chapter.startSec);
+      button.disabled = true;
+      button.setAttribute(
+        "aria-label",
+        `${chapter.title}, ${formatChapterTime(chapter.startSec)} 위치로 이동`,
+      );
+
+      button.append(time, title);
+      row.append(button);
+      list.append(row);
+
+      button.addEventListener("click", () => {
+        const player = getLessonPlayer();
+        if (!canSeekLesson()) return;
+        if (chapter.startSec >= player.duration) return;
+
+        try {
+          // 재생 중이면 계속 재생, 일시정지 상태라면 위치만 이동합니다.
+          player.currentTime = chapter.startSec;
+
+          outline.querySelectorAll(".lecture-chapter-seek")
+            .forEach(item => {
+              item.classList.toggle("is-active", item === button);
+            });
+        } catch {
+          const message = document.getElementById("lesson-status");
+          if (message) {
+            message.textContent =
+              "재생 위치를 이동하지 못했습니다. 영상이 준비된 후 다시 시도해 주세요.";
+          }
+        }
+      });
+    }
+
+    if (chapters.length) outline.append(list);
+    updateChapterButtons();
+
+    const footer = document.createElement("p");
+    footer.className = "lecture-chapter-footer";
+    footer.textContent =
+      Number.isInteger(data.duration) && data.duration > 0
+        ? `등록된 영상 길이: ${formatChapterTime(data.duration)}`
+        : "영상 길이 정보가 없습니다.";
+
+    outline.append(footer);
+  }
+
+  showOutlineMessage("목차를 불러오는 중입니다.");
+
+  const introduction = classroom.querySelector("#lesson-default > p");
+  if (introduction) {
+    introduction.textContent = "오른쪽 목차에서 강의 구성을 확인하세요.";
+  }
+
+
+  async function loadLearningInfo() {
+    // 다른 강의의 예시 제목이 실제 정보처럼 보이지 않게 합니다.
+    title.textContent = "강의 정보 확인 중";
+    if (videoTitle) videoTitle.textContent = "강의 정보 확인 중";
+
+    const session = getStoredSession();
+
+    if (!session) {
+      title.textContent = "로그인이 필요합니다";
+      showOutlineMessage("로그인 후 수강 중인 강의의 목차를 확인해 주세요.");
+      status.textContent = "로그인 후 수강 중인 강의를 열어 주세요.";
+      return;
+    }
+
+    status.textContent = "학습 정보를 불러오는 중입니다.";
+
+    try {
+      const response = await authFetch(
+        `/backend/lectures/${lectureId}/learn`,
+        {
+          headers: {
+            Authorization: session.authorization,
+          },
+          cache: "no-store",
+        },
+      );
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const messages = {
+          401: "로그인이 만료되었거나 인증할 수 없습니다. 다시 로그인해 주세요.",
+          403: "이 강의를 수강할 권한이 없습니다. 수강 중인 강의를 선택해 주세요.",
+          404: "강의를 찾을 수 없습니다.",
+        };
+
+        throw new Error(
+          messages[response.status] ||
+            data?.message ||
+            "학습 정보를 불러오지 못했습니다.",
+        );
+      }
+
+      if (
+        data?.lectureId !== Number(lectureId) ||
+        typeof data.name !== "string" ||
+        typeof data.done !== "boolean"
+      ) {
+        throw new Error("학습 정보 응답 형식을 확인해 주세요.");
+      }
+
+      title.textContent = data.name;
+      if (videoTitle) videoTitle.textContent = data.name;
+      renderChapters(data);
+      await prepareLessonVideo(data);
+
+      status.textContent = "";
+    } catch (error) {
+      title.textContent = "학습 정보를 불러올 수 없습니다";
+      if (videoTitle) videoTitle.textContent = "학습 정보 조회 실패";
+      showOutlineMessage("학습 정보를 불러오지 못해 목차를 표시할 수 없습니다.");
+      status.textContent = error.message;
+    }
+  }
+
+  loadLearningInfo();
+}
+
+
+// 학습 화면의 강의자료 조회·다운로드
+if (learningPathMatch && classroom) {
+  const lectureId = learningPathMatch[1];
+  const panel = document.getElementById("materials-panel");
+  const menu = document.querySelector(
+    '[data-lesson-panel="materials-panel"]',
+  );
+
+  if (panel && menu) {
+    let loading = false;
+
+    const heading = document.createElement("h2");
+    heading.textContent = "강의자료";
+
+    const message = document.createElement("p");
+    message.setAttribute("role", "status");
+    message.textContent = "강의자료 버튼을 누르면 자료를 조회합니다.";
+
+    const download = document.createElement("button");
+    download.type = "button";
+    download.className = "btn primary";
+    download.textContent = "자료 다운로드";
+    download.hidden = true;
+
+    panel.replaceChildren(heading, message, download);
+
+    let filename = "강의자료";
+
+    async function requestMaterial(path) {
+      const session = getStoredSession();
+
+      if (!session?.authorization) {
+        throw new Error("로그인 후 이용해 주세요.");
+      }
+
+      return authFetch(path, {
+        headers: {
+          Authorization: session.authorization,
+        },
+        cache: "no-store",
+      });
+    }
+
+    async function responseError(response) {
+      const body = await response.json().catch(() => null);
+
+      if (response.status === 401) {
+        return "로그인이 만료되었거나 인증할 수 없습니다. 다시 로그인해 주세요.";
+      }
+
+      if (response.status === 403) {
+        return "이 강의의 자료를 이용할 수 있는 수강 권한이 없습니다.";
+      }
+
+      if (
+        response.status === 404 &&
+        body?.code === "MATERIAL_NOT_FOUND"
+      ) {
+        return "등록된 강의자료가 없습니다.";
+      }
+
+      return body?.message ||
+        `강의자료 요청에 실패했습니다. HTTP ${response.status}`;
+    }
+
+    menu.addEventListener("click", async () => {
+      // 메뉴를 닫을 때는 조회하지 않습니다.
+      if (panel.hidden || loading) return;
+
+      loading = true;
+      download.hidden = true;
+      message.textContent = "강의자료를 확인하고 있습니다.";
+
+      try {
+        const response = await requestMaterial(
+          `/backend/lectures/${lectureId}/material`,
+        );
+
+        if (!response.ok) {
+          throw new Error(await responseError(response));
+        }
+
+        const data = await response.json();
+
+        if (
+          data.lectureId !== Number(lectureId) ||
+          typeof data.filename !== "string"
+        ) {
+          throw new Error("강의자료 응답 형식이 올바르지 않습니다.");
+        }
+
+        filename = data.filename;
+        message.textContent = filename;
+        download.hidden = false;
+      } catch (error) {
+        message.textContent =
+          error instanceof TypeError
+            ? "강의자료 서버에 연결하지 못했습니다."
+            : error.message;
+      } finally {
+        loading = false;
+      }
+    });
+
+    download.addEventListener("click", async () => {
+      if (download.disabled) return;
+
+      download.disabled = true;
+      message.textContent = "자료 파일을 내려받고 있습니다.";
+
+      try {
+        const response = await requestMaterial(
+          `/backend/lectures/${lectureId}/material/download`,
+        );
+
+        if (!response.ok) {
+          throw new Error(await responseError(response));
+        }
+
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+
+        link.href = objectUrl;
+        link.download = filename;
+        document.body.append(link);
+        link.click();
+        link.remove();
+
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+        message.textContent = "자료 파일의 다운로드를 요청했습니다.";
+      } catch (error) {
+        message.textContent =
+          error instanceof TypeError
+            ? "자료 파일을 내려받지 못했습니다. 연결 상태를 확인해 주세요."
+            : error.message;
+      } finally {
+        download.disabled = false;
+      }
+    });
+  }
+}
+
+// 학습 화면의 강의 질문 목록
+if (learningPathMatch && classroom) {
+  const lectureId = learningPathMatch[1];
+  const panel = document.getElementById("qna-panel");
+  const menu = document.querySelector(
+    '[data-lesson-panel="qna-panel"]',
+  );
+
+  if (panel && menu) {
+    // 예시 질문을 제거하고, 아직 연결하지 않은 작성 UI는 숨깁니다.
+    panel.querySelectorAll(".qna-row").forEach((row) => row.remove());
+    const writeButton = document.getElementById("write-question");
+    const questionForm = document.getElementById("question-form");
+    if (writeButton) writeButton.hidden = false;
+    if (questionForm) questionForm.hidden = true;
+
+    // 설계안의 제목·닉네임 행 구조를 유지합니다.
+    const tableHead = panel.querySelector(".qna-table-head");
+
+    const message = document.createElement("p");
+    message.className = "lecture-qna-message";
+    message.setAttribute("role", "status");
+
+    const list = document.createElement("div");
+    const pagination = document.createElement("div");
+    pagination.className = "form-actions";
+
+    panel.append(message, list, pagination);
+    if (tableHead) list.before(tableHead);
+    list.className = "lecture-qna-list";
+
+    let page = 1;
+    let loading = false;
+
+    async function loadQuestions(nextPage = 1) {
+      if (loading) return;
+
+      loading = true;
+      message.classList.remove("is-empty");
+      message.textContent = "질문 목록을 불러오는 중입니다.";
+      list.replaceChildren();
+      pagination.replaceChildren();
+
+      try {
+        const session = getStoredSession();
+        const headers = { Accept: "application/json" };
+
+        if (session?.authorization) {
+          headers.Authorization = session.authorization;
+        }
+
+        const response = await authFetch(
+          `/backend/lectures/${lectureId}/qna?page=${nextPage}&size=10`,
+          {
+            headers,
+            cache: "no-store",
+          },
+        );
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message || `질문 조회 실패: HTTP ${response.status}`,
+          );
+        }
+
+        if (
+          !Array.isArray(data?.questions) ||
+          !Number.isInteger(data?.page?.current) ||
+          !Number.isInteger(data?.page?.totalPages)
+        ) {
+          throw new Error("질문 목록 응답 형식이 올바르지 않습니다.");
+        }
+
+        page = data.page.current;
+
+        for (const question of data.questions) {
+          const row = document.createElement("article");
+          row.className = "lecture-qna-item";
+
+          const heading = document.createElement("h3");
+          const toggle = document.createElement("button");
+          toggle.type = "button";
+          toggle.className = "lecture-qna-toggle";
+          toggle.textContent =
+            `${question.secret ? "🔒 " : ""}${question.title}`;
+          toggle.setAttribute("aria-expanded", "false");
+          toggle.disabled = question.accessible === false;
+
+          heading.append(toggle);
+
+          const info = document.createElement("p");
+          info.className = "lecture-qna-author";
+          info.textContent = question.nickname || "작성자";
+          info.title = question.answered ? "답변 완료" : "답변 대기";
+
+          row.append(heading, info);
+
+                    const detail = document.createElement("div");
+          detail.className = "lecture-qna-detail";
+          detail.id = `lecture-qna-detail-${question.qid}`;
+          detail.hidden = true;
+
+          toggle.setAttribute("aria-controls", detail.id);
+          row.append(detail);
+
+          let detailLoading = false;
+
+          toggle.addEventListener("click", async () => {
+            if (detailLoading || question.accessible === false) return;
+
+            // 이미 열려 있으면 접습니다.
+            if (!detail.hidden) {
+              detail.hidden = true;
+              toggle.setAttribute("aria-expanded", "false");
+              return;
+            }
+
+            detail.hidden = false;
+            toggle.setAttribute("aria-expanded", "true");
+            detail.textContent = "질문 내용을 불러오는 중입니다.";
+            detailLoading = true;
+
+            try {
+              const session = getStoredSession();
+              const headers = { Accept: "application/json" };
+
+              if (session?.authorization) {
+                headers.Authorization = session.authorization;
+              }
+
+              const response = await authFetch(
+                `/backend/lectures/${lectureId}/qna/${question.qid}`,
+                {
+                  headers,
+                  cache: "no-store",
+                },
+              );
+
+              const data = await response.json().catch(() => null);
+
+              if (response.status === 401) {
+                throw new Error("로그인 후 다시 확인해 주세요.");
+              }
+
+              if (response.status === 403) {
+                throw new Error("이 질문을 열람할 권한이 없습니다.");
+              }
+
+              if (response.status === 404) {
+                throw new Error("질문을 찾을 수 없습니다.");
+              }
+
+              if (!response.ok) {
+                throw new Error(
+                  data?.message ||
+                    `질문 상세 조회 실패: HTTP ${response.status}`,
+                );
+              }
+
+              if (
+                data?.qid !== question.qid ||
+                data?.lectureId !== Number(lectureId)
+              ) {
+                throw new Error("질문 상세 응답 형식이 올바르지 않습니다.");
+              }
+
+              const questionLabel = document.createElement("h4");
+              questionLabel.textContent = "질문 내용";
+
+              const questionText = document.createElement("p");
+              questionText.textContent =
+                data.question || "작성된 본문이 없습니다.";
+
+              const answerBox = document.createElement("section");
+              answerBox.className = "lecture-qna-answer";
+
+              const answerLabel = document.createElement("h4");
+              answerLabel.textContent = "강사 답변";
+
+              const answerText = document.createElement("p");
+              const hasAnswer = Boolean(data.answer?.trim());
+
+              answerText.textContent = hasAnswer
+                ? data.answer
+                : "아직 답변이 등록되지 않았습니다.";
+
+              answerBox.append(answerLabel, answerText);
+
+              if (hasAnswer && data.answeredAt) {
+                const answeredAt = document.createElement("p");
+                answeredAt.className = "lecture-qna-date";
+                answeredAt.textContent =
+                  `답변 일시: ${data.answeredAt.replace("T", " ")}`;
+                answerBox.append(answeredAt);
+              }
+
+              info.textContent = data.nickname || "작성자";
+              info.title = hasAnswer ? "답변 완료" : "답변 대기";
+
+              detail.replaceChildren(
+                questionLabel,
+                questionText,
+                answerBox,
+              );
+            } catch (error) {
+              detail.textContent =
+                error instanceof TypeError
+                  ? "질문 내용을 불러오지 못했습니다. 연결 상태를 확인해 주세요."
+                  : error.message;
+            } finally {
+              detailLoading = false;
+            }
+          });
+
+
+          if (question.accessible === false) {
+            const restricted = document.createElement("p");
+            restricted.className = "lecture-qna-restricted";
+            restricted.textContent = "열람 권한이 없는 비밀글입니다.";
+            row.append(restricted);
+          }
+
+          list.append(row);
+        }
+
+        message.classList.toggle(
+          "is-empty",
+          data.questions.length === 0,
+        );
+
+        message.textContent = data.questions.length
+          ? `총 ${data.page.total}개의 질문`
+          : "아직 등록된 질문이 없어요.\n강의를 듣다가 궁금한 점을 남겨 주세요.";
+
+        if (data.page.totalPages > 1) {
+          const previous = document.createElement("button");
+          previous.type = "button";
+          previous.className = "btn secondary";
+          previous.textContent = "이전";
+          previous.disabled = page <= 1;
+          previous.addEventListener("click", () => {
+            loadQuestions(page - 1);
+          });
+
+          const pageInfo = document.createElement("span");
+          pageInfo.textContent = `${page} / ${data.page.totalPages}`;
+
+          const next = document.createElement("button");
+          next.type = "button";
+          next.className = "btn secondary";
+          next.textContent = "다음";
+          next.disabled = page >= data.page.totalPages;
+          next.addEventListener("click", () => {
+            loadQuestions(page + 1);
+          });
+
+          pagination.append(previous, pageInfo, next);
+        }
+      } catch (error) {
+        message.textContent =
+          error instanceof TypeError
+            ? "질문 서버에 연결하지 못했습니다."
+            : error.message;
+      } finally {
+        loading = false;
+      }
+    }
+
+        if (questionForm && writeButton) {
+      const fieldset = questionForm.querySelector("fieldset");
+      const titleInput = document.getElementById("question-title");
+      const bodyInput = document.getElementById("question-body");
+      const formStatus = questionForm.querySelector(".form-status");
+      const submitButton = questionForm.querySelector(
+        'button[type="submit"]',
+      );
+      const cancelButton = document.getElementById("cancel-question");
+
+      fieldset.disabled = false;
+      titleInput.maxLength = 200;
+      bodyInput.maxLength = 4000;
+
+      const secretLabel = document.createElement("label");
+      secretLabel.className = "lecture-qna-secret";
+
+      const secretInput = document.createElement("input");
+      secretInput.type = "checkbox";
+
+      const secretText = document.createElement("span");
+      secretText.textContent = "비밀글로 작성";
+      const secretHelp = document.createElement("p");
+      secretHelp.className = "lecture-qna-secret-help";
+      secretHelp.id = "question-secret-help";
+      secretHelp.textContent = "선택하면 작성자와 담당 강사만 볼 수 있어요.";
+      secretInput.setAttribute("aria-describedby", secretHelp.id);
+      secretLabel.append(secretInput, secretText);
+
+      fieldset.insertBefore(
+        secretLabel,
+        fieldset.querySelector(".form-actions"),
+      );
+
+      secretLabel.after(secretHelp);
+
+      let posting = false;
+
+      questionForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        if (posting || !questionForm.reportValidity()) return;
+
+        const title = titleInput.value.trim();
+        const question = bodyInput.value.trim();
+
+        if (!title || !question) {
+          formStatus.textContent = "질문 제목과 내용을 입력해 주세요.";
+          return;
+        }
+
+        const session = getStoredSession();
+
+        if (!session?.authorization) {
+          formStatus.textContent = "로그인 후 질문을 등록해 주세요.";
+          return;
+        }
+
+        posting = true;
+        fieldset.disabled = true;
+        writeButton.disabled = true;
+        cancelButton.disabled = true;
+        submitButton.disabled = true;
+        formStatus.textContent = "질문을 등록하고 있습니다.";
+
+        try {
+          const response = await authFetch(
+            `/backend/lectures/${lectureId}/qna`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: session.authorization,
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify({
+                title,
+                question,
+                secret: secretInput.checked,
+              }),
+            },
+          );
+
+          const data = await response.json().catch(() => null);
+
+          if (response.status === 401) {
+            throw new Error("인증할 수 없습니다. 다시 로그인해 주세요.");
+          }
+
+          if (response.status === 403) {
+            throw new Error("수강 중인 강의에만 질문을 등록할 수 있습니다.");
+          }
+
+          if (response.status !== 201) {
+            throw new Error(
+              data?.message || `질문 등록 실패: HTTP ${response.status}`,
+            );
+          }
+
+          questionForm.reset();
+          questionForm.hidden = true;
+          writeButton.setAttribute("aria-expanded", "false");
+          formStatus.textContent = "";
+
+          // 등록된 질문이 보이도록 첫 페이지를 다시 조회합니다.
+          await loadQuestions(1);
+        } catch (error) {
+          formStatus.textContent =
+            error instanceof TypeError
+              ? "등록 결과를 확인하지 못했습니다. 목록을 확인한 뒤 다시 시도해 주세요."
+              : error.message;
+        } finally {
+          posting = false;
+          fieldset.disabled = false;
+          writeButton.disabled = false;
+          cancelButton.disabled = false;
+          submitButton.disabled = false;
+        }
+      });
+    }
+
+    menu.addEventListener("click", () => {
+      // 패널을 열 때만 조회합니다.
+      if (!panel.hidden) loadQuestions(1);
+    });
+  }
+}
+
+// COURSE_REVIEWS_START
+{
+  const panel = document.querySelector('[data-panel="reviews"]');
+  const tab = document.querySelector('[data-tab="reviews"]');
+  const lectureId = new URLSearchParams(location.search).get("id");
+
+  if (panel && tab && /^[1-9]\d*$/.test(lectureId || "")) {
+    panel.querySelectorAll(".screen-note").forEach(el => el.remove());
+
+    const status = document.createElement("p");
+    status.className = "course-review-status";
+    status.setAttribute("role", "status");
+
+    const list = document.createElement("div");
+    const navigation = document.createElement("nav");
+    navigation.className = "course-review-pagination";
+    navigation.setAttribute("aria-label", "수강평 페이지");
+
+    const emptyReview = document.createElement("div");
+    emptyReview.className = "empty-panel course-review-empty";
+    emptyReview.hidden = true;
+    const emptyIcon = document.createElement("span");
+    emptyIcon.className = "empty-icon";
+    emptyIcon.setAttribute("aria-hidden", "true");
+    emptyIcon.innerHTML = '<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 5v15M12 5C9 3 6 3 2 4v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1Z"/></svg>';
+    const emptyTitle = document.createElement("h3");
+    emptyTitle.textContent = "첫 번째 학습 경험을 기다려요.";
+    const emptyDescription = document.createElement("p");
+    emptyDescription.textContent = "아직 등록된 수강평이 없습니다.";
+    emptyReview.append(emptyIcon, emptyTitle, emptyDescription);
+    panel.append(status, emptyReview, list, navigation);
+    let loading = false;
+
+    // REVIEW_EDIT_DELETE
+    let mutating = false;
+
+    function addReviewActions(card, review) {
+      const memberId = Number(getStoredSession()?.member?.memberId);
+      if (
+        !Number.isSafeInteger(memberId) ||
+        memberId <= 0 ||
+        memberId !== Number(review.userId)
+      ) return;
+
+      const make = (tag, text = "") => {
+        const element = document.createElement(tag);
+        element.textContent = text;
+        return element;
+      };
+
+      const controls = make("div");
+      controls.className = "course-review-actions";
+
+      const edit = make("button", "수정");
+      edit.type = "button";
+      edit.className = "btn secondary";
+
+      const remove = make("button", "삭제");
+      remove.type = "button";
+      remove.className = "btn secondary";
+
+      const form = make("form");
+      form.className = "course-review-edit";
+      form.hidden = true;
+
+      const fields = make("fieldset");
+
+      const starLabel = make("label", "별점");
+      const select = make("select");
+      for (let value = 1; value <= 5; value += 1) {
+        const option = make("option", `${value}점`);
+        option.value = String(value);
+        select.append(option);
+      }
+      select.value = String(review.star);
+      starLabel.append(select);
+
+      const textLabel = make("label", "수강평 내용");
+      const textarea = make("textarea");
+      textarea.rows = 5;
+      textarea.maxLength = 2000;
+      textarea.required = true;
+      textarea.value = review.review || "";
+      textLabel.append(textarea);
+
+      const buttons = make("div");
+      buttons.className = "course-review-actions";
+
+      const save = make("button", "수정 저장");
+      save.type = "submit";
+      save.className = "btn primary";
+
+      const cancel = make("button", "취소");
+      cancel.type = "button";
+      cancel.className = "btn secondary";
+
+      const message = make("p");
+      message.className = "course-review-status";
+      message.setAttribute("role", "status");
+
+      buttons.append(cancel, save);
+      fields.append(starLabel, textLabel, buttons);
+      form.append(fields);
+      controls.append(edit, remove);
+      card.append(controls, form, message);
+
+      edit.addEventListener("click", () => {
+        if (mutating) return;
+        select.value = String(review.star);
+        textarea.value = review.review || "";
+        form.hidden = false;
+        controls.hidden = true;
+        message.textContent = "";
+        textarea.focus();
+      });
+
+      cancel.addEventListener("click", () => {
+        if (mutating) return;
+        form.hidden = true;
+        controls.hidden = false;
+        message.textContent = "";
+        edit.focus();
+      });
+
+      async function changeReview(method, payload) {
+        if (mutating || loading) return;
+
+        const session = getStoredSession();
+        if (
+          !session?.authorization ||
+          Number(session.member?.memberId) !== memberId
+        ) {
+          message.textContent =
+            "로그인 계정이 변경되었거나 로그아웃되었습니다. 새로고침해 주세요.";
+          return;
+        }
+
+        mutating = true;
+        fields.disabled = true;
+        edit.disabled = true;
+        remove.disabled = true;
+        message.textContent = method === "DELETE"
+          ? "수강평을 삭제하고 있습니다."
+          : "수강평을 수정하고 있습니다.";
+
+        let succeeded = false;
+
+        try {
+          const headers = {
+            Authorization: session.authorization,
+            Accept: "application/json",
+          };
+          if (payload) headers["Content-Type"] = "application/json";
+
+          const response = await authFetch(
+            `/backend/lectures/${lectureId}/reviews`,
+            {
+              method,
+              headers,
+              ...(payload ? { body: JSON.stringify(payload) } : {}),
+            },
+          );
+
+          const expectedStatus = method === "DELETE" ? 204 : 200;
+          if (response.status !== expectedStatus) {
+            const data = await response.json().catch(() => null);
+            throw new Error(
+              data?.message || `처리 실패: HTTP ${response.status}`,
+            );
+          }
+
+          succeeded = true;
+        } catch (error) {
+          message.textContent = error instanceof TypeError
+            ? "처리 결과를 확인하지 못했습니다. 새로고침하여 확인해 주세요."
+            : error.message;
+        } finally {
+          mutating = false;
+          fields.disabled = false;
+          edit.disabled = false;
+          remove.disabled = false;
+        }
+
+        // 수정·삭제 후 목록과 평균 별점을 함께 갱신합니다.
+        if (succeeded) await loadReviews(1);
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const text = textarea.value.trim();
+        if (!text) {
+          message.textContent = "수강평 내용을 입력해 주세요.";
+          return;
+        }
+
+        changeReview("PUT", {
+          star: Number(select.value),
+          review: text,
+        });
+      });
+
+      remove.addEventListener("click", () => {
+        if (mutating || loading) return;
+        if (!window.confirm("내 수강평을 삭제하시겠습니까?")) return;
+        changeReview("DELETE");
+      });
+    }
+
+
+    async function loadReviews(page = 1) {
+      if (loading || mutating) return;
+      loading = true;
+      status.classList.remove("is-empty");
+      emptyReview.hidden = true;
+      status.textContent = "수강평을 불러오는 중입니다.";
+      list.replaceChildren();
+      navigation.replaceChildren();
+
+      try {
+        const response = await fetch(
+          `/backend/lectures/${lectureId}/reviews?page=${page}&size=5`,
+          {
+            headers: { Accept: "application/json" },
+            cache: "no-store",
+          },
+        );
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          throw new Error(
+            data?.message || `수강평 조회 실패: HTTP ${response.status}`,
+          );
+        }
+
+        if (
+          !Array.isArray(data?.reviews) ||
+          !Number.isInteger(data?.page?.current) ||
+          !Number.isInteger(data?.page?.totalPages)
+        ) {
+          throw new Error("수강평 응답 형식이 올바르지 않습니다.");
+        }
+
+        const summary = document.getElementById("detail-review-summary");
+        if (summary) {
+          summary.textContent =
+            typeof data.rating === "number"
+              ? `평균 ${data.rating.toFixed(1)}점 · 수강평 ${data.reviewCount}개`
+              : `수강평 ${data.reviewCount}개`;
+        }
+
+        for (const review of data.reviews) {
+          const card = document.createElement("article");
+          card.className = "course-review-card";
+
+          const meta = document.createElement("div");
+          meta.className = "course-review-meta";
+
+          const author = document.createElement("strong");
+          author.textContent = review.nickname || "수강생";
+
+          const rating = document.createElement("span");
+          rating.className = "course-review-rating";
+          const star = Number(review.star);
+
+          if (Number.isInteger(star) && star >= 1 && star <= 5) {
+            rating.textContent = "★".repeat(star) + "☆".repeat(5 - star);
+            rating.setAttribute("aria-label", `5점 만점에 ${star}점`);
+          } else {
+            rating.textContent = "평점 정보 없음";
+          }
+
+          meta.append(author, rating);
+
+          const body = document.createElement("p");
+          body.className = "course-review-body";
+          body.textContent = review.review || "작성된 내용이 없습니다.";
+
+          card.append(meta, body);
+
+          if (review.created) {
+            const date = document.createElement("time");
+            date.dateTime = review.created;
+            date.textContent = review.created.slice(0, 10);
+            card.append(date);
+          }
+
+          addReviewActions(card, review);
+          list.append(card);
+        }
+
+        emptyReview.hidden = data.reviews.length !== 0;
+        status.textContent = "";
+
+        if (data.page.totalPages > 1) {
+          const current = data.page.current;
+
+          const previous = document.createElement("button");
+          previous.type = "button";
+          previous.className = "btn secondary";
+          previous.textContent = "이전";
+          previous.disabled = current <= 1;
+          previous.addEventListener("click", () => loadReviews(current - 1));
+
+          const pageText = document.createElement("span");
+          pageText.textContent = `${current} / ${data.page.totalPages}`;
+
+          const next = document.createElement("button");
+          next.type = "button";
+          next.className = "btn secondary";
+          next.textContent = "다음";
+          next.disabled = current >= data.page.totalPages;
+          next.addEventListener("click", () => loadReviews(current + 1));
+
+          navigation.append(previous, pageText, next);
+        }
+      } catch (error) {
+        status.textContent = error instanceof TypeError
+          ? "수강평 서버에 연결하지 못했습니다. 탭을 다시 눌러 재시도해 주세요."
+          : error.message;
+      } finally {
+        loading = false;
+      }
+    }
+
+    tab.addEventListener("click", () => loadReviews(1));
+  }
+}
+// COURSE_REVIEWS_END
+
+// 내 학습 화면에서 /lectures/{id}/learn?panel=assignment|materials|qna 로 들어오면
+// 모든 메뉴 처리가 등록된 뒤 해당 메뉴를 열어 둡니다.
+{
+  const panelKey = new URLSearchParams(location.search).get("panel");
+  const panelIds = {
+    assignment: "assignment-panel",
+    materials: "materials-panel",
+    qna: "qna-panel",
+  };
+  const menu =
+    panelIds[panelKey] &&
+    document.querySelector(`[data-lesson-panel="${panelIds[panelKey]}"]`);
+  if (menu && byId(panelIds[panelKey])?.hidden) {
+    menu.click();
+    menu.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+}
+
+// 수강평 작은 창 (/courses/reviews?id=강의번호&user=작성자번호)
+// 공개 API GET /lectures/{lid} (강의 이름)와 GET /lectures/{lid}/reviews (수강평 목록)를 씁니다.
+if (byId("review-popup")) {
+  const params = new URLSearchParams(location.search);
+  const lectureId = params.get("id") || "";
+  const highlightUser = params.get("user") || "";
+  const status = byId("review-popup-status");
+  const list = byId("review-popup-list");
+  const pages = byId("review-popup-pages");
+  const size = 5;
+  let page = 1; // 강의 수강평 API는 1페이지부터 셉니다.
+  let totalPages = 0;
+
+  byId("review-popup-close").addEventListener("click", () => {
+    if (window.opener) window.close();
+    else history.back();
+  });
+
+  const stars = (count) => "★".repeat(Math.max(0, Math.min(5, Number(count) || 0)));
+  const dateText = (value) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("ko-KR");
+  };
+
+  async function loadReviews() {
+    status.textContent = "수강평을 불러오는 중입니다.";
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/lectures/${lectureId}/reviews?page=${page}&size=${size}`,
+        { cache: "no-store" },
+      );
+      if (!response.ok) throw new Error(response.status === 404 ? "강의를 찾을 수 없습니다." : "수강평을 불러오지 못했습니다.");
+      const data = await response.json();
+      const reviews = Array.isArray(data.reviews) ? data.reviews : [];
+      totalPages = Number(data.page?.totalPages) || 0;
+      byId("review-popup-summary").textContent =
+        data.reviewCount ? `수강평 ${data.reviewCount}개 · 평균 ★ ${data.rating ?? "-"}` : "";
+      list.replaceChildren(
+        ...reviews.map((review) => {
+          const item = document.createElement("li");
+          if (highlightUser && String(review.userId) === highlightUser) item.className = "is-selected";
+          const meta = document.createElement("div");
+          meta.className = "review-popup-meta";
+          const name = document.createElement("strong");
+          name.textContent = review.nickname || "수강생";
+          const star = document.createElement("span");
+          star.className = "review-popup-stars";
+          star.textContent = stars(review.star);
+          star.setAttribute("aria-label", `${review.star}점`);
+          const date = document.createElement("time");
+          date.textContent = dateText(review.created);
+          meta.append(name, star, date);
+          const body = document.createElement("p");
+          body.textContent = review.review || "";
+          item.append(meta, body);
+          return item;
+        }),
+      );
+      status.textContent = reviews.length ? "" : "아직 등록된 수강평이 없습니다.";
+      pages.hidden = totalPages <= 1;
+      byId("review-popup-page").textContent = `${page} / ${Math.max(totalPages, 1)}`;
+      byId("review-popup-prev").disabled = page <= 1;
+      byId("review-popup-next").disabled = page >= totalPages;
+      list.querySelector(".is-selected")?.scrollIntoView({ block: "center" });
+    } catch (error) {
+      status.textContent =
+        error instanceof TypeError ? "서버에 연결하지 못했습니다." : error.message;
+    }
+  }
+
+  if (!/^[1-9]\d*$/.test(lectureId)) {
+    status.textContent = "강의 번호가 올바르지 않습니다.";
+  } else {
+    byId("review-popup-course").href = `${forumBase}/courses/detail?id=${encodeURIComponent(lectureId)}`;
+    fetch(`${API_BASE_URL}/lectures/${lectureId}`, { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((lecture) => {
+        if (typeof lecture?.name === "string") {
+          byId("review-popup-title").textContent = `${lecture.name} 수강평`;
+          document.title = `${lecture.name} 수강평 · 새싹에듀`;
+        }
+      })
+      .catch(() => {});
+    byId("review-popup-prev").addEventListener("click", () => {
+      if (page > 1) { page -= 1; loadReviews(); }
+    });
+    byId("review-popup-next").addEventListener("click", () => {
+      if (page < totalPages) { page += 1; loadReviews(); }
+    });
+    loadReviews();
+  }
 }

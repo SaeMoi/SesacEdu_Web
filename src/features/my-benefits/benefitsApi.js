@@ -146,6 +146,8 @@ export function getCouponRegistrationErrorMessage(error) {
       return "이미 등록한 쿠폰입니다.";
     case "COUPON_SOLD_OUT":
       return "쿠폰이 모두 소진되었습니다.";
+    case "OWN_COUPON":
+      return "본인이 발행한 쿠폰은 등록할 수 없습니다.";
     case "UNAUTHORIZED":
       return "로그인이 필요합니다. 현재 프로젝트의 로그인 처리와 연결이 필요합니다.";
     case "TOKEN_EXPIRED":

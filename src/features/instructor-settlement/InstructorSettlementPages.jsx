@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { InstructorCenterLayout as SharedInstructorCenterLayout } from "../instructor-center/InstructorCenterLayout.jsx";
+import { InstructorCenterTabs } from "../instructor-center/InstructorCenterTabs.jsx";
 import {
   getInstructorSettlement,
   getInstructorSettlements,
@@ -23,18 +24,7 @@ function SettlementHeading({ title, description }) {
         <h1>{title}</h1>
         <p>{description}</p>
       </header>
-      <nav className="instructor-settlement-tabs" aria-label="강사센터 분류">
-        <span aria-disabled="true">운영 현황</span>
-        <Link to="/instructor/lectures">강의</Link>
-        <span aria-disabled="true">학습 관리</span>
-        <Link
-          aria-current="page"
-          className="is-active"
-          to="/instructor/settlement"
-        >
-          정산
-        </Link>
-      </nav>
+      <InstructorCenterTabs className="instructor-settlement-tabs" />
     </>
   );
 }
@@ -60,6 +50,7 @@ function formatWon(value) {
 }
 
 function formatStatus(status) {
+  if (status === "pending") return "정산 대기";
   if (status === "requested") return "승인 대기";
   if (status === "approved") return "승인 완료";
   if (status === "paid") return "지급 완료";
@@ -204,14 +195,14 @@ export function InstructorSettlementListPage() {
                 </thead>
                 <tbody>
                   {data.settlements.map((settlement) => (
-                    <tr key={settlement.sid}>
+                    <tr key={settlement.sid ?? settlement.period}>
                       <td>{settlement.period || "-"}</td>
                       <td>{formatWon(settlement.amount)}</td>
                       <td>{formatStatus(settlement.status)}</td>
                       <td>
                         <Link
                           className="instructor-settlement-detail-link"
-                          to={`/instructor/settlement/${encodeURIComponent(settlement.sid)}`}
+                          to={`/instructor/settlement/${encodeURIComponent(settlement.sid ?? settlement.period)}`}
                         >
                           상세 보기
                         </Link>
@@ -260,7 +251,7 @@ export function InstructorSettlementDetailPage() {
         const result = await getInstructorSettlement(accessToken, sid, page, {
           signal: controller.signal,
         });
-        if (active && String(result.sid) !== String(sid)) {
+        if (active && String(result.sid ?? result.period) !== String(sid)) {
           throw new Error("조회된 정산 정보가 요청한 정산 ID와 일치하지 않습니다.");
         }
         if (active) {
@@ -360,7 +351,9 @@ export function InstructorSettlementDetailPage() {
                   ? `지급일: ${data.payDate}`
                   : data.status === "requested" || data.status === "approved"
                     ? "지급 예정일: 승인 후 안내"
-                    : null}
+                    : data.status === "pending"
+                      ? "정산 기간이 끝나면 정산이 요청됩니다."
+                      : null}
               </span>
               <span>은행: {data.bank || "-"}</span>
               <span>계좌: {data.account || "-"}</span>

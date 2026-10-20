@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 import { InstructorCenterLayout as SharedInstructorCenterLayout } from "../instructor-center/InstructorCenterLayout.jsx";
+import { InstructorCenterTabs as SharedInstructorCenterTabs } from "../instructor-center/InstructorCenterTabs.jsx";
 import {
   deleteInstructorAssignmentFeedback,
   getInstructorAssignment,
+  fetchInstructorAssignmentFile,
   getInstructorAssignmentDownload,
   getInstructorAssignments,
   saveInstructorAssignmentFeedback,
@@ -26,12 +28,7 @@ function InstructorCenterLayout({ children }) {
 
 function InstructorCenterTabs() {
   return (
-    <nav className="assignment-top-tabs" aria-label="강사센터 영역">
-      <span>운영 현황</span>
-      <span>강의</span>
-      <span className="is-active" aria-current="page">학습 관리</span>
-      <span>정산</span>
-    </nav>
+    <SharedInstructorCenterTabs className="assignment-top-tabs" />
   );
 }
 
@@ -272,11 +269,7 @@ export function InstructorAssignmentsDetailPage() {
     setDownloadError("");
     try {
       const file = await getInstructorAssignmentDownload(accessToken, assid);
-      const response = await fetch(file.url);
-      if (!response.ok) {
-        throw new Error("첨부파일을 다운로드하지 못했습니다.");
-      }
-      const blob = await response.blob();
+      const blob = await fetchInstructorAssignmentFile(accessToken, file.url);
       const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = objectUrl;

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { InstructorCenterLayout as SharedInstructorCenterLayout } from "../instructor-center/InstructorCenterLayout.jsx";
+import { InstructorCenterTabs } from "../instructor-center/InstructorCenterTabs.jsx";
 import {
   deleteInstructorQnaAnswer,
   getInstructorQna,
@@ -32,12 +33,7 @@ function InstructorQnaHeading({ title, description }) {
         <h1>{title}</h1>
         <p>{description}</p>
       </header>
-      <nav className="instructor-qna-tabs" aria-label="강사센터 분류">
-        <span aria-disabled="true">운영 현황</span>
-        <Link to="/instructor/lectures">강의</Link>
-        <span aria-current="page" aria-disabled="true" className="is-active">학습 관리</span>
-        <span aria-disabled="true">정산</span>
-      </nav>
+      <InstructorCenterTabs className="instructor-qna-tabs" />
     </>
   );
 }

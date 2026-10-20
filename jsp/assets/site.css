@@ -1119,6 +1119,8 @@ fieldset {
 .post-body p + p {
   margin-top: 38px;
 }
+.post-body ul { list-style: disc; padding-left: 1.4em; }
+.post-body a { color: #2f6f8f; text-decoration: underline; }
 .comments {
   background: #f7f9f2;
   border: 1px solid var(--line);
@@ -1181,6 +1183,32 @@ fieldset {
   color: inherit;
   padding: 0;
 }
+.editor-toolbar button[aria-pressed="true"] {
+  color: #1b3a4b;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+/* 글 작성 본문 편집 영역 (서식이 바로 보이는 입력칸) */
+.post-editor {
+  min-height: 250px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 25px;
+  font-size: 15px;
+  line-height: 2;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  outline: none;
+}
+.post-editor:focus { border-color: #1b3a4b; }
+.post-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #9aa5ab;
+}
+.post-editor p { margin: 0; }
+.post-editor ul { margin: 0; padding-left: 1.4em; list-style: disc; }
+.post-editor a { color: #2f6f8f; text-decoration: underline; }
 .post-page textarea {
   min-height: 250px;
   padding: 25px;
@@ -1641,3 +1669,602 @@ fieldset {
 }
 #post-pagination .page-arrow svg { width: 20px; height: 20px; }
 #post-pagination .page-arrow:disabled { color: #c9cfd4; cursor: default; }
+
+/* 학습 화면 질문·답변 */
+#qna-panel .section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+#qna-panel .lecture-qna-message {
+  margin: 16px 0;
+  color: #6b7f89;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+#qna-panel .lecture-qna-message.is-empty {
+  padding: 48px 24px;
+  border: 1px solid #e1e8df;
+  border-radius: 16px;
+  background: #f5f8f1;
+  color: #60745f;
+  text-align: center;
+  white-space: pre-line;
+  font-size: 15px;
+}
+
+#qna-panel .lecture-qna-item {
+  padding: 22px 24px;
+  margin-bottom: 12px;
+  border: 1px solid #e2e9e6;
+  border-radius: 14px;
+  background: #fff;
+  overflow-wrap: anywhere;
+}
+
+#qna-panel .lecture-qna-item h3 {
+  margin: 0 0 10px;
+  color: #153b4c;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+#qna-panel .lecture-qna-item p {
+  margin: 6px 0 0;
+  color: #71818a;
+  font-size: 13px;
+}
+
+#qna-panel .question-form {
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid #dce5d7;
+  border-radius: 16px;
+  background: #f8faf5;
+}
+
+#qna-panel .lecture-qna-secret {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 16px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+#qna-panel .lecture-qna-secret input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: #547a36;
+}
+
+@media (max-width: 600px) {
+  #qna-panel .question-form,
+  #qna-panel .lecture-qna-item {
+    padding: 18px;
+  }
+}
+
+
+#qna-panel .lecture-qna-toggle {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #153b4c;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+#qna-panel .lecture-qna-toggle:hover:not(:disabled) {
+  color: #547a36;
+}
+
+#qna-panel .lecture-qna-toggle:focus-visible {
+  outline: 2px solid #547a36;
+  outline-offset: 5px;
+  border-radius: 4px;
+}
+
+#qna-panel .lecture-qna-toggle:disabled {
+  color: #80908a;
+  cursor: default;
+}
+
+#qna-panel .lecture-qna-detail {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e9e6;
+}
+
+#qna-panel .lecture-qna-detail h4 {
+  margin: 0 0 10px;
+  color: #153b4c;
+  font-size: 14px;
+}
+
+#qna-panel .lecture-qna-detail p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+  color: #475d68;
+  font-size: 14px;
+}
+
+#qna-panel .lecture-qna-answer {
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 12px;
+  background: #f5f8f1;
+}
+
+#qna-panel .lecture-qna-date {
+  margin-top: 14px;
+  color: #7a8a80;
+  font-size: 12px;
+}
+
+/* QNA_SECRET_ALIGNMENT_START */
+#qna-panel #question-form label.lecture-qna-secret {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 0;
+  min-height: 24px;
+  font-size: 14px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+#qna-panel #question-form .lecture-qna-secret > input[type="checkbox"] {
+  appearance: auto;
+  display: block;
+  position: static;
+  transform: none;
+  box-sizing: border-box;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  max-width: 18px;
+  max-height: 18px;
+  margin: 0;
+  padding: 0;
+  align-self: center;
+  accent-color: #547a36;
+  cursor: pointer;
+}
+
+#qna-panel #question-form .lecture-qna-secret > span {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+/* QNA_SECRET_ALIGNMENT_END */
+
+/* COURSE_REVIEWS_START */
+[data-panel="reviews"] .course-review-status {
+  margin: 20px 0;
+  color: #70828a;
+  font-size: 14px;
+}
+[data-panel="reviews"] .course-review-status:empty {
+  display: none;
+}
+[data-panel="reviews"] .course-review-status.is-empty {
+  padding: 48px 20px;
+  border: 1px solid #e1e8df;
+  border-radius: 16px;
+  background: #f5f8f1;
+  text-align: center;
+}
+[data-panel="reviews"] .course-review-card {
+  padding: 24px;
+  margin: 16px 0;
+  border: 1px solid #e0e8e4;
+  border-radius: 16px;
+  background: #fff;
+}
+[data-panel="reviews"] .course-review-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #153b4c;
+  font-size: 15px;
+}
+[data-panel="reviews"] .course-review-rating {
+  color: #547a36;
+  letter-spacing: 2px;
+}
+[data-panel="reviews"] .course-review-body {
+  margin: 18px 0;
+  color: #475d68;
+  font-size: 15px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+[data-panel="reviews"] .course-review-card time {
+  color: #82918b;
+  font-size: 12px;
+}
+[data-panel="reviews"] .course-review-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 24px;
+}
+[data-panel="reviews"] .course-review-pagination:empty {
+  display: none;
+}
+/* COURSE_REVIEWS_END */
+
+/* REVIEW_EDIT_DELETE_STYLE */
+[data-panel="reviews"] .course-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+[data-panel="reviews"] .course-review-actions[hidden],
+[data-panel="reviews"] .course-review-edit[hidden] {
+  display: none;
+}
+[data-panel="reviews"] .course-review-actions .btn {
+  padding: 9px 16px;
+  font-size: 13px;
+}
+[data-panel="reviews"] .course-review-edit {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid #e0e8e4;
+}
+[data-panel="reviews"] .course-review-edit label {
+  display: block;
+  margin: 12px 0;
+  color: #153b4c;
+  font-size: 14px;
+}
+[data-panel="reviews"] .course-review-edit select {
+  display: block;
+  width: 120px;
+  margin-top: 8px;
+  font: inherit;
+}
+[data-panel="reviews"] .course-review-edit textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-top: 8px;
+  font: inherit;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+/* 실제 강의 목차 */
+.classroom .lecture-real-chapters {
+  list-style: none;
+  margin: 20px 0;
+  padding: 0;
+}
+.classroom .lecture-real-chapters li {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e3eae4;
+  color: #294a59;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.classroom .lecture-chapter-time {
+  color: #547a36;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.classroom .lecture-chapter-footer {
+  margin-top: 20px;
+  color: #738780;
+  font-size: 12px;
+}
+
+/* 영상 준비 상태에 따라 활성화되는 목차 */
+.classroom .lecture-real-chapters li {
+  display: block;
+  padding: 0;
+}
+.classroom .lecture-chapter-seek {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #294a59;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+.classroom .lecture-chapter-seek:hover:not(:disabled),
+.classroom .lecture-chapter-seek.is-active {
+  background: #edf4e4;
+}
+.classroom .lecture-chapter-seek:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+.classroom .lecture-chapter-seek:focus-visible {
+  outline: 2px solid #547a36;
+  outline-offset: 2px;
+}
+
+/* 인증된 강의 영상 플레이어 */
+.classroom .lesson-video > video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: #102f3e;
+  object-fit: contain;
+}
+.classroom .lesson-video > video[hidden],
+.classroom .lesson-video .video-center[hidden],
+.classroom .lesson-video .lesson-load-video[hidden] {
+  display: none;
+}
+.classroom .lesson-video .video-center {
+  padding: 24px;
+  text-align: center;
+}
+.classroom .lesson-load-video {
+  margin-top: 20px;
+}
+
+/* 화면설계 최신본: API 연동 후에도 목록·작성폼·목차의 원래 배치를 유지합니다. */
+#qna-panel .lecture-qna-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(90px, 24%);
+  align-items: center;
+  gap: 12px 20px;
+  margin: 0;
+  padding: 23px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+#qna-panel .lecture-qna-item h3 { margin: 0; font-size: 13px; }
+#qna-panel .lecture-qna-item .lecture-qna-author {
+  margin: 0; text-align: right; color: #8a9a91; font-size: 12px;
+}
+#qna-panel .lecture-qna-detail,
+#qna-panel .lecture-qna-restricted { grid-column: 1 / -1; }
+#qna-panel .lecture-qna-message:empty,
+.classroom .screen-note:empty,
+#assignment-area [role="status"]:empty { display: none; }
+#qna-panel .lecture-qna-message.is-empty {
+  border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+  background: white; margin: 0; padding: 32px 18px;
+}
+#qna-panel .question-form {
+  margin: 24px 0; padding: 0; border: 0; border-radius: 0; background: white;
+}
+#qna-panel .question-form .form-actions {
+  justify-content: flex-end; gap: 12px;
+  border-top: 1px solid var(--line); padding-top: 18px;
+}
+#qna-panel #question-form label.lecture-qna-secret {
+  margin: 20px 0 8px; font-weight: 400; font-size: 13px;
+}
+#qna-panel .lecture-qna-secret-help {
+  margin: 0 0 20px 28px; color: var(--muted); font-size: 12px;
+}
+/* 작성할 때에는 목록 대신 작성 폼에 집중합니다. */
+#qna-panel:has(#question-form:not([hidden])) > .section-heading,
+#qna-panel:has(#question-form:not([hidden])) > .qna-table-head,
+#qna-panel:has(#question-form:not([hidden])) > .lecture-qna-message,
+#qna-panel:has(#question-form:not([hidden])) > .lecture-qna-list,
+#qna-panel:has(#question-form:not([hidden])) > .form-actions { display: none; }
+.classroom .lecture-real-chapters { margin: 0; }
+.classroom .lecture-real-chapters li {
+  border-bottom: 0; border-top: 1px solid var(--line);
+}
+.classroom .lecture-chapter-seek {
+  min-height: 71px; align-items: center; padding: 22px;
+  gap: 15px; grid-template-columns: 44px minmax(0, 1fr);
+  border-radius: 0; font-size: 12px;
+}
+.classroom .lecture-chapter-time { color: #899b9b; }
+.classroom .lecture-chapter-seek.is-active {
+  background: #ecf4de; min-height: 90px;
+}
+.classroom .lecture-chapter-seek.is-active .lecture-chapter-time { color: #527632; }
+.classroom .lesson-outline > .lecture-chapter-footer {
+  margin: 0; padding: 17px 22px; border-top: 1px solid var(--line); font-size: 12px;
+}
+[data-panel="reviews"] .course-review-empty {
+  padding: 70px 24px; text-align: center; background: #f0f4f1;
+  border-radius: 12px; margin-top: 28px;
+}
+[data-panel="reviews"] .course-review-empty[hidden] { display: none; }
+[data-panel="reviews"] .course-review-empty .empty-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: #e0f0bf; color: #668e36; margin-bottom: 22px;
+}
+[data-panel="reviews"] .course-review-empty h3 { font-size: 20px; margin-bottom: 14px; }
+[data-panel="reviews"] .course-review-empty p { color: var(--muted); }
+@media (max-width: 600px) {
+  #qna-panel .lecture-qna-item { padding: 18px 10px; gap: 12px; }
+  #qna-panel .qna-table-head { padding: 18px 10px; }
+}
+
+#qna-panel:has(#question-form:not([hidden])) .question-form { margin-top: 0; }
+#qna-panel .question-form h3 { font-size: 23px; }
+#qna-panel .question-form #cancel-question {
+  background: white; border: 1px solid var(--line); color: var(--ink);
+  min-width: 100px;
+}
+
+/* 강의 설계안: 배너의 텍스트/이미지 비율과 카드의 장식을 복원합니다. */
+.catalog .course-card { min-width: 0; }
+.course-art strong { min-width: 0; overflow-wrap: anywhere; text-wrap: balance; }
+.catalog .course-art { height: 150px; overflow: hidden; }
+.catalog .course-art strong {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+.detail-page .detail-banner { grid-template-columns: minmax(0, 1fr) 355px; }
+.detail-page .detail-banner > div:first-child { min-width: 0; }
+.detail-page .detail-banner h1 {
+  max-width: 13em; text-wrap: balance; overflow-wrap: anywhere; white-space: pre-line;
+}
+.detail-page .banner-copy { max-width: 38em; white-space: pre-line; }
+.detail-page .hero-preview { width: 100%; }
+.detail-page .banner-tags > #detail-instructor-name { background: none; padding: 0; }
+.detail-page .teacher-profile .avatar {
+  width: 72px; height: 72px; font-size: 27px;
+}
+.detail-page .teacher-profile strong { font-size: 20px; }
+.detail-page .teacher-profile p { font-size: 14px; margin-top: 4px; }
+.detail-page .teacher-other-section {
+  margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line);
+}
+.detail-page .teacher-other-section > p { margin: 10px 0 24px; }
+.detail-page .teacher-other-section .course-grid { gap: 16px; }
+.detail-page .teacher-other-section .course-art { height: 128px; min-height: 128px; padding: 18px; }
+.detail-page .teacher-other-section .course-art strong { font-size: 17px; }
+.detail-page .teacher-other-section .line-icon { width: 27px; height: 27px; }
+.detail-page .teacher-other-section .course-card h3 { font-size: 16px; margin-top: 16px; }
+.detail-page .teacher-other-section .course-price { font-size: 15px; }
+.detail-page #video-preview { margin-top: 30px; min-height: 280px; overflow: hidden; }
+.detail-page #preview-placeholder {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 22px; padding: 32px 24px; text-align: center;
+}
+.detail-page #preview-placeholder h3 { font-size: 22px; }
+.detail-page #preview-message { color: #c3d9df; font-size: 13px; }
+.detail-page #preview-message:empty { display: none; }
+.detail-page #detail-preview-video { display: block; width: 100%; max-height: 480px; background: #102f3e; }
+@media (max-width: 1000px) and (min-width: 701px) {
+  .detail-page .detail-banner { grid-template-columns: minmax(0, 1fr) 34%; }
+  .detail-page .teacher-other-section .course-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .detail-page .detail-banner { grid-template-columns: minmax(0, 1fr); }
+  .detail-page .detail-banner h1 { max-width: none; }
+  .detail-page .teacher-other-section .course-grid { grid-template-columns: minmax(0, 1fr); }
+  .detail-page .teacher-other-section .course-art { height: 154px; }
+  .detail-page .teacher-other-section .course-art strong { font-size: 23px; }
+  .catalog .course-art { height: 154px; }
+}
+.catalog .course-art strong { white-space: pre-line; }
+.detail-page > .screen-note:empty { display: none; }
+.detail-page #teacher-bio,
+.detail-page #teacher-career { white-space: pre-line; }
+/* 이미지 원본 비율에 맞춰 위아래 빈 띠와 모서리 겹침을 없앱니다. */
+.detail-page .hero-preview {
+  align-self: center;
+  height: auto;
+  max-height: none;
+}
+.detail-page .hero-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* 수강평 제목과 작성 버튼을 양쪽으로 정렬합니다. */
+.detail-page .course-review-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: 12px;
+}
+.detail-page .course-review-heading h2 { margin: 0; }
+.detail-page #course-review-write {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* 화면 설계안의 새소식 빈 화면 */
+.detail-page .course-news-empty {
+  min-height: 260px;
+  margin-top: 28px;
+  padding: 40px 24px;
+  border-radius: 14px;
+  background: #f0f4f1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+.detail-page .course-news-empty h3 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.5;
+  font-weight: 600;
+  word-break: keep-all;
+}
+.detail-page .course-news-empty p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+@media (max-width: 600px) {
+  .detail-page .course-news-empty { min-height: 220px; padding: 32px 20px; }
+  .detail-page .course-news-empty h3 { font-size: 18px; }
+}
+
+/* 수강평 작은 창 (/courses/reviews) */
+.review-popup-body { background: #fff; }
+.review-popup { padding: 28px 24px 32px; max-width: 560px; margin: 0 auto; }
+.review-popup h1 { font-size: 22px; margin: 6px 0 4px; }
+.review-popup-list { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 12px; }
+.review-popup-list li { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.review-popup-list li.is-selected { border-color: #1b3a4b; background: #f7f9f2; }
+.review-popup-list p { margin: 8px 0 0; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+.review-popup-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; font-size: 14px; color: #6b7c85; }
+.review-popup-meta strong { color: #1b3a4b; }
+.review-popup-stars { color: #e3a008; letter-spacing: 1px; }
+.review-popup-pages { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 18px; }
+.review-popup-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+#add-to-cart { margin-top: 10px; }
