@@ -62,9 +62,10 @@ if (assignmentArea) {
   noteInput.placeholder = "과제 내용을 입력해 주세요. 최대 3000자입니다. 파일만 제출해도 됩니다.";
 
   // 과제 첨부 파일 (선택). 먼저 /assignments/file 로 올린 뒤 받은 경로를 제출에 넣습니다.
+  const FILE_LABEL = "첨부 파일 (선택, 10MB 이하)";
   const fileLabel = document.createElement("label");
   fileLabel.htmlFor = "assignment-api-file";
-  fileLabel.textContent = "첨부 파일 (선택, 10MB 이하)";
+  fileLabel.textContent = FILE_LABEL;
   const fileInput = document.createElement("input");
   fileInput.id = "assignment-api-file";
   fileInput.type = "file";
@@ -85,12 +86,29 @@ if (assignmentArea) {
   submitForm.prepend(submitHeading);
 
   let submitting = false;
-    let currentSubmission = null;
+  let currentSubmission = null;
+  let assignmentTitle = "";
   let editing = false;
+
+  const make = (tag, text, className = "") => {
+    const element = document.createElement(tag);
+    element.textContent = text;
+    element.className = className;
+    return element;
+  };
 
   const actions = document.createElement("div");
   actions.className = "form-actions";
   actions.hidden = true;
+
+  // 상세·다운로드 결과는 내 제출 카드 안에 보여 줍니다.
+  const submissionMessage = document.createElement("p");
+  submissionMessage.setAttribute("role", "status");
+
+  const detailButton = document.createElement("button");
+  detailButton.type = "button";
+  detailButton.className = "btn secondary";
+  detailButton.textContent = "상세·피드백 확인";
 
   const editButton = document.createElement("button");
   editButton.type = "button";
@@ -102,7 +120,7 @@ if (assignmentArea) {
   deleteButton.className = "btn secondary";
   deleteButton.textContent = "삭제";
 
-  actions.append(editButton, deleteButton);
+  actions.append(detailButton, editButton, deleteButton);
   submissionCard.append(actions);
 
   const cancelEdit = document.createElement("button");
@@ -120,6 +138,10 @@ if (assignmentArea) {
 
     editing = true;
     noteInput.value = currentSubmission.note || "";
+    // 새 파일을 고르지 않으면 서버가 기존 첨부를 그대로 둡니다.
+    fileLabel.textContent = currentSubmission.filename
+      ? `${FILE_LABEL} · 현재 첨부: ${currentSubmission.filename} (새 파일을 고르면 바뀝니다)`
+      : FILE_LABEL;
     submitButton.textContent = "수정 저장";
     submitMessage.textContent = "";
     cancelEdit.hidden = false;
@@ -135,8 +157,131 @@ if (assignmentArea) {
     submitForm.hidden = true;
     cancelEdit.hidden = true;
     actions.hidden = false;
+    fileLabel.textContent = FILE_LABEL;
     submitMessage.textContent = "";
   });
+
+  // GET /assignments/{aid} — 제출물 한 건을 다시 읽어 제출 내용과 피드백을 최신으로 보여 줍니다.
+  detailButton.addEventListener("click", async () => {
+    if (submitting || !currentSubmission || !learningMatch) return;
+
+    const session = getStoredSession();
+
+    if (!session?.authorization) {
+      submissionMessage.textContent = "로그인 후 이용해 주세요.";
+      return;
+    }
+
+    detailButton.disabled = true;
+    submissionMessage.textContent = "제출 내용과 피드백을 확인하고 있습니다.";
+
+    try {
+      const response = await authFetch(
+        `/backend/lectures/${learningMatch[1]}/assignments/${currentSubmission.assignmentId}`,
+        {
+          headers: {
+            Authorization: session.authorization,
+            Accept: "application/json",
+          },
+          cache: "no-store",
+        },
+      );
+
+      const data = await response.json().catch(() => null);
+
+      if (response.status === 401) {
+        throw new Error("로그인이 만료되었거나 인증할 수 없습니다. 다시 로그인해 주세요.");
+      }
+
+      if (response.status === 403) {
+        throw new Error("이 강의의 과제를 조회할 수강 권한이 없습니다.");
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message || `과제 상세 조회 실패: HTTP ${response.status}`,
+        );
+      }
+
+      if (data?.assignmentId !== currentSubmission.assignmentId) {
+        throw new Error("과제 상세 응답 형식이 올바르지 않습니다.");
+      }
+
+      showSubmission(data);
+      submissionMessage.textContent = "최신 제출 내용과 피드백을 불러왔습니다.";
+    } catch (error) {
+      submissionMessage.textContent =
+        error instanceof TypeError
+          ? "과제 서버에 연결하지 못했습니다."
+          : error.message;
+    } finally {
+      detailButton.disabled = false;
+    }
+  });
+
+  // GET /assignments/{aid}/file — 제출한 첨부 파일을 원래 이름으로 내려받습니다.
+  async function downloadSubmissionFile(button) {
+    if (!currentSubmission || !learningMatch) return;
+
+    const session = getStoredSession();
+
+    if (!session?.authorization) {
+      submissionMessage.textContent = "로그인 후 이용해 주세요.";
+      return;
+    }
+
+    button.disabled = true;
+    submissionMessage.textContent = "제출한 파일을 내려받고 있습니다.";
+
+    try {
+      const response = await authFetch(
+        `/backend/lectures/${learningMatch[1]}/assignments/${currentSubmission.assignmentId}/file`,
+        {
+          headers: { Authorization: session.authorization },
+          cache: "no-store",
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+
+        if (response.status === 401) {
+          throw new Error("로그인이 만료되었거나 인증할 수 없습니다. 다시 로그인해 주세요.");
+        }
+
+        if (
+          response.status === 404 &&
+          data?.code === "SUBMISSION_FILE_NOT_FOUND"
+        ) {
+          throw new Error("제출한 파일을 찾을 수 없습니다.");
+        }
+
+        throw new Error(
+          data?.message || `파일 다운로드 실패: HTTP ${response.status}`,
+        );
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = objectUrl;
+      link.download = currentSubmission.filename || "submission";
+      document.body.append(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+      submissionMessage.textContent = "제출한 파일의 다운로드를 요청했습니다.";
+    } catch (error) {
+      submissionMessage.textContent =
+        error instanceof TypeError
+          ? "파일을 내려받지 못했습니다. 연결 상태를 확인해 주세요."
+          : error.message;
+    } finally {
+      button.disabled = false;
+    }
+  }
 
   deleteButton.addEventListener("click", async () => {
     if (submitting || !currentSubmission || !learningMatch) return;
@@ -197,8 +342,10 @@ if (assignmentArea) {
 
     const note = noteInput.value.trim();
     const file = fileInput.files?.[0] ?? null;
+    // 수정할 때 기존 첨부가 있으면 내용을 비워도 첨부는 남습니다.
+    const keepsFile = editing && Boolean(currentSubmission?.filename);
 
-    if (!note && !file) {
+    if (!note && !file && !keepsFile) {
       submitMessage.textContent = "파일을 첨부하거나 과제 내용을 입력해 주세요.";
       return;
     }
@@ -300,6 +447,61 @@ if (assignmentArea) {
       submitButton.disabled = false;
     }
   });
+  // 제출물 한 건(과제 안내의 submission 또는 상세 API 응답)으로 내 제출·피드백 카드를 그립니다.
+  function showSubmission(submission) {
+    currentSubmission = submission;
+
+    // 0점도 채점된 점수이므로 값의 존재 여부로 확인합니다.
+    const isScored = submission.score !== null &&
+      submission.score !== undefined;
+    // 채점된 제출물은 수정·삭제 버튼을 숨기고, 상세·피드백 확인은 그대로 둡니다.
+    editButton.hidden = isScored;
+    deleteButton.hidden = isScored;
+    actions.hidden = false;
+
+    const headingRow = make("div", "", "section-heading");
+    headingRow.append(
+      make("h2", "내가 제출한 과제"),
+      make("span", "제출 완료", "assignment-badge"),
+    );
+    const submittedAt = make("p", submission.submittedAt
+      ? `제출 일시: ${submission.submittedAt.replace("T", " ")}` : "");
+    submissionCard.replaceChildren(
+      headingRow, submittedAt, make("h3", assignmentTitle),
+      make("p", submission.note || "작성된 내용이 없습니다.", "assignment-memo"),
+      actions, submissionMessage,
+    );
+    if (submission.filename) {
+      const attachment = make("div", "", "assignment-download");
+      const fileButton = make("button", "파일 다운로드", "btn secondary");
+      fileButton.type = "button";
+      fileButton.addEventListener("click", () => downloadSubmissionFile(fileButton));
+      attachment.append(make("strong", submission.filename), fileButton);
+      actions.before(attachment);
+    }
+    const feedbackHeading = make("div", "", "section-heading");
+    feedbackHeading.append(
+      make("h2", "강사 피드백"),
+      make("span", isScored ? "채점 완료" : "피드백 대기", "assignment-badge"),
+    );
+    const feedback = make("div", "", submission.feedback?.trim()
+      ? "assignment-memo" : "feedback-wait");
+    if (submission.feedback?.trim()) {
+      feedback.append(make("p", submission.feedback));
+    } else {
+      feedback.append(
+        make("h3", "강사님의 피드백을 기다리고 있어요."),
+        make("p", "피드백이 등록되면 이곳에서 확인할 수 있어요."),
+      );
+    }
+    if (isScored) feedback.append(make("p", `점수: ${submission.score}점`));
+    if (submission.feedbackAt) feedback.append(make("p",
+      `피드백 일시: ${submission.feedbackAt.replace("T", " ")}`));
+    feedbackCard.replaceChildren(feedbackHeading, feedback);
+    submissionCard.hidden = false;
+    feedbackCard.hidden = false;
+  }
+
   async function loadAssignment() {
     if (!learningMatch) {
       status.textContent =
@@ -317,6 +519,8 @@ if (assignmentArea) {
     cancelEdit.hidden = true;
     submitButton.textContent = "과제 제출";
     submitMessage.textContent = "";
+    submissionMessage.textContent = "";
+    fileLabel.textContent = FILE_LABEL;
      submitForm.hidden = true;
     content.textContent = "";
     fileType.textContent = "";
@@ -386,68 +590,10 @@ if (assignmentArea) {
             submissionState.style.whiteSpace = "pre-wrap";
 
 
-        if (data.submission) {
-          const submission = data.submission;
-          currentSubmission = submission;
+      assignmentTitle = data.title;
 
-
-        // 0점도 채점된 점수이므로 값의 존재 여부로 확인합니다.
-        const isScored = submission.score !== null &&
-          submission.score !== undefined;
-                // 채점된 제출물은 서버에서도 수정·삭제를 허용하지 않습니다.
-        actions.hidden = isScored;
-
-        // 현재 수정 기능은 내용만 제출한 과제에 적용합니다.
-        // 첨부 과제를 내용만으로 수정하면 기존 첨부 정보가 지워질 수 있습니다.
-        editButton.hidden = Boolean(
-          submission.filename || submission.fileUrl,
-        );
-
-
-        const make = (tag, text, className = "") => {
-          const element = document.createElement(tag);
-          element.textContent = text;
-          element.className = className;
-          return element;
-        };
-        const headingRow = make("div", "", "section-heading");
-        headingRow.append(
-          make("h2", "내가 제출한 과제"),
-          make("span", "제출 완료", "assignment-badge"),
-        );
-        const submittedAt = make("p", submission.submittedAt
-          ? `제출 일시: ${submission.submittedAt.replace("T", " ")}` : "");
-        submissionCard.replaceChildren(
-          headingRow, submittedAt, make("h3", data.title),
-          make("p", submission.note || "작성된 내용이 없습니다.", "assignment-memo"),
-          actions,
-        );
-        if (submission.filename) {
-          const attachment = make("div", "", "assignment-download");
-          attachment.append(make("strong", submission.filename));
-          actions.before(attachment);
-        }
-        const feedbackHeading = make("div", "", "section-heading");
-        feedbackHeading.append(
-          make("h2", "강사 피드백"),
-          make("span", isScored ? "채점 완료" : "피드백 대기", "assignment-badge"),
-        );
-        const feedback = make("div", "", submission.feedback?.trim()
-          ? "assignment-memo" : "feedback-wait");
-        if (submission.feedback?.trim()) {
-          feedback.append(make("p", submission.feedback));
-        } else {
-          feedback.append(
-            make("h3", "강사님의 피드백을 기다리고 있어요."),
-            make("p", "피드백이 등록되면 이곳에서 확인할 수 있어요."),
-          );
-        }
-        if (isScored) feedback.append(make("p", `점수: ${submission.score}점`));
-        if (submission.feedbackAt) feedback.append(make("p",
-          `피드백 일시: ${submission.feedbackAt.replace("T", " ")}`));
-        feedbackCard.replaceChildren(feedbackHeading, feedback);
-        submissionCard.hidden = false;
-        feedbackCard.hidden = false;
+      if (data.submission) {
+        showSubmission(data.submission);
         submissionState.append(make("span", "제출 완료", "assignment-badge"));
         submitForm.hidden = true;
       } else {
