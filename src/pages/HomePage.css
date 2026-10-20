@@ -1,0 +1,187 @@
+:root {
+  --font-family:
+    -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR",
+    sans-serif;
+}
+/* 메인 본문만 React로 구성합니다. 수치는 PPT의 1440px 기준 화면을 따릅니다. */
+.design-home {
+  padding-bottom: 60px;
+}
+.home-intro {
+  text-align: center;
+  padding: 72px 20px 0;
+}
+.home-kicker {
+  font-size: 18px;
+  font-weight: 700;
+  color: #36566a;
+}
+.home-intro h1 {
+  font-size: 60px;
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.055em;
+  margin: 28px 0 35px;
+}
+.home-subtitle {
+  font-size: 24px;
+  font-weight: 700;
+  color: #527632;
+}
+.home-categories {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 58px auto 25px;
+}
+.home-categories a {
+  width: 155px;
+  height: 146px;
+  background: #f5f7f3;
+  border: 1px solid #e0e6e2;
+  border-radius: 23px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 19px 10px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #36566a;
+}
+.home-categories a.selected {
+  background: #eaf3dc;
+  border-color: #dbe8c5;
+}
+.home-categories img {
+  width: 66px;
+  height: 64px;
+  object-fit: contain;
+  margin-top: 22px;
+}
+.home-categories a:hover {
+  outline: 2px solid #a0cf65;
+  outline-offset: 2px;
+}
+.home-all {
+  width: 340px;
+  height: 49px;
+}
+.home-about {
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  background: #153b4d;
+  color: white;
+  border-radius: 23px;
+  padding: 34px 42px 33px;
+  min-height: 181px;
+  text-align: left;
+}
+.home-about .eyebrow {
+  color: #b3e766;
+  font-size: 10px;
+  margin: 4px 0 13px;
+}
+.home-about h2 {
+  font-size: 26px;
+  line-height: 1.5;
+}
+.home-about h2 span {
+  color: #b0ee49;
+}
+.about-copy {
+  padding-left: 38px;
+  border-left: 1px solid #476471;
+  color: #d1e0e2;
+  font-size: 16px;
+  line-height: 1.8;
+}
+.about-links {
+  display: flex;
+  gap: 9px;
+  color: #9ecb70;
+  font-size: 12px;
+  margin-top: 19px;
+}
+.home-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 20px;
+  margin-top: 24px;
+  color: #71838b;
+  font-size: 11px;
+}
+@media (max-width: 900px) {
+  .home-intro h1 {
+    font-size: 48px;
+  }
+  .home-categories {
+    gap: 10px;
+  }
+  .home-categories a {
+    width: 130px;
+  }
+  .home-about {
+    padding: 28px;
+    gap: 20px;
+  }
+  .home-about h2 {
+    font-size: 22px;
+  }
+  .about-copy {
+    font-size: 14px;
+    padding-left: 24px;
+  }
+}
+@media (max-width: 600px) {
+  .home-intro {
+    padding: 45px 16px 0;
+  }
+  .home-kicker {
+    font-size: 13px;
+  }
+  .home-intro h1 {
+    font-size: 36px;
+    margin: 25px 0;
+  }
+  .home-subtitle {
+    font-size: 16px;
+  }
+  .home-categories {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 34px;
+  }
+  .home-categories a {
+    width: auto;
+    height: 118px;
+    border-radius: 15px;
+    font-size: 12px;
+    padding-top: 14px;
+  }
+  .home-categories img {
+    width: 50px;
+    height: 48px;
+    margin-top: 12px;
+  }
+  .home-all {
+    width: 100%;
+    max-width: 340px;
+  }
+  .home-about {
+    grid-template-columns: 1fr;
+    margin-top: 30px;
+  }
+  .home-about h2 {
+    font-size: 23px;
+  }
+  .about-copy {
+    border-left: 0;
+    border-top: 1px solid #476471;
+    padding: 20px 0 0;
+  }
+  .home-footer {
+    justify-content: center;
+  }
+}

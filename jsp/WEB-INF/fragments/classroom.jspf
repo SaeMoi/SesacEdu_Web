@@ -1,0 +1,112 @@
+<%@ page pageEncoding="UTF-8" %>
+<% // 과제 화면도 동일한 React 헤더와 강의 레이아웃을 사용합니다.
+request.setAttribute("chatCourseId", "web");
+boolean assignmentPage = Boolean.TRUE.equals(request.getAttribute("assignmentPage")); %>
+<%@ include file="head.jspf" %>
+<main id="main" class="wrap classroom">
+<p class="eyebrow">MY CLASSROOM</p>
+<h1>웹 보안 입문</h1>
+<div class="classroom-grid">
+<div>
+<div class="lesson-video">
+<div class="video-center">
+<button class="play-button" data-video-note aria-label="강의 영상 재생">▷</button>
+<h2>웹 보안 입문</h2>
+<p>인증과 인가 이해하기</p>
+<p class="video-status" role="status">
+</p>
+</div>
+<div class="video-controls">
+<div class="progress">
+<span>
+</span>
+</div>
+<div>
+<span>Ⅱ　08:30 / 45:00</span>
+<span>음량　1.0×　전체 화면</span>
+</div>
+</div>
+</div>
+<%-- 학습 메뉴는 페이지 이동 대신 같은 화면에서 패널을 열고 닫습니다. --%>
+<nav class="lesson-actions" aria-label="학습 메뉴">
+<button type="button" class="btn <%=assignmentPage ? "sage" : "secondary"%>" data-lesson-panel="assignment-panel" aria-controls="assignment-panel" aria-expanded="<%=assignmentPage%>">과제　⌄</button>
+<button type="button" class="btn secondary" data-lesson-panel="materials-panel" aria-controls="materials-panel" aria-expanded="false">강의자료</button>
+<button type="button" class="btn secondary" data-lesson-panel="qna-panel" aria-controls="qna-panel" aria-expanded="false">질문·답변</button>
+</nav>
+<p id="lesson-status" class="form-status" role="status">
+</p>
+<div id="assignment-panel" data-lesson-content <%=assignmentPage ? "" : "hidden"%>>
+<%@ include file="assignment.jspf" %>
+</div>
+<section id="materials-panel" class="lesson-intro" data-lesson-content hidden>
+<h2>강의자료</h2><p>등록된 강의자료가 없습니다. 자료 파일은 아직 연결되지 않았습니다.</p>
+</section>
+<%-- 메뉴가 모두 접히면 표시하는 기본 안내입니다. 과제 직접 진입 시에만 숨깁니다. --%>
+<section id="lesson-default" class="lesson-intro" <%=assignmentPage ? "hidden" : ""%>>
+<h2>차근차근, 첫걸음부터.</h2>
+<p>오른쪽 목차를 선택하면 영상의 해당 시간으로 이동해요.</p>
+<p class="screen-note">현재는 화면 미리보기이며 영상 파일은 연결 전입니다.</p>
+</section>
+<%-- 질문 목록은 질문·답변 버튼을 눌렀을 때만 펼칩니다. --%>
+<section class="qna-section" id="qna-panel" data-lesson-content hidden>
+<div class="section-heading">
+<h2>질문·답변</h2>
+<button class="btn primary" id="write-question" aria-controls="question-form" aria-expanded="false">질문 작성</button>
+</div>
+<div class="qna-table-head">
+<span>제목</span>
+<span>학습자 닉네임</span>
+</div>
+<details class="qna-row">
+<summary>
+<strong>인증과 인가의 차이가 궁금합니다.</strong>
+<span>보안새싹</span>
+</summary>
+<p>인증은 누구인지 확인하고, 인가는 허용된 행동인지 확인하는 과정입니다. (예시 답변)</p>
+</details>
+<details class="qna-row">
+<summary>
+<strong>과제 파일 제출 형식을 알려주세요.</strong>
+<span>코딩하는새싹</span>
+</summary>
+<p>강의별 과제 안내에서 제출 형식을 확인해 주세요. (예시 답변)</p>
+</details>
+<form class="question-form" id="question-form" hidden>
+<h3>질문 작성</h3>
+<fieldset disabled data-enable>
+<label for="question-title">제목</label>
+<input id="question-title" required maxlength="100" placeholder="질문 제목을 입력해 주세요">
+<label for="question-body">내용</label>
+<textarea id="question-body" required rows="6" maxlength="3000" placeholder="궁금한 내용을 자세히 적어주세요.">
+</textarea>
+<div class="form-actions">
+<button type="button" class="btn secondary" id="cancel-question">취소</button>
+<button class="btn primary" type="submit">질문 등록</button>
+</div>
+</fieldset>
+<p class="form-status" role="status">
+</p>
+</form>
+</section>
+</div>
+<aside class="lesson-outline">
+<h2>강의 목차</h2>
+<p>하나의 영상, 주제별로 살펴보세요.</p>
+<% String[][] parts={{"00:00","강의 소개와 학습 목표"},{"08:30","인증과 인가 이해하기"},{"18:00","접근 권한 확인하기"},{"29:20","입력값 검증의 기본"},{"39:10","핵심 정리와 과제 안내"}};for(String[] part:parts){ %>
+<button class="chapter <%=part[0].equals("08:30")?"active":""%>" data-chapter="<%=part[0]%>" data-chapter-title="<%=part[1]%>">
+<strong>
+<%=part[0]%>
+</strong>
+<span>
+<%=part[1]%>
+</span>
+</button>
+<% } %>
+<div class="outline-footer">
+<span>총 45분</span>
+<span>단일 영상</span>
+</div>
+</aside>
+</div>
+</main>
+<%@ include file="footer.jspf" %>

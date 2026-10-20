@@ -1,0 +1,35 @@
+<%@ page pageEncoding="UTF-8" %>
+<% for(String[] item:courses){ %>
+<a class="course-card" data-course data-category="<%=item[8]%>" data-level="<%=item[9]%>" data-price="<%=item[7]%>" href="${pageContext.request.contextPath}/courses/detail?id=<%=item[0]%>">
+<div class="course-art <%=item[4]%>">
+<strong>
+<%=item[2]%>
+</strong>
+<span class="line-icon <%=item[6]%>" aria-hidden="true">
+<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.2">
+<% if(item[6].equals("shield")){ %>
+<path d="M24 3 43 11v12c0 11-19 21-19 21S5 34 5 23V11Z"/>
+<path d="m14 23 7 7 13-15"/>
+<% }else if(item[6].equals("file")){ %>
+<path d="M11 3h17l11 11v30H11Z"/>
+<path d="M28 3v12h11M16 24h16M16 33h16"/>
+<% }else{ %>
+<path d="M24 9c-6-6-12-4-20-4v33c8 0 14-2 20 5 6-7 12-5 20-5V5c-8 0-14-2-20 4ZM24 9v34"/>
+<% } %>
+</svg>
+</span>
+</div>
+<span class="pill">
+<%=item[5]%>
+</span>
+<h3>
+<%=item[1]%>
+</h3>
+<p><%=item[8]%> · 예시 강사</p>
+<div class="course-price">
+<strong>
+<%=item[3]%>원</strong>
+<span aria-hidden="true">→</span>
+</div>
+</a>
+<% } %>

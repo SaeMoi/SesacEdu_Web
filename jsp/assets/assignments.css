@@ -1,0 +1,49 @@
+/* 설계안 23~25: 과제 안내, 첨부, 제출 내역, 강사 피드백 */
+#assignment-area {scroll-margin-top:24px}
+.assignment-card {border:1px solid var(--color-border);border-radius:16px;padding:28px;margin:24px 0;background:white}
+.assignment-card h2 {font-size:22px;margin:0}.assignment-card h3 {font-size:18px}
+.assignment-card p,.assignment-card li {line-height:1.9;color:var(--color-muted)}
+.assignment-guide {background:#fafcf8}.assignment-badge {display:inline-block;background:#eaf3dc;color:#537738;border-radius:6px;padding:6px 12px;font-size:12px;white-space:nowrap}
+.assignment-guide h2 .assignment-badge {vertical-align:middle;margin-right:8px}
+.assignment-bottom,.assignment-download,.assignment-drop {display:flex;align-items:center;justify-content:space-between;gap:16px}
+.assignment-bottom {border-top:1px solid #dfe7d8;padding-top:16px;margin-top:24px;color:var(--color-muted);font-size:13px}
+.assignment-drop {position:relative;background:#f5f8ee;border:1px dashed #b7cca1;border-radius:12px;padding:24px;margin:24px 0}
+.assignment-drop.dragging {outline:2px solid #537738}.assignment-drop p {font-size:13px;margin-bottom:0;overflow-wrap:anywhere}
+.assignment-file-input {position:absolute;width:1px;height:1px;opacity:0}.assignment-drop:focus-within {outline:2px solid #537738}
+.assignment-drop label {flex-shrink:0;cursor:pointer}.assignment-card textarea {width:100%;margin-top:10px;padding:16px;border:1px solid var(--color-border);border-radius:10px;font:inherit;resize:vertical}
+.assignment-download {background:#f4f7f3;border-radius:12px;padding:20px;margin:24px 0}.assignment-download strong {overflow-wrap:anywhere}.assignment-download p {margin:4px 0;font-size:13px}
+.assignment-feedback {background:#f3f7eb}.feedback-wait {text-align:center;padding:24px 0}.assignment-memo {white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:600px){.assignment-card{padding:18px}.assignment-card .section-heading,.assignment-bottom,.assignment-download,.assignment-drop{align-items:flex-start;flex-direction:column}.assignment-card h2{font-size:20px}}
+
+/* 설계안의 과제 안내 / 내 제출 내용 / 강사 피드백 구성을 API 데이터에 적용합니다. */
+#assignment-area .assignment-card[hidden],
+#assignment-area .form-actions[hidden] { display: none; }
+#assignment-area .assignment-card .section-heading { margin-bottom: 20px; }
+#assignment-area .assignment-card h3 { margin: 18px 0 12px; }
+#assignment-area .assignment-guide > p:empty { display: none; }
+#assignment-area .assignment-guide > p { margin-top: 14px; }
+#assignment-area .assignment-submission-state {
+  border-top: 1px solid var(--line); margin-top: 24px; padding-top: 16px;
+  text-align: right; color: var(--muted); font-size: 13px;
+}
+#assignment-area .assignment-submission-state:empty { display: none; }
+#assignment-area .assignment-submit-actions {
+  justify-content: flex-end; gap: 12px; padding-top: 18px;
+  border-top: 1px solid var(--line); margin-top: 22px;
+}
+#assignment-area .assignment-live-submission > .form-actions {
+  justify-content: flex-end; gap: 12px;
+}
+
+#assignment-area .assignment-bottom .assignment-submission-state {
+  border: 0; padding: 0; margin: 0;
+}
+
+/* 강사 피드백은 내 제출 카드 안에 접어 두고 '피드백 확인'으로 펼칩니다. */
+#assignment-area .assignment-feedback-inline {
+  background: #f3f7eb; border-radius: 12px; padding: 20px; margin-top: 16px;
+}
+#assignment-area .assignment-feedback-inline h3 { margin: 0 0 10px; }
+#assignment-area .assignment-feedback-inline p { margin: 6px 0 0; }
+#assignment-area .assignment-feedback-inline .assignment-score { font-weight: 700; }
+#assignment-area .assignment-feedback-inline .assignment-feedback-date { font-size: 13px; color: var(--color-muted); }

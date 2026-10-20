@@ -1,0 +1,137 @@
+/* 기존 페이지 CSS와 충돌하지 않도록 공통 메뉴 전용 이름을 사용합니다. */
+.shared-mypage-sidebar {
+  min-width: 0;
+  color: #153b4c;
+}
+
+.shared-mypage-sidebar .shared-mypage-eyebrow {
+  margin: 0 0 12px;
+  color: #65856b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.shared-mypage-sidebar h2 {
+  margin: 0 0 28px;
+  font-size: 26px;
+}
+
+.shared-mypage-sidebar .shared-mypage-group {
+  margin: 0 0 24px;
+}
+
+.shared-mypage-group h3 {
+  margin: 0 0 8px;
+  color: #657b83;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shared-mypage-sidebar .shared-mypage-link {
+  display: block;
+  padding: 11px 14px;
+  border-radius: 10px;
+  color: #153b4c;
+  text-decoration: none;
+}
+
+.shared-mypage-sidebar .shared-mypage-link:hover {
+  background: #f4f6f5;
+}
+
+.shared-mypage-sidebar .shared-mypage-link.is-active {
+  background: #e8efd9;
+  color: #527b2e;
+  font-weight: 700;
+}
+
+.shared-mypage-unavailable {
+  display: block;
+  padding: 11px 14px;
+  color: #8b999d;
+  font-size: 14px;
+}
+
+.shared-mypage-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #dce4e3;
+}
+
+.shared-mypage-tabs .shared-mypage-tab {
+  padding: 10px 18px;
+  border-radius: 10px;
+  color: #657b83;
+  text-decoration: none;
+}
+
+.shared-mypage-tabs .shared-mypage-tab:hover {
+  background: #f4f6f5;
+}
+
+.shared-mypage-tabs .shared-mypage-tab.is-active {
+  background: #e8efd9;
+  color: #527b2e;
+  font-weight: 700;
+}
+
+.shared-mypage-link:focus-visible,
+.shared-mypage-tab:focus-visible {
+  outline: 2px solid #527b2e;
+  outline-offset: 3px;
+}
+/* 사이드바 기본 프로필 카드 (GET /mypage/basic_profile) */
+.shared-mypage-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -12px 0 24px;
+  padding: 14px;
+  border: 1px solid #dce4e3;
+  border-radius: 12px;
+}
+
+.shared-mypage-avatar {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.shared-mypage-avatar.is-fallback {
+  display: grid;
+  place-items: center;
+  background: #e8efd9;
+  color: #527b2e;
+  font-weight: 700;
+}
+
+.shared-mypage-profile-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shared-mypage-profile-text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shared-mypage-role {
+  color: #657b83;
+  font-size: 12px;
+}
+
+.shared-mypage-sidebar .shared-mypage-point {
+  color: #527b2e;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
