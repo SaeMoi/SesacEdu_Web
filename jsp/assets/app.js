@@ -2692,8 +2692,9 @@ if (learningPathMatch && classroom) {
               questionLabel.textContent = "질문 내용";
 
               const questionText = document.createElement("p");
-              questionText.textContent =
-                data.question || "작성된 본문이 없습니다.";
+              // 서버가 굵게·기울임을 태그로 바꿔 questionHtml 로 준다.
+              questionText.innerHTML =
+                data.questionHtml || "작성된 본문이 없습니다.";
 
               const answerBox = document.createElement("section");
               answerBox.className = "lecture-qna-answer";
@@ -2704,8 +2705,8 @@ if (learningPathMatch && classroom) {
               const answerText = document.createElement("p");
               const hasAnswer = Boolean(data.answer?.trim());
 
-              answerText.textContent = hasAnswer
-                ? data.answer
+              answerText.innerHTML = hasAnswer
+                ? data.answerHtml
                 : "아직 답변이 등록되지 않았습니다.";
 
               answerBox.append(answerLabel, answerText);
