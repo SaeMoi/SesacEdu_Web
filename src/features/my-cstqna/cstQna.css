@@ -1,0 +1,205 @@
+/* 고객센터 1:1 문의. 목록 표·상태 배지·탭은 my-qna/myQna.css 를 그대로 씁니다. */
+
+.cstqna-list-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cstqna-title-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  word-break: break-word;
+}
+
+.cstqna-title-link:hover {
+  text-decoration: underline;
+}
+
+.cstqna-primary-button,
+.cstqna-secondary-button,
+.cstqna-danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  min-height: 38px;
+  padding: 7px 16px;
+  border: 0;
+  border-radius: var(--radius-small);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cstqna-primary-button {
+  background: var(--color-primary);
+  color: var(--color-text);
+}
+
+.cstqna-secondary-button {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.cstqna-danger-button {
+  background: #fdecec;
+  color: var(--color-error);
+}
+
+.cstqna-primary-button:disabled,
+.cstqna-danger-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.cstqna-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* 상세 */
+.cstqna-detail {
+  margin-top: 20px;
+}
+
+.cstqna-detail-header {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cstqna-detail-header h2 {
+  margin: 10px 0 6px;
+  font-size: 20px;
+  word-break: break-word;
+}
+
+.cstqna-detail-meta {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+/* 사용자 입력은 텍스트로만 출력하고 줄바꿈만 살립니다. */
+.cstqna-text {
+  margin: 16px 0 0;
+  line-height: 1.7;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cstqna-text.is-waiting {
+  color: var(--color-muted);
+}
+
+.cstqna-answer {
+  margin-top: 24px;
+  padding: 18px 20px;
+  border-radius: var(--radius-medium);
+  background: var(--color-surface);
+}
+
+.cstqna-answer h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.cstqna-answer .cstqna-text {
+  margin-top: 10px;
+}
+
+.cstqna-answer-meta {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* 작성·수정 폼 */
+.cstqna-form {
+  margin-top: 20px;
+}
+
+.cstqna-field + .cstqna-field {
+  margin-top: 18px;
+}
+
+.cstqna-field > label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cstqna-field > label > span {
+  color: var(--color-error);
+}
+
+.cstqna-field > input,
+.cstqna-field > textarea {
+  display: block;
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-small);
+  background: var(--color-background);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.cstqna-field > textarea {
+  min-height: 200px;
+  resize: vertical;
+}
+
+.cstqna-field > [aria-invalid="true"] {
+  border-color: var(--color-error);
+}
+
+.cstqna-field-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.cstqna-field-error {
+  margin: 0;
+  color: var(--color-error);
+  font-size: 12px;
+}
+
+.cstqna-count {
+  flex-shrink: 0;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.cstqna-form-message {
+  margin: 16px 0 0;
+  font-size: 13px;
+}
+
+.cstqna-form-message.is-error {
+  color: var(--color-error);
+}
+
+@media (max-width: 640px) {
+  .cstqna-actions {
+    justify-content: stretch;
+  }
+
+  .cstqna-actions > * {
+    flex: 1;
+  }
+}

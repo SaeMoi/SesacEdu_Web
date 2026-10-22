@@ -34,6 +34,12 @@ const menuGroups = [
       { label: "강사 신청", to: "/instructor/apply" },
     ],
   },
+  {
+    title: "고객센터",
+    items: [
+      { label: "1:1 문의", to: "/mypage/cstqna" },
+    ],
+  },
 ];
 
 const roleLabels = {
@@ -117,14 +123,6 @@ export function MyPageSidebar() {
           ))}
         </section>
       ))}
-
-      <section className="shared-mypage-group">
-        <h3>고객센터</h3>
-        {/* 아직 연결할 화면이 없으므로 링크처럼 표시하지 않습니다. */}
-        <span className="shared-mypage-unavailable">
-          공지사항 · 준비 중
-        </span>
-      </section>
     </aside>
   );
 }
