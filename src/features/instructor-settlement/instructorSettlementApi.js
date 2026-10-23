@@ -1,7 +1,7 @@
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
 const API_PATH = "/instructor/settlement";
 
-async function request(path, accessToken, { signal } = {}) {
+async function request(path, accessToken, { signal, method = "GET", payload } = {}) {
   if (!API_BASE_URL) {
     throw new Error("정산 API 서버 주소가 설정되지 않았습니다.");
   }
@@ -13,8 +13,12 @@ async function request(path, accessToken, { signal } = {}) {
 
   let response;
   try {
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    if (payload !== undefined) headers["Content-Type"] = "application/json";
     response = await fetch(`${API_BASE_URL}${path}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      method,
+      headers,
+      body: payload === undefined ? undefined : JSON.stringify(payload),
       signal,
     });
   } catch (error) {
@@ -46,6 +50,12 @@ async function request(path, accessToken, { signal } = {}) {
     }
     if (response.status === 404) {
       throw new Error(message || "정산 정보를 찾을 수 없습니다.");
+    }
+    if (method === "POST" && response.status === 400) {
+      throw new Error(message || "정산 기간이 끝났고 매출이 있는 달만 정산 신청할 수 있습니다.");
+    }
+    if (method === "POST" && response.status === 409) {
+      throw new Error(message || "이미 정산 신청된 달입니다.");
     }
     if (response.status >= 500) {
       throw new Error(message || "서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
@@ -82,6 +92,19 @@ export async function getInstructorSettlements(accessToken, page, { signal } = {
     settlements: result.settlements,
     ...getPagination(result),
   };
+}
+
+// 정산 신청 (POST /instructor/settlement { period: "2026-09" }). 목록의 period("2026.09")를 그대로 넘겨도 됩니다.
+export async function requestInstructorSettlement(accessToken, period) {
+  const normalized = String(period ?? "").trim().replace(".", "-");
+  const result = await request(API_PATH, accessToken, {
+    method: "POST",
+    payload: { period: normalized },
+  });
+  if (!result || result.status !== "requested") {
+    throw new Error("정산 신청 응답 형식이 올바르지 않습니다.");
+  }
+  return result;
 }
 
 export async function getInstructorSettlement(
