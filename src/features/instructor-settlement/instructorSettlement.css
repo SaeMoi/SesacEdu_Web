@@ -277,6 +277,37 @@
   text-underline-offset: 3px;
 }
 
+/* 정산 신청 버튼 (끝난 달 + 매출 있음 + 신청 전/반려) */
+.instructor-settlement-request-button {
+  margin-left: 12px;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--color-primary);
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.instructor-settlement-request-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.instructor-settlement-request-message {
+  margin: 14px 0 0;
+  font-size: 13px;
+}
+
+.instructor-settlement-request-message.is-success {
+  color: var(--color-navy);
+}
+
+.instructor-settlement-request-message.is-error {
+  color: var(--color-error);
+}
+
 .instructor-settlement-state {
   display: grid;
   min-height: 180px;

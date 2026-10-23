@@ -5,6 +5,7 @@ import { InstructorCenterTabs } from "../instructor-center/InstructorCenterTabs.
 import {
   getInstructorSettlement,
   getInstructorSettlements,
+  requestInstructorSettlement,
 } from "./instructorSettlementApi.js";
 import { useInstructorCoursesAuth } from "../instructor-courses/instructorCoursesAuthContext.js";
 import "./instructorSettlement.css";
@@ -50,7 +51,7 @@ function formatWon(value) {
 }
 
 function formatStatus(status) {
-  if (status === "pending") return "정산 대기";
+  if (status === "pending") return "신청 전";
   if (status === "requested") return "승인 대기";
   if (status === "approved") return "승인 완료";
   if (status === "paid") return "지급 완료";
@@ -111,6 +112,26 @@ export function InstructorSettlementListPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // 정산 신청: 진행 중인 period, 결과 안내
+  const [requesting, setRequesting] = useState("");
+  const [requestMessage, setRequestMessage] = useState({ type: "", text: "" });
+
+  async function handleRequest(settlement) {
+    if (requesting) return;
+    if (!window.confirm(`${settlement.period} 정산을 신청할까요?\n신청 후에는 관리자 승인 전까지 취소할 수 없습니다.`)) return;
+    setRequesting(settlement.period);
+    setRequestMessage({ type: "", text: "" });
+    try {
+      await requestInstructorSettlement(accessToken, settlement.period);
+      setRequestMessage({ type: "success", text: `${settlement.period} 정산을 신청했습니다. 관리자 승인 후 지급됩니다.` });
+      setLoading(true);
+      setRetry((count) => count + 1);
+    } catch (requestError) {
+      setRequestMessage({ type: "error", text: requestError.message });
+    } finally {
+      setRequesting("");
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -180,6 +201,15 @@ export function InstructorSettlementListPage() {
             </article>
           </section>
 
+          {requestMessage.text && (
+            <p
+              className={`instructor-settlement-request-message is-${requestMessage.type}`}
+              role={requestMessage.type === "error" ? "alert" : "status"}
+            >
+              {requestMessage.text}
+            </p>
+          )}
+
           {data.settlements.length === 0 ? (
             <div className="instructor-settlement-state">정산 내역이 없습니다.</div>
           ) : (
@@ -206,6 +236,20 @@ export function InstructorSettlementListPage() {
                         >
                           상세 보기
                         </Link>
+                        {settlement.requestable && (
+                          <button
+                            className="instructor-settlement-request-button"
+                            disabled={Boolean(requesting)}
+                            onClick={() => handleRequest(settlement)}
+                            type="button"
+                          >
+                            {requesting === settlement.period
+                              ? "신청 중..."
+                              : settlement.status === "rejected"
+                                ? "다시 신청"
+                                : "정산 신청"}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -224,7 +268,7 @@ export function InstructorSettlementListPage() {
             />
           )}
           <p className="instructor-settlement-list-note">
-            정산 내역은 월별로 확인할 수 있어요. 지급 완료 내역에서 상세를 확인하세요.
+            정산 기간(매월 1일~말일)이 끝난 달은 「정산 신청」으로 정산을 요청할 수 있어요. 반려된 달은 다시 신청할 수 있어요.
           </p>
         </>
       ) : null}
@@ -352,7 +396,7 @@ export function InstructorSettlementDetailPage() {
                   : data.status === "requested" || data.status === "approved"
                     ? "지급 예정일: 승인 후 안내"
                     : data.status === "pending"
-                      ? "정산 기간이 끝나면 정산이 요청됩니다."
+                      ? "정산 기간이 끝나면 정산 관리 목록에서 정산 신청을 해 주세요."
                       : null}
               </span>
               <span>은행: {data.bank || "-"}</span>
