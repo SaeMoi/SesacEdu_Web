@@ -316,9 +316,12 @@ export function InstructorQnaDetailPage() {
             <p className="instructor-qna-question-meta">
               {qna.nickname || "-"} / {qna.lectureName || "-"}
             </p>
-            <p className="instructor-qna-question-content">
-              {qna.question || "질문 내용이 없습니다."}
-            </p>
+            <p
+              className="instructor-qna-question-content"
+              dangerouslySetInnerHTML={{
+                __html: qna.question || "질문 내용이 없습니다.",
+              }}
+            />
           </section>
 
           <label htmlFor="instructor-qna-answer">강사 답변</label>

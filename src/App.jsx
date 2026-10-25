@@ -20,6 +20,11 @@ import MyQnaPage from "./features/my-qna/MyQnaPage.jsx";
 import MyCartPage from "./features/my-cart/MyCartPage.jsx";
 import BenefitsPage from "./features/my-benefits/BenefitsPage.jsx";
 
+// 고객센터 1:1 문의 (목록·작성·상세·수정)
+import CstQnaListPage from "./features/my-cstqna/CstQnaListPage.jsx";
+import CstQnaWritePage from "./features/my-cstqna/CstQnaWritePage.jsx";
+import CstQnaDetailPage from "./features/my-cstqna/CstQnaDetailPage.jsx";
+
 // 결제 관련 화면
 import {
   PaymentPage,
@@ -88,6 +93,12 @@ export default function App() {
         <Route path="/mypage/qna" element={<MyQnaPage />} />
         <Route path="/mypage/cart" element={<MyCartPage />} />
         <Route path="/mypage/bnf" element={<BenefitsPage />} />
+
+        {/* 고객센터 1:1 문의. posts는 :iqid보다 먼저 둔다 */}
+        <Route path="/mypage/cstqna" element={<CstQnaListPage />} />
+        <Route path="/mypage/cstqna/posts" element={<CstQnaWritePage />} />
+        <Route path="/mypage/cstqna/:iqid" element={<CstQnaDetailPage />} />
+        <Route path="/mypage/cstqna/:iqid/edit" element={<CstQnaWritePage />} />
 
         {/* 결제 */}
         <Route path="/mypage/buy" element={<PaymentPage />} />
