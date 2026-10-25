@@ -40,7 +40,6 @@ if (byId("signup-form")) {
   const status = form.querySelector(".form-status");
   const email = byId("email");
   let verificationToken = "";
-  let verifiedEmail = "";
   let busy = false;
 
   const emailValue = () => email.value.trim().toLowerCase();
@@ -51,20 +50,10 @@ if (byId("signup-form")) {
   };
 
   const update = () => {
-    const mismatch =
-      byId("pwcheck").value !== "" &&
-      byId("pwcheck").value !== byId("pw").value;
+    byId("pwcheck").setCustomValidity("");
+    byId("password-error").hidden = true;
 
-    byId("pwcheck").setCustomValidity(
-      mismatch ? "비밀번호가 일치하지 않습니다." : "",
-    );
-    byId("password-error").hidden = !mismatch;
-
-    byId("signup-submit").disabled =
-      busy ||
-      !verificationToken ||
-      verifiedEmail !== emailValue() ||
-      !form.checkValidity();
+    byId("signup-submit").disabled = busy;
 
     for (const id of ["check-email", "resend-code", "verify-code"]) {
       byId(id).disabled = busy;
@@ -74,7 +63,6 @@ if (byId("signup-form")) {
 
   const resetVerification = () => {
     verificationToken = "";
-    verifiedEmail = "";
   };
 
   const post = async (url, payload, expectedCode) => {
@@ -112,7 +100,7 @@ if (byId("signup-form")) {
 
   const requestCode = async () => {
     email.value = emailValue();
-    if (busy || !email.reportValidity()) return;
+    if (busy) return;
 
     busy = true;
     resetVerification();
@@ -166,7 +154,6 @@ if (byId("signup-form")) {
         throw new Error("인증 응답을 확인할 수 없습니다. 다시 인증해 주세요.");
       }
       verificationToken = result.verificationToken;
-      verifiedEmail = emailValue();
       message(byId("code-status"), "이메일 인증이 완료되었습니다.");
     } catch (error) {
       message(byId("code-status"), error.message, true);
@@ -192,12 +179,7 @@ if (byId("signup-form")) {
     event.preventDefault();
     if (busy) return;
     update();
-    if (!form.reportValidity()) return;
 
-    if (!verificationToken || verifiedEmail !== emailValue()) {
-      message(status, "이메일 인증을 먼저 완료해 주세요.", true);
-      return;
-    }
 
     const payload = {
       email: emailValue(),
@@ -551,7 +533,7 @@ if (document.querySelector("[data-lecture-detail]")) {
       const headers = { Accept: "application/json" };
 
       if (session?.authorization) {
-        headers.Authorization = session.authorization;
+        headers.Authorization = session?.authorization;
       }
 
       const response = await authFetch(
@@ -868,7 +850,7 @@ on("open-purchase", "click", async () => {
     headers.set("Accept", "application/json");
 
     if (session?.authorization) {
-      headers.set("Authorization", session.authorization);
+      headers.set("Authorization", session?.authorization);
     }
 
     return authFetch(`/backend${path}`, {
@@ -878,10 +860,7 @@ on("open-purchase", "click", async () => {
     });
   }
 
-  if (!getStoredSession()?.authorization) {
-    goLogin();
-    return;
-  }
+
 
   button.disabled = true;
   status.textContent = "수강 상태를 확인하고 있습니다.";
@@ -937,10 +916,7 @@ on("add-to-cart", "click", async () => {
     return;
   }
   const session = getStoredSession();
-  if (!session?.authorization) {
-    location.assign(`${basePath}/login?course=${encodeURIComponent(lectureId)}`);
-    return;
-  }
+
   button.disabled = true;
   status.textContent = "장바구니에 담는 중입니다.";
   try {
@@ -949,7 +925,7 @@ on("add-to-cart", "click", async () => {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
-        Authorization: session.authorization,
+        Authorization: session?.authorization,
       },
       body: JSON.stringify({ courseId: Number(lectureId) }),
       cache: "no-store",
@@ -1060,7 +1036,7 @@ const forumDate = (iso) => {
 const forumInitial = (nickname) => (nickname || "?").trim().charAt(0) || "?";
 const forumAuthHeaders = () => {
   const session = getStoredSession();
-  return session ? { Authorization: session.authorization } : {};
+  return session ? { Authorization: session?.authorization } : {};
 };
 // 실패 응답을 화면 문구로 바꿉니다. 400이면 result.errors[].reason을 모아 보여줍니다.
 async function forumError(response, fallback) {
@@ -1359,7 +1335,7 @@ if (document.querySelector("[data-post-detail]")) {
       status.textContent = "";
       status.hidden = true;
       byId("post-content").hidden = false;
-      const loggedIn = Boolean(getSession());
+      const loggedIn = true;
       form.hidden = !loggedIn;
       byId("comment-login").hidden = loggedIn;
     } catch (error) {
@@ -1384,7 +1360,7 @@ if (document.querySelector("[data-post-detail]")) {
   let sending = false;
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (sending || !form.reportValidity()) return;
+    if (sending) return;
     sending = true;
     const input = byId("comment-input");
     const button = form.querySelector('[type="submit"]');
@@ -1429,17 +1405,11 @@ const forumEscape = (text) =>
 if (byId("post-form")) {
   const form = byId("post-form");
   const status = byId("post-write-status");
-  if (!getSession()) {
-    status.textContent = "글을 등록하려면 먼저 로그인해 주세요.";
-  }
+
   let sending = false;
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (sending || !form.reportValidity()) return;
-    if (!getStoredSession()) {
-      status.textContent = "글을 등록하려면 먼저 로그인해 주세요.";
-      return;
-    }
+    if (sending) return;
     const bodyText = byId("post-body").textContent.trim();
     if (!bodyText) {
       status.textContent = "본문을 입력해 주세요.";
@@ -1558,7 +1528,7 @@ if (loginForm) {
     // 기본 폼 제출로 페이지가 새로고침되는 것을 막습니다.
     event.preventDefault();
 
-    if (submitting || !loginForm.reportValidity()) return;
+    if (submitting) return;
 
     const emailInput = loginForm.querySelector('[name="email"]');
     const passwordInput = loginForm.querySelector('[name="pw"]');
@@ -1727,13 +1697,11 @@ if (learningPathMatch && classroom) {
 
     async function requestVideo(extraHeaders = {}) {
       const session = getStoredSession();
-      if (!session?.authorization) {
-        throw new Error("로그인 후 영상을 확인해 주세요.");
-      }
+
 
       return authFetch(endpoint, {
         headers: {
-          Authorization: session.authorization,
+          Authorization: session?.authorization,
           ...extraHeaders,
         },
         signal: controller.signal,
@@ -1825,7 +1793,6 @@ if (learningPathMatch && classroom) {
           const session = getStoredSession();
 
           if (
-            !session?.authorization ||
             playbackMemberId == null ||
             String(session.member?.memberId) !== String(playbackMemberId)
           ) {
@@ -1844,7 +1811,7 @@ if (learningPathMatch && classroom) {
               {
                 method: "PUT",
                 headers: {
-                  Authorization: session.authorization,
+                  Authorization: session?.authorization,
                   "Content-Type": "application/json",
                   Accept: "application/json",
                 },
@@ -1961,7 +1928,6 @@ if (learningPathMatch && classroom) {
         const session = getStoredSession();
 
         if (
-          !session?.authorization ||
           playbackMemberId == null ||
           String(session.member?.memberId) !== String(playbackMemberId)
         ) {
@@ -1975,7 +1941,7 @@ if (learningPathMatch && classroom) {
           {
             method: "POST",
             headers: {
-              Authorization: session.authorization,
+              Authorization: session?.authorization,
               Accept: "application/json",
             },
           },
@@ -2315,12 +2281,7 @@ if (learningPathMatch && classroom) {
 
     const session = getStoredSession();
 
-    if (!session) {
-      title.textContent = "로그인이 필요합니다";
-      showOutlineMessage("로그인 후 수강 중인 강의의 목차를 확인해 주세요.");
-      status.textContent = "로그인 후 수강 중인 강의를 열어 주세요.";
-      return;
-    }
+
 
     status.textContent = "학습 정보를 불러오는 중입니다.";
 
@@ -2329,7 +2290,7 @@ if (learningPathMatch && classroom) {
         `/backend/lectures/${lectureId}/learn`,
         {
           headers: {
-            Authorization: session.authorization,
+            Authorization: session?.authorization,
           },
           cache: "no-store",
         },
@@ -2408,13 +2369,11 @@ if (learningPathMatch && classroom) {
     async function requestMaterial(path) {
       const session = getStoredSession();
 
-      if (!session?.authorization) {
-        throw new Error("로그인 후 이용해 주세요.");
-      }
+
 
       return authFetch(path, {
         headers: {
-          Authorization: session.authorization,
+          Authorization: session?.authorization,
         },
         cache: "no-store",
       });
@@ -2568,7 +2527,7 @@ if (learningPathMatch && classroom) {
         const headers = { Accept: "application/json" };
 
         if (session?.authorization) {
-          headers.Authorization = session.authorization;
+          headers.Authorization = session?.authorization;
         }
 
         const response = await authFetch(
@@ -2649,7 +2608,7 @@ if (learningPathMatch && classroom) {
               const headers = { Accept: "application/json" };
 
               if (session?.authorization) {
-                headers.Authorization = session.authorization;
+                headers.Authorization = session?.authorization;
               }
 
               const response = await authFetch(
@@ -2832,7 +2791,7 @@ if (learningPathMatch && classroom) {
       questionForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        if (posting || !questionForm.reportValidity()) return;
+        if (posting) return;
 
         const title = titleInput.value.trim();
         const question = bodyInput.value.trim();
@@ -2844,10 +2803,7 @@ if (learningPathMatch && classroom) {
 
         const session = getStoredSession();
 
-        if (!session?.authorization) {
-          formStatus.textContent = "로그인 후 질문을 등록해 주세요.";
-          return;
-        }
+
 
         posting = true;
         fieldset.disabled = true;
@@ -2862,7 +2818,7 @@ if (learningPathMatch && classroom) {
             {
               method: "POST",
               headers: {
-                Authorization: session.authorization,
+                Authorization: session?.authorization,
                 "Content-Type": "application/json",
                 Accept: "application/json",
               },
@@ -3048,7 +3004,6 @@ if (learningPathMatch && classroom) {
 
         const session = getStoredSession();
         if (
-          !session?.authorization ||
           Number(session.member?.memberId) !== memberId
         ) {
           message.textContent =
@@ -3068,7 +3023,7 @@ if (learningPathMatch && classroom) {
 
         try {
           const headers = {
-            Authorization: session.authorization,
+            Authorization: session?.authorization,
             Accept: "application/json",
           };
           if (payload) headers["Content-Type"] = "application/json";

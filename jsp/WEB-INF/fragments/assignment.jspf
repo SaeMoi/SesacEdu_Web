@@ -8,16 +8,16 @@
 <ol><li>인증이 필요한 상황과 인가가 필요한 상황을 작성해 주세요.</li><li>두 과정이 다른 이유를 자신의 말로 설명해 주세요.</li></ol>
 <div class="assignment-bottom"><span>제출 형식: 내용 작성 또는 PDF 첨부 · 첨부 시 최대 10MB</span><span class="assignment-badge" id="assignment-state">미제출</span></div>
 </article>
-<form id="assignment-form" class="assignment-card">
+<form novalidate id="assignment-form" class="assignment-card">
 <div class="section-heading"><h2>과제 제출</h2><span class="assignment-badge">웹 보안 입문</span></div>
 <h3>인증과 인가 구분하기</h3><p>인증과 인가의 차이를 아래에 작성해 주세요. PDF 파일은 선택해서 첨부할 수 있습니다.</p>
 <fieldset disabled data-enable>
 <div id="assignment-drop" class="assignment-drop">
 <div><strong>과제 파일 첨부 (선택)</strong><p id="assignment-file-name">파일을 끌어 놓거나 파일 선택 버튼을 눌러 주세요.</p></div>
 <label class="btn secondary" for="assignment-file">파일 선택</label>
-<input id="assignment-file" type="file" accept=".pdf,application/pdf" aria-label="과제 PDF 파일" class="assignment-file-input">
+<input id="assignment-file" type="file" aria-label="과제 PDF 파일" class="assignment-file-input">
 </div>
-<label for="assignment-memo">과제 내용</label><textarea id="assignment-memo" rows="5" maxlength="3000" placeholder="과제 내용을 입력해 주세요. 파일 없이 내용만 제출할 수 있습니다."></textarea>
+<label for="assignment-memo">과제 내용</label><textarea id="assignment-memo" rows="5" placeholder="과제 내용을 입력해 주세요. 파일 없이 내용만 제출할 수 있습니다."></textarea>
 <div class="form-actions"><button type="reset" class="btn secondary">취소</button><button type="submit" class="btn primary">과제 제출</button></div>
 </fieldset><p id="assignment-status" class="form-status" role="status"></p>
 </form>
