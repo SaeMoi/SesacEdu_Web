@@ -8,17 +8,17 @@
 <span class="muted">커뮤니티 · 글쓰기</span>
 </div>
 <p class="write-description">작은 질문과 경험도 좋아요. 편하게 들려주세요.</p>
-<form novalidate id="post-form">
+<form id="post-form">
 <fieldset disabled data-enable>
 <label for="post-category">카테고리</label>
-<select id="post-category">
+<select id="post-category" required>
 <%-- 값은 POST /forum/posts의 category입니다. 수강평은 내 학습 화면에서 작성합니다. --%>
 <option value="STUDY">스터디</option>
 <option value="PROJECT">팀 프로젝트</option>
 <option value="QUESTION">질문·답변</option>
 </select>
 <label class="sr-only" for="post-title">제목</label>
-<input class="post-title-input" id="post-title" placeholder="제목을 입력해 주세요">
+<input class="post-title-input" id="post-title" required maxlength="200" placeholder="제목을 입력해 주세요">
 <div class="editor-toolbar" aria-label="본문 서식">
 <span>본문</span>
 <button type="button" data-format="bold" aria-label="굵게" aria-pressed="false"><b>B</b></button>

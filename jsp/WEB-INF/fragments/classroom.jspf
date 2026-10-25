@@ -71,13 +71,13 @@ boolean assignmentPage = Boolean.TRUE.equals(request.getAttribute("assignmentPag
 </summary>
 <p>강의별 과제 안내에서 제출 형식을 확인해 주세요. (예시 답변)</p>
 </details>
-<form novalidate class="question-form" id="question-form" hidden>
+<form class="question-form" id="question-form" hidden>
 <h3>질문 작성</h3>
 <fieldset disabled data-enable>
 <label for="question-title">제목</label>
-<input id="question-title" placeholder="질문 제목을 입력해 주세요">
+<input id="question-title" required maxlength="100" placeholder="질문 제목을 입력해 주세요">
 <label for="question-body">내용</label>
-<textarea id="question-body" rows="6" placeholder="궁금한 내용을 자세히 적어주세요.">
+<textarea id="question-body" required rows="6" maxlength="3000" placeholder="궁금한 내용을 자세히 적어주세요.">
 </textarea>
 <div class="form-actions">
 <button type="button" class="btn secondary" id="cancel-question">취소</button>

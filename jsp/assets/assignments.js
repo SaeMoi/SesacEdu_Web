@@ -210,7 +210,10 @@ if (assignmentArea) {
 
     const session = getStoredSession();
 
-
+    if (!session?.authorization) {
+      submissionMessage.textContent = "로그인 후 이용해 주세요.";
+      return;
+    }
 
     feedbackButton.disabled = true;
     submissionMessage.textContent = "강사 피드백을 확인하고 있습니다.";
@@ -220,7 +223,7 @@ if (assignmentArea) {
         `/backend/lectures/${learningMatch[1]}/assignments/${currentSubmission.assignmentId}`,
         {
           headers: {
-            Authorization: session?.authorization,
+            Authorization: session.authorization,
             Accept: "application/json",
           },
           cache: "no-store",
@@ -270,7 +273,10 @@ if (assignmentArea) {
 
     const session = getStoredSession();
 
-
+    if (!session?.authorization) {
+      submissionMessage.textContent = "로그인 후 이용해 주세요.";
+      return;
+    }
 
     button.disabled = true;
     submissionMessage.textContent = "제출한 파일을 내려받고 있습니다.";
@@ -279,7 +285,7 @@ if (assignmentArea) {
       const response = await authFetch(
         `/backend/lectures/${learningMatch[1]}/assignments/${currentSubmission.assignmentId}/file`,
         {
-          headers: { Authorization: session?.authorization },
+          headers: { Authorization: session.authorization },
           cache: "no-store",
         },
       );
@@ -332,7 +338,10 @@ if (assignmentArea) {
 
     const session = getStoredSession();
 
-
+    if (!session?.authorization) {
+      status.textContent = "로그인 후 이용해 주세요.";
+      return;
+    }
 
     submitting = true;
     editButton.disabled = true;
@@ -345,7 +354,7 @@ if (assignmentArea) {
         {
           method: "DELETE",
           headers: {
-            Authorization: session?.authorization,
+            Authorization: session.authorization,
             Accept: "application/json",
           },
         },
@@ -388,11 +397,17 @@ if (assignmentArea) {
       submitMessage.textContent = "파일을 첨부하거나 과제 내용을 입력해 주세요.";
       return;
     }
-
+    if (file && file.size > 10 * 1024 * 1024) {
+      submitMessage.textContent = "과제 파일은 10MB까지 올릴 수 있습니다.";
+      return;
+    }
 
     const session = getStoredSession();
 
-
+    if (!session?.authorization) {
+      submitMessage.textContent = "로그인 후 제출해 주세요.";
+      return;
+    }
 
     submitting = true;
     submitButton.disabled = true;
@@ -415,7 +430,7 @@ if (assignmentArea) {
           `/backend/lectures/${learningMatch[1]}/assignments/file`,
           {
             method: "POST",
-            headers: { Authorization: session?.authorization, Accept: "application/json" },
+            headers: { Authorization: session.authorization, Accept: "application/json" },
             body: formData,
           },
         );
@@ -432,7 +447,7 @@ if (assignmentArea) {
         {
           method: isEditing ? "PUT" : "POST",
           headers: {
-            Authorization: session?.authorization,
+            Authorization: session.authorization,
             "Content-Type": "application/json",
             Accept: "application/json",
           },
@@ -547,7 +562,10 @@ if (assignmentArea) {
     closeFeedback();
 
 
-
+    if (!session?.authorization) {
+      status.textContent = "로그인 후 이용해 주세요.";
+      return;
+    }
 
     status.textContent = "과제를 불러오는 중입니다.";
 
@@ -557,7 +575,7 @@ if (assignmentArea) {
         {
           headers: {
             Accept: "application/json",
-            Authorization: session?.authorization,
+            Authorization: session.authorization,
           },
           cache: "no-store",
         },

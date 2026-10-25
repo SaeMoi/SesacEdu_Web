@@ -19,9 +19,9 @@
 <h2>댓글 <span id="comment-count"></span></h2>
 <div id="comment-list"></div>
 <button class="btn secondary" type="button" id="comment-more" hidden>댓글 더 보기</button>
-<form novalidate id="comment-form" hidden>
+<form id="comment-form" hidden>
 <label class="sr-only" for="comment-input">댓글</label>
-<textarea id="comment-input" rows="3" placeholder="댓글을 입력해 주세요."></textarea>
+<textarea id="comment-input" required maxlength="1000" rows="3" placeholder="댓글을 입력해 주세요."></textarea>
 <p class="field-status" id="comment-status" role="status" aria-live="polite"></p>
 <div class="form-actions"><button class="btn primary" type="submit">댓글 등록</button></div>
 </form>
