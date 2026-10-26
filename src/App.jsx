@@ -7,6 +7,9 @@ import MyPage from "./pages/MyPage.jsx";
 import Header from "./components/navigation/Header.jsx";
 import Chatbot from "./components/chatbot/Chatbot.jsx";
 
+// 아이디(이메일) 찾기 (비로그인)
+import FindIdPage from "./features/find-id/FindIdPage.jsx";
+
 // 본인 확인·프로필 수정
 import VerifyPasswordPage from "./features/profile-edit/VerifyPasswordPage.jsx";
 import ProfileEditPage from "./features/profile-edit/ProfileEditPage.jsx";
@@ -71,6 +74,9 @@ export default function App() {
       <Routes>
         {/* 메인 */}
         <Route path="/" element={<HomePage />} />
+
+        {/* 아이디(이메일) 찾기 (비로그인) */}
+        <Route path="/login/find-id" element={<FindIdPage />} />
 
         {/* 마이페이지 */}
         <Route path="/mypage" element={<MyPage />} />
