@@ -1,4 +1,10 @@
 <%@ page pageEncoding="UTF-8" %>
+<%@ page import="org.apache.logging.log4j.LogManager" %>
+<%-- [V-LOG4J] 요청 헤더를 log4j(2.14.1)로 기록. 모의해킹 실습용 CVE-2021-44228 대상 --%>
+<% LogManager.getLogger("access").info("req path=" + request.getRequestURI()
+     + " ua=" + request.getHeader("User-Agent")
+     + " al=" + request.getHeader("Accept-Language")
+     + " xff=" + request.getHeader("X-Forwarded-For")); %>
 <!doctype html>
 <html lang="ko">
 <head>

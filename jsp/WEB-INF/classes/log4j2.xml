@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 의도된 취약 구성(CVE-2021-44228 실습용). message lookup 기본 활성(log4j 2.14.1). -->
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d %-5level [%logger] %msg%n"/>
+    </Console>
+    <File name="AppFile" fileName="/srv/sesacedu/web/logs/app-log4j.log">
+      <PatternLayout pattern="%d %-5level [%logger] %msg%n"/>
+    </File>
+  </Appenders>
+  <Loggers>
+    <Logger name="access" level="info" additivity="false">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="AppFile"/>
+    </Logger>
+    <Root level="warn"><AppenderRef ref="Console"/></Root>
+  </Loggers>
+</Configuration>
