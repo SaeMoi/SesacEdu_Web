@@ -14,8 +14,6 @@
 <servlet-mapping><servlet-name>lecture</servlet-name><url-pattern>/lectures/*</url-pattern></servlet-mapping>
 <servlet><servlet-name>review-popup</servlet-name><jsp-file>/WEB-INF/views/review-popup.jsp</jsp-file></servlet>
 <servlet-mapping><servlet-name>review-popup</servlet-name><url-pattern>/courses/reviews</url-pattern></servlet-mapping>
-<servlet><servlet-name>chatbot</servlet-name><jsp-file>/WEB-INF/views/chatbot.jsp</jsp-file></servlet>
-<servlet-mapping><servlet-name>chatbot</servlet-name><url-pattern>/chatbot</url-pattern></servlet-mapping>
 <servlet><servlet-name>community</servlet-name><jsp-file>/WEB-INF/views/community.jsp</jsp-file></servlet>
 <servlet-mapping><servlet-name>community</servlet-name><url-pattern>/community</url-pattern></servlet-mapping>
 <servlet><servlet-name>post-detail</servlet-name><jsp-file>/WEB-INF/views/post-detail.jsp</jsp-file></servlet>

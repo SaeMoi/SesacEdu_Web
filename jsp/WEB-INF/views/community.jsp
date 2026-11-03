@@ -46,10 +46,6 @@
 <p>개인정보는 남기지 않아요.</p>
 </div>
 <p class="screen-note">목록·글은 누구나 볼 수 있고, 글·댓글 작성은 로그인 후 이용할 수 있어요. 검색은 현재 페이지 안에서만 찾습니다.</p>
-<nav class="small-links">
-<a href="${pageContext.request.contextPath}/qna">강의 질문·답변</a>
-<a href="${pageContext.request.contextPath}/chatbot">학습 도우미</a>
-</nav>
 </aside>
 </div>
 </main>
