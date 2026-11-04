@@ -1,7 +1,46 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" session="false" %>
 
-<%-- 강의 제목은 상세 API 조회 후 JavaScript에서 갱신합니다. --%>
-<% String pageTitle = "강의 상세"; %>
+<%--
+  검색 노출·링크 공유 미리보기를 위해 강의 제목을 서버에서 채운다.
+  JS 가 제목을 바꾸기 전 HTML 만 읽는 수집기·메신저에는 모든 강의가 "강의 상세"로 보였다.
+  API 가 늦거나 실패하면 기본 제목으로 두고 화면은 그대로 띄운다.
+--%>
+<%
+  String pageTitle = "강의 상세";
+  String lectureId = request.getParameter("id");
+  if (lectureId != null && lectureId.matches("[0-9]+")) {
+    try {
+      java.net.HttpURLConnection c = (java.net.HttpURLConnection)
+          new java.net.URL("http://127.0.0.1:8080/lectures/" + lectureId).openConnection();
+      c.setConnectTimeout(1000);
+      c.setReadTimeout(1000);
+      String body = new String(c.getInputStream().readAllBytes(), "UTF-8");
+      String q = String.valueOf((char) 34);
+      String lectureName = null;
+      String headline = "";
+      int ni = body.indexOf(q + "name" + q + ":" + q);
+      if (ni >= 0) {
+        int st = ni + 8;
+        int en = body.indexOf(q, st);
+        if (en > st) lectureName = body.substring(st, en);
+      }
+      int hi = body.indexOf(q + "headline" + q + ":" + q);
+      if (hi >= 0) {
+        int st = hi + 12;
+        int en = body.indexOf(q, st);
+        if (en > st) headline = body.substring(st, en);
+      }
+      if (lectureName != null) {
+        pageTitle = lectureName;
+        // 인기 강의 집계·제목 누락 점검용 조회 기록
+        org.apache.logging.log4j.LogManager.getLogger("access").info(
+            "detail view lid=" + lectureId + " name=" + lectureName + " headline=" + headline);
+      }
+    } catch (Exception ignore) {
+      // 제목만 기본값으로 둔다
+    }
+  }
+%>
 <%@ include file="../fragments/head.jspf" %>
 
 <main id="main" class="wrap detail-page" data-lecture-detail>
